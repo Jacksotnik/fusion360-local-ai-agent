@@ -1,0 +1,133 @@
+{
+ "note": "Plain-language requests, third HONEST set: written after plain_holdout.json and plain_holdout2.json had been used for tuning, before the final configuration was run. Never tune the prompt on it; record the numbers before looking at the failures.",
+ "cases": [
+  {
+   "id": "R-soap-dish",
+   "prompt": "Сделай мыльницу: снаружи 12 на 8 см, высота 3 см, открытая сверху, стенки и дно 3 мм.",
+   "start": null,
+   "reference": "box(120, 80, 30, corner=(0, 0, 0))\nshell(3, 'top')",
+   "volume": "120*80*30 - 114*74*27"
+  },
+  {
+   "id": "R-washer",
+   "prompt": "Сделай шайбу: снаружи 16 мм, дырка 8.4 мм, толщина 1.6 мм.",
+   "start": null,
+   "reference": "tube(16, 8.4, 1.6, base=(0, 0, 0))",
+   "volume": "math.pi*(8*8 - 4.2*4.2)*1.6"
+  },
+  {
+   "id": "R-stick",
+   "prompt": "Сделай круглую палочку диаметром 8 мм и длиной 15 см.",
+   "start": null,
+   "reference": "cylinder(8, 150, base=(0, 0, 0))",
+   "volume": "math.pi*4*4*150"
+  },
+  {
+   "id": "R-block-blind-hole",
+   "prompt": "Сделай брусок 4 на 4 см и высотой 8 см, сверху посередине дырка 1.2 см глубиной 5 см.",
+   "start": null,
+   "reference": "box(40, 40, 80, corner=(0, 0, 0))\ndrill(20, 20, 80, 12, axis='Z', depth=50)",
+   "volume": "40*40*80 - math.pi*6*6*50"
+  },
+  {
+   "id": "R-square-coaster",
+   "prompt": "Сделай квадратную подставку под кружку 10 на 10 см толщиной 6 мм со скруглёнными углами по 1 см.",
+   "start": null,
+   "reference": "box(100, 100, 6, corner=(0, 0, 0), corner_radius=10)",
+   "volume": "(100*100 - (4 - math.pi)*10*10)*6"
+  },
+  {
+   "id": "R-stamp",
+   "prompt": "Сделай печатку: ручка — цилиндр диаметром 1.5 см и высотой 4 см, а снизу под ней круглое основание диаметром 3 см и толщиной 5 мм.",
+   "start": null,
+   "reference": "shaft([(30, 5), (15, 40)])",
+   "volume": "math.pi*(15*15*5 + 7.5*7.5*40)"
+  },
+  {
+   "id": "R-u-holder",
+   "prompt": "Сделай держатель буквой П из полоски шириной 15 мм и толщиной 2 мм: ширина 4 см, высота 2 см.",
+   "start": null,
+   "reference": "channel(40, 20, 2, 15)",
+   "volume": "(40*2 + 2*18*2)*15"
+  },
+  {
+   "id": "R-bead",
+   "prompt": "Сделай бусину: кружок диаметром 12 мм и высотой 8 мм с дырочкой 2 мм насквозь через центр сверху вниз.",
+   "start": null,
+   "reference": "cylinder(12, 8, base=(0, 0, 0))\ndrill(0, 0, 0, 2, axis='Z')",
+   "volume": "math.pi*(6*6 - 1*1)*8"
+  },
+  {
+   "id": "R-door-wedge",
+   "prompt": "Сделай клин под дверь: сбоку это треугольник с основанием 10 см и высотой 3 см, ширина клина 4 см.",
+   "start": null,
+   "reference": "sk = new_sketch(plane='XZ')\npolygon(sk, [(0, 0), (100, 0), (0, 30)])\nextrude(sk, 40)",
+   "volume": "0.5*100*30*40"
+  },
+  {
+   "id": "R-plate-slot",
+   "prompt": "Сделай пластинку 8 на 4 см толщиной 4 мм с продолговатой дыркой посередине: длина дырки 3 см, ширина 1 см, концы круглые.",
+   "start": null,
+   "reference": "box(80, 40, 4, corner=(0, 0, 0))\nsk = new_sketch(plane='XY')\nslot(sk, 40, 20, 30, 10)\ncut(sk)",
+   "volume": "80*40*4 - (20*10 + math.pi*5*5)*4"
+  },
+  {
+   "id": "R-edit-shorter",
+   "prompt": "Сделай её короче — 7 см.",
+   "start": "box(100, 50, 8, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(70, 50, 8, corner=(0, 0, 0))",
+   "volume": "70*50*8"
+  },
+  {
+   "id": "R-edit-taller",
+   "prompt": "Сделай его повыше, 35 мм.",
+   "start": "cylinder(30, 20, base=(0, 0, 0))",
+   "reference": "clear()\ncylinder(30, 35, base=(0, 0, 0))",
+   "volume": "math.pi*15*15*35"
+  },
+  {
+   "id": "R-edit-corner-hole",
+   "prompt": "Просверли в ней дырочку 5 мм в углу, в 8 мм от обоих краёв.",
+   "start": "box(60, 40, 5, corner=(0, 0, 0))",
+   "reference": "drill(8, 8, 0, 5, axis='Z')",
+   "volume": "60*40*5 - math.pi*2.5*2.5*5"
+  },
+  {
+   "id": "R-edit-chamfer-top",
+   "prompt": "Сними фаску 2 мм по верхнему краю.",
+   "start": "cylinder(30, 40, base=(0, 0, 0))",
+   "reference": "chamfer(find_edges(kind='circle', z=40), 2)",
+   "volume": "math.pi*15*15*40 - 2*math.pi*(15 - 2/3)*2"
+  },
+  {
+   "id": "R-ask-weight",
+   "prompt": "Сколько она весит?",
+   "start": "box(50, 50, 10, corner=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "50*50*10",
+   "answer": [[196.25, 0.19625]]
+  },
+  {
+   "id": "R-ask-hole",
+   "prompt": "Какого диаметра в ней дырка?",
+   "start": "box(60, 40, 6, corner=(0, 0, 0))\ndrill(30, 20, 0, 9, axis='Z')",
+   "reference": "pass",
+   "volume": "60*40*6 - math.pi*4.5*4.5*6",
+   "answer": [[9, 0.9]]
+  },
+  {
+   "id": "R-dumbbell",
+   "prompt": "Сделай гантельку: на концах палочки диаметром 1 см два кружка диаметром 3 см и толщиной 1 см, общая длина 10 см.",
+   "start": null,
+   "reference": "shaft([(30, 10), (10, 80), (30, 10)])",
+   "volume": "math.pi*(15*15*10*2 + 5*5*80)"
+  },
+  {
+   "id": "R-round-frame",
+   "prompt": "Сделай круглую рамку: снаружи 10 см, внутри круглое окошко 8 см, толщина 4 мм.",
+   "start": null,
+   "reference": "tube(100, 80, 4, base=(0, 0, 0))",
+   "volume": "math.pi*(50*50 - 40*40)*4"
+  }
+ ]
+}

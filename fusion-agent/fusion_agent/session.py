@@ -44,6 +44,10 @@ class DesignSession:
                                 "mark design").strip()
         return self.design_name
 
+    def mark_user_steps(self):
+        """Record the current timeline steps as the user's own part (the test runner builds such parts)."""
+        return must(self.fusion.run_script(fusion_scripts.MARK_USER_STEPS_SCRIPT), "mark user steps").strip()
+
     def is_active(self):
         script = fusion_scripts.active_is_session_script(self.session_id)
         return must(self.fusion.run_script(script, read_only=True), "active check").strip() == "session"

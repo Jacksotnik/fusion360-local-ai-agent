@@ -1,0 +1,180 @@
+{
+ "note": "Plain-language requests, HONEST set: written before any tuning; the prompt must never be tuned on its failures. Measure it only with a finished configuration and record the numbers before looking at the failures.",
+ "cases": [
+  {
+   "id": "P-brick",
+   "prompt": "Сделай кирпичик 6 на 3 на 2 см.",
+   "start": null,
+   "reference": "box(60, 30, 20, corner=(0, 0, 0))",
+   "volume": "60*30*20"
+  },
+  {
+   "id": "P-pill",
+   "prompt": "Сделай круглую таблетку диаметром 2.5 см и высотой 8 мм.",
+   "start": null,
+   "reference": "cylinder(25, 8, base=(0, 0, 0))",
+   "volume": "math.pi*12.5*12.5*8"
+  },
+  {
+   "id": "P-plate-corner-holes",
+   "prompt": "Нужна пластинка 7 на 4 см толщиной 3 мм с четырьмя дырочками по 3 мм по углам, в 5 мм от краёв.",
+   "start": null,
+   "reference": "box(70, 40, 3, corner=(0, 0, 0))\nholes([(5, 5), (65, 5), (5, 35), (65, 35)], 3)",
+   "volume": "70*40*3 - 4*math.pi*1.5*1.5*3"
+  },
+  {
+   "id": "P-cup",
+   "prompt": "Сделай стаканчик: снаружи диаметр 5 см, высота 6 см, стенки и дно по 2 мм.",
+   "start": null,
+   "reference": "cylinder(50, 60, base=(0, 0, 0))\nshell(2, 'top')",
+   "volume": "math.pi*25*25*60 - math.pi*23*23*58"
+  },
+  {
+   "id": "P-angle-g",
+   "prompt": "Сделай железный уголок буквой Г: одна сторона 4 см, другая 3 см, ширина 2 см, толщина металла 3 мм.",
+   "start": null,
+   "reference": "angle_profile(40, 30, 3, 20)",
+   "volume": "(40*3 + 27*3)*20"
+  },
+  {
+   "id": "P-step",
+   "prompt": "Сделай ступеньку: брусок 6 на 4 см высотой 2 см, а сверху на нём у одного края ещё брусок 3 на 4 см тоже высотой 2 см.",
+   "start": null,
+   "reference": "box(60, 40, 20, corner=(0, 0, 0))\nbox(30, 40, 20, corner=(0, 0, 20), operation='join')",
+   "volume": "60*40*20 + 30*40*20"
+  },
+  {
+   "id": "P-cap",
+   "prompt": "Сделай колпачок: круглый, диаметр 3 см, высота 1 см, пустой внутри и открытый снизу, стенки 1.5 мм.",
+   "start": null,
+   "reference": "cylinder(30, 10, base=(0, 0, 0))\nshell(1.5, 'bottom')",
+   "volume": "math.pi*15*15*10 - math.pi*13.5*13.5*8.5"
+  },
+  {
+   "id": "P-edit-longer",
+   "prompt": "Пусть она будет длиной 12 см вместо 8.",
+   "start": "box(80, 50, 6, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(120, 50, 6, corner=(0, 0, 0))",
+   "volume": "120*50*6"
+  },
+  {
+   "id": "P-edit-drill-center",
+   "prompt": "Просверли в нём дырку насквозь по центру, 6 мм.",
+   "start": "cylinder(30, 10, base=(0, 0, 0))",
+   "reference": "drill(0, 0, 0, 6, axis='Z')",
+   "volume": "math.pi*(15*15 - 3*3)*10"
+  },
+  {
+   "id": "P-edit-round-corners",
+   "prompt": "Закругли у неё четыре угла по 5 мм.",
+   "start": "box(60, 40, 10, corner=(0, 0, 0))",
+   "reference": "fillet(find_edges(parallel_to='Z'), 5)",
+   "volume": "(60*40 - (4 - math.pi)*5*5)*10"
+  },
+  {
+   "id": "P-button",
+   "prompt": "Сделай кнопку: кружок диаметром 2 см и толщиной 4 мм, а сверху на нём ровно посередине кружок поменьше, 1.2 см и высотой 3 мм.",
+   "start": null,
+   "reference": "cylinder(20, 4, base=(0, 0, 0))\ncylinder(12, 3, base=(0, 0, 4), operation='join')",
+   "volume": "math.pi*(10*10*4 + 6*6*3)"
+  },
+  {
+   "id": "P-photo-frame",
+   "prompt": "Сделай рамку для фото: снаружи 15 на 10 см, внутри окно 11 на 6 см, толщина 5 мм.",
+   "start": null,
+   "reference": "box(150, 100, 5, corner=(0, 0, 0))\nbox(110, 60, 5, corner=(20, 20, 0), operation='cut')",
+   "volume": "(150*100 - 110*60)*5"
+  },
+  {
+   "id": "P-cutting-board",
+   "prompt": "Сделай доску для нарезки 30 на 20 см толщиной 1.5 см.",
+   "start": null,
+   "reference": "box(300, 200, 15, corner=(0, 0, 0))",
+   "volume": "300*200*15"
+  },
+  {
+   "id": "P-coin",
+   "prompt": "Сделай монетку диаметром 2.3 см и толщиной 2 мм.",
+   "start": null,
+   "reference": "cylinder(23, 2, base=(0, 0, 0))",
+   "volume": "math.pi*11.5*11.5*2"
+  },
+  {
+   "id": "P-bar-long-hole",
+   "prompt": "Сделай брусок 8 на 2 на 2 см с дыркой диаметром 1 см насквозь вдоль всего бруска.",
+   "start": null,
+   "reference": "box(80, 20, 20, corner=(0, 0, 0))\ndrill(0, 10, 10, 10, axis='X')",
+   "volume": "80*20*20 - math.pi*5*5*80"
+  },
+  {
+   "id": "P-pencil-case",
+   "prompt": "Сделай пенал: коробка 20 на 5 см и высотой 3 см, открытая сверху, стенки и дно 2 мм.",
+   "start": null,
+   "reference": "box(200, 50, 30, corner=(0, 0, 0))\nshell(2, 'top')",
+   "volume": "200*50*30 - 196*46*28"
+  },
+  {
+   "id": "P-pencil-holder",
+   "prompt": "Сделай держатель для карандаша: цилиндр диаметром 3 см и высотой 4 см, сверху в нём дырка диаметром 1 см и глубиной 3 см.",
+   "start": null,
+   "reference": "cylinder(30, 40, base=(0, 0, 0))\ndrill(0, 0, 40, 10, axis='Z', depth=30)",
+   "volume": "math.pi*(15*15*40 - 5*5*30)"
+  },
+  {
+   "id": "P-little-table",
+   "prompt": "Сделай маленький столик: квадратная крышка 10 на 10 см толщиной 1 см и под ней по углам четыре квадратные ножки 1 на 1 см высотой 5 см.",
+   "start": null,
+   "reference": "box(100, 100, 10, corner=(0, 0, 50))\nfor x, y in [(0, 0), (90, 0), (0, 90), (90, 90)]:\n    box(10, 10, 50, corner=(x, y, 0), operation='join')",
+   "volume": "100*100*10 + 4*10*10*50"
+  },
+  {
+   "id": "P-edit-square-window",
+   "prompt": "Проделай в ней по центру квадратное окошко 2 на 2 см.",
+   "start": "box(50, 50, 5, corner=(0, 0, 0))",
+   "reference": "box(20, 20, 5, corner=(15, 15, 0), operation='cut')",
+   "volume": "50*50*5 - 20*20*5"
+  },
+  {
+   "id": "P-edit-thicker-disk",
+   "prompt": "Сделай его потолще, 15 мм.",
+   "start": "cylinder(40, 10, base=(0, 0, 0))",
+   "reference": "clear()\ncylinder(40, 15, base=(0, 0, 0))",
+   "volume": "math.pi*20*20*15"
+  },
+  {
+   "id": "P-edit-cut-top-edges",
+   "prompt": "Срежь острые края сверху на 2 мм.",
+   "start": "box(60, 30, 20, corner=(0, 0, 0))",
+   "reference": "chamfer(find_edges(kind='line', z=20), 2)",
+   "volume": "60*30*20 - 2*2*(60 + 30) + 4*2**3/3"
+  },
+  {
+   "id": "P-napkin-ring",
+   "prompt": "Сделай кольцо для салфеток: снаружи диаметр 4.5 см, внутри 4 см, высота 3 см.",
+   "start": null,
+   "reference": "tube(45, 40, 30, base=(0, 0, 0))",
+   "volume": "math.pi*(22.5*22.5 - 20*20)*30"
+  },
+  {
+   "id": "P-axle",
+   "prompt": "Сделай ось: палочку диаметром 5 мм и длиной 6 см.",
+   "start": null,
+   "reference": "cylinder(5, 60, base=(0, 0, 0))",
+   "volume": "math.pi*2.5*2.5*60"
+  },
+  {
+   "id": "P-ring-pyramid",
+   "prompt": "Сделай пирамидку из трёх кругов друг на друге: снизу диаметр 6 см, потом 4 см, сверху 2 см, каждый высотой 1 см.",
+   "start": null,
+   "reference": "shaft([(60, 10), (40, 10), (20, 10)])",
+   "volume": "math.pi*(30*30 + 20*20 + 10*10)*10"
+  },
+  {
+   "id": "P-plug",
+   "prompt": "Сделай заглушку: диск диаметром 3 см толщиной 3 мм, а снизу на нём круглый выступ диаметром 2.2 см и высотой 1 см.",
+   "start": null,
+   "reference": "shaft([(22, 10), (30, 3)])",
+   "volume": "math.pi*(11*11*10 + 15*15*3)"
+  }
+ ]
+}

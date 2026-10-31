@@ -33,7 +33,7 @@ def build_parser():
                         help="do not take a screenshot after each change of the design")
     parser.add_argument("--new", action="store_true", help="start in a new empty design")
     parser.add_argument("--selftest", action="store_true",
-                        help="run three quick tasks in a new design and report pass/fail")
+                        help="run four quick tasks (build, edit, question, shaft) in new designs and report pass/fail")
     parser.add_argument("--version", action="version", version="fusion-agent " + __version__)
     return parser
 

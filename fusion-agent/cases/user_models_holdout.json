@@ -1,0 +1,89 @@
+{
+ "note": "The user opened their own model and asks, in plain words, to change it or asks about it. HONEST set: written before any tuning; the prompt must never be tuned on its failures. Measure it only with a finished configuration and record the numbers before looking at the failures. Same format as user_models_dev.json.",
+ "start_prelude": "user_models_prelude.py",
+ "cases": [
+  {
+   "id": "V-flange-bigger-bore",
+   "prompt": "Сделай отверстие в центре 16 мм.",
+   "start": "build_user_flange()",
+   "reference": "set_parameter('BoreD', 16)",
+   "volume": "math.pi*(30*30*8 + 15*15*20 - 8*8*28)"
+  },
+  {
+   "id": "V-flange-taller-hub",
+   "prompt": "Выступ сверху сделай выше: 30 мм.",
+   "start": "build_user_flange()",
+   "reference": "set_parameter('HubH', 30)",
+   "volume": "math.pi*(30*30*8 + 15*15*30 - 6*6*38)"
+  },
+  {
+   "id": "V-flange-ask-outer",
+   "prompt": "Какой наружный диаметр у детали?",
+   "start": "build_user_flange()",
+   "reference": "pass",
+   "volume": "math.pi*(30*30*8 + 15*15*20 - 6*6*28)",
+   "answer": [[60, 6]]
+  },
+  {
+   "id": "V-flange-ask-hole",
+   "prompt": "Какого диаметра дырка посередине?",
+   "start": "build_user_flange()",
+   "reference": "pass",
+   "volume": "math.pi*(30*30*8 + 15*15*20 - 6*6*28)",
+   "answer": [[12, 1.2]]
+  },
+  {
+   "id": "V-flange-list-parameters",
+   "prompt": "Перечисли параметры модели.",
+   "start": "build_user_flange()",
+   "reference": "pass",
+   "volume": "math.pi*(30*30*8 + 15*15*20 - 6*6*28)",
+   "answer": [[60, 6], [8, 0.8], [30, 3], [20, 2], [12, 1.2]]
+  },
+  {
+   "id": "V-block-wider",
+   "prompt": "Сделай брусок шире, 50 мм вместо 40.",
+   "start": "build_rounded_block()",
+   "reference": "set_parameter('d2', 50)",
+   "volume": "(70*50 - (4 - math.pi)*4*4)*25"
+  },
+  {
+   "id": "V-block-bigger-rounding",
+   "prompt": "Закругления на углах сделай побольше, 8 мм.",
+   "start": "build_rounded_block()",
+   "reference": "set_parameter('d6', 8)",
+   "volume": "(70*40 - (4 - math.pi)*8*8)*25"
+  },
+  {
+   "id": "V-block-drill",
+   "prompt": "Просверли сверху посередине дырку 10 мм насквозь.",
+   "start": "build_rounded_block()",
+   "reference": "drill(35, 20, 0, 10, axis='Z')",
+   "volume": "(70*40 - (4 - math.pi)*4*4)*25 - math.pi*5*5*25"
+  },
+  {
+   "id": "V-block-ask-size",
+   "prompt": "Какие размеры у бруска?",
+   "start": "build_rounded_block()",
+   "reference": "pass",
+   "volume": "(70*40 - (4 - math.pi)*4*4)*25",
+   "answer": [[70, 7], [40, 4], [25, 2.5]]
+  },
+  {
+   "id": "V-block-ask-rounding",
+   "prompt": "Какой радиус у закруглений на углах?",
+   "start": "build_rounded_block()",
+   "reference": "pass",
+   "volume": "(70*40 - (4 - math.pi)*4*4)*25",
+   "answer": [[4, 0.4]]
+  },
+  {
+   "id": "V-block-ask-weight",
+   "prompt": "Сколько весит брусок?",
+   "start": "build_rounded_block()",
+   "reference": "pass",
+   "volume": "(70*40 - (4 - math.pi)*4*4)*25",
+   "answer": [[546.80, 0.54680]]
+  }
+ ]
+}

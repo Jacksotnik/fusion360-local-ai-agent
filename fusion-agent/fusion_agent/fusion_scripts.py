@@ -9,6 +9,8 @@ import json
 ATTRIBUTE_GROUP = "fusion-agent"
 SESSION_ATTRIBUTE = "session"
 SELFTEST_ATTRIBUTE = "selftest"
+# How many first timeline steps are the user's own part; the CAD helpers' undo() and clear() never delete them.
+USER_STEPS_ATTRIBUTE = "user_steps"
 
 ROUND_TRIP_MARKER = "fusion-agent round trip ok"
 
@@ -68,8 +70,11 @@ def run(_context: str):
 '''
 
 
-def mark_active_script(session_id):
-    """Mark the active design as the session design (the user opened it for the app)."""
+def mark_active_script(session_id, records_user_steps=True):
+    """Mark the active design as the session design (the user opened it for the app). In a design that
+    no fusion-agent session has worked in yet, record how many timeline steps are already there: those
+    are the user's own part. A design of an earlier session keeps what that session recorded, so the
+    steps the app built there stay the app's (missing = 0)."""
     return f'''import adsk.core, adsk.fusion
 
 def run(_context: str):
@@ -77,8 +82,21 @@ def run(_context: str):
     design = adsk.fusion.Design.cast(app.activeProduct)
     if design is None:
         raise RuntimeError("the active document is not a design in the Design workspace")
+    is_new_to_the_app = design.attributes.itemByName("{ATTRIBUTE_GROUP}", "{SESSION_ATTRIBUTE}") is None
     design.attributes.add("{ATTRIBUTE_GROUP}", "{SESSION_ATTRIBUTE}", "{session_id}")
+    if {records_user_steps} and is_new_to_the_app:
+        design.attributes.add("{ATTRIBUTE_GROUP}", "{USER_STEPS_ATTRIBUTE}", str(design.timeline.count))
     print(app.activeDocument.name)
+'''
+
+
+# The test runner builds "the user's own part" in a new design, then marks its steps as the user's.
+MARK_USER_STEPS_SCRIPT = f'''import adsk.core, adsk.fusion
+
+def run(_context: str):
+    design = adsk.fusion.Design.cast(adsk.core.Application.get().activeProduct)
+    design.attributes.add("{ATTRIBUTE_GROUP}", "{USER_STEPS_ATTRIBUTE}", str(design.timeline.count))
+    print(design.timeline.count)
 '''
 
 
@@ -193,15 +211,15 @@ def run(_context: str):
     print(json.dumps(result))
 '''
 
-# Timeline length and every model parameter: enough to undo a turn (new steps and set_parameter edits).
+# Timeline length and every parameter (model and user): enough to undo a turn (new steps and
+# set_parameter edits).
 SNAPSHOT_SCRIPT = '''import adsk.core, adsk.fusion, json
 
 def run(_context: str):
     design = adsk.fusion.Design.cast(adsk.core.Application.get().activeProduct)
     parameters = {}
     for parameter in design.allParameters:
-        if adsk.fusion.ModelParameter.cast(parameter) is not None:
-            parameters[parameter.name] = parameter.expression
+        parameters[parameter.name] = parameter.expression
     print(json.dumps({"timeline": design.timeline.count, "parameters": parameters}))
 '''
 

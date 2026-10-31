@@ -1,0 +1,138 @@
+{
+ "note": "The user opened their own model (built like in the Fusion UI: dimensioned sketches, user parameters, a component) and asks, in plain words, to change it or asks about it. DEV set: the prompt may be tuned on these. start uses the builders of user_models_prelude.py; the runner marks the start steps as the user's (protected). A task with 'answer' is a question: the design must stay as it was and the final answer must contain every listed number (any of the alternatives, 3% tolerance) or text.",
+ "start_prelude": "user_models_prelude.py",
+ "cases": [
+  {
+   "id": "U-plate-thicker",
+   "prompt": "Сделай пластину толще — 10 мм.",
+   "start": "build_user_plate()",
+   "reference": "set_parameter('Thickness', 10)",
+   "volume": "80*50*10 - math.pi*4*4*10"
+  },
+  {
+   "id": "U-plate-bigger-hole",
+   "prompt": "Дырку сделай побольше, 12 мм.",
+   "start": "build_user_plate()",
+   "reference": "set_parameter('HoleD', 12)",
+   "volume": "80*50*6 - math.pi*6*6*6"
+  },
+  {
+   "id": "U-plate-round-corners",
+   "prompt": "Скругли у пластины четыре угла на 5 мм.",
+   "start": "build_user_plate()",
+   "reference": "fillet(find_edges(parallel_to='Z'), 5)",
+   "volume": "(80*50 - (4 - math.pi)*5*5)*6 - math.pi*4*4*6"
+  },
+  {
+   "id": "U-plate-ask-thickness",
+   "prompt": "Какая толщина у пластины?",
+   "start": "build_user_plate()",
+   "reference": "pass",
+   "volume": "80*50*6 - math.pi*4*4*6",
+   "answer": [
+    [
+     6,
+     0.6
+    ]
+   ]
+  },
+  {
+   "id": "U-plate-ask-parameters",
+   "prompt": "Какие у этой модели параметры?",
+   "start": "build_user_plate()",
+   "reference": "pass",
+   "volume": "80*50*6 - math.pi*4*4*6",
+   "answer": [
+    [
+     80,
+     8
+    ],
+    [
+     50,
+     5
+    ],
+    [
+     6,
+     0.6
+    ],
+    [
+     8,
+     0.8
+    ]
+   ]
+  },
+  {
+   "id": "U-plate-ask-weight",
+   "prompt": "Сколько весит эта деталь?",
+   "start": "build_user_plate()",
+   "reference": "pass",
+   "volume": "80*50*6 - math.pi*4*4*6",
+   "answer": [
+    [
+     186.03,
+     0.18603
+    ]
+   ]
+  },
+  {
+   "id": "U-plate-ask-material",
+   "prompt": "Из чего она сделана?",
+   "start": "build_user_plate()",
+   "reference": "pass",
+   "volume": "80*50*6 - math.pi*4*4*6",
+   "answer": [
+    [
+     "стал",
+     "steel"
+    ]
+   ]
+  },
+  {
+   "id": "U-bracket-taller",
+   "prompt": "Сделай стенку уголка повыше, чтобы общая высота была 60 мм.",
+   "start": "build_bracket_component()",
+   "reference": "set_parameter('d7', 60)",
+   "volume": "60*30*5 + 5*30*55"
+  },
+  {
+   "id": "U-bracket-longer-base",
+   "prompt": "Сделай основание длиннее, 80 мм.",
+   "start": "build_bracket_component()",
+   "reference": "set_parameter('d1', 80)",
+   "volume": "80*30*5 + 5*30*35"
+  },
+  {
+   "id": "U-bracket-ask-height",
+   "prompt": "Какая высота у этой детали?",
+   "start": "build_bracket_component()",
+   "reference": "pass",
+   "volume": "60*30*5 + 5*30*35",
+   "answer": [
+    [
+     40,
+     4
+    ]
+   ]
+  },
+  {
+   "id": "U-bracket-ask-volume",
+   "prompt": "Какой у неё объём?",
+   "start": "build_bracket_component()",
+   "reference": "pass",
+   "volume": "60*30*5 + 5*30*35",
+   "answer": [
+    [
+     14250,
+     14.25
+    ]
+   ]
+  },
+  {
+   "id": "U-sketch-plate-longer",
+   "prompt": "Сделай пластину длиннее: 80 мм вместо 60.",
+   "start": "box(60, 40, 5, corner=(0, 0, 0))",
+   "reference": "box(20, 40, 5, corner=(60, 0, 0), operation='join')",
+   "volume": "80*40*5"
+  }
+ ]
+}

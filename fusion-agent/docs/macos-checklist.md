@@ -50,7 +50,7 @@ Run each and note the result.
 | 11 | Option+V | works only with "Use Option as Meta key" (Terminal) / "Esc+" (iTerm2); note what happens |
 | 12 | Send a long request and press Ctrl+C while the spinner runs | "Stopped. ..." and the prompt comes back; the next request works |
 | 13 | Ctrl+C on an empty line, and Ctrl+D | the app quits with "Bye." |
-| 14 | `fusion-agent --selftest` | 3/3 PASS; the self-test designs are closed again |
+| 14 | `fusion-agent --selftest` | 4/4 PASS; the self-test designs are closed again |
 
 Session logs and screenshots are in `~/Library/Application Support/fusion-agent/sessions/`; send the
 newest folder along with the notes.

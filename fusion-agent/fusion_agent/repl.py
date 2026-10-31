@@ -25,7 +25,7 @@ COMMANDS = [
     ("/paste", "", "attach the picture from the clipboard (also Alt+V)"),
     ("/model", "[name]", "list the models, or switch to one"),
     ("/think", "on|off", "slow, more accurate mode: the model thinks first"),
-    ("/undo", "[n]", "undo the last n requests (design and conversation)"),
+    ("/undo", "[n]", "undo the last n changes (design and conversation; questions are skipped)"),
     ("/reset", "", "start a new conversation; the design stays"),
     ("/verbose", "on|off", "show the scripts the model runs"),
     ("/screenshots", "on|off", "a screenshot after each change of the design"),
@@ -376,11 +376,12 @@ class App:
         if info.get("session"):
             question = "\"%s\" was made in an earlier fusion-agent session. Continue in it?" % name
         else:
-            question = "The active design \"%s\" already has %s. Work in it anyway (the model will change it)?" % (
-                name, doctor.plural(info.get("bodies", 0), "body", "bodies"))
-        if ask_yes_no(question, default=False):
+            question = ("The open design \"%s\" has %s. Work with it (change it or ask about it; "
+                        "nothing is saved)?" % (name, doctor.plural(info.get("bodies", 0), "body", "bodies")))
+        if ask_yes_no(question, default=True):
             self.design.adopt_active()
-            print("Working in \"%s\"." % self.design.design_name)
+            print("Working with \"%s\". Ask about it or ask for a change; /undo takes a change back." %
+                  self.design.design_name)
             return True
         print("Not touching \"%s\". Type /new, or open an empty design in Fusion (File > New Design)." % name)
         return False
@@ -541,9 +542,20 @@ class App:
             active = "another document (also named \"%s\")" % active_name
         else:
             active = "\"%s\"" % active_name
+        choices = {"b": "back to the session design", "n": "new design", "s": "skip this request"}
+        can_switch = doctor.document_kind(info) in ("empty", "has_content")
+        if can_switch:
+            choices = {"w": "work with %s instead" % active, "b": "back to the session design",
+                       "n": "new design", "s": "skip this request"}
         choice = ask_choice("The active document in Fusion is %s, not this session's design \"%s\"." % (
-            active, self.design.design_name), {"b": "back to the session design", "n": "new design",
-                                               "s": "skip this request"})
+            active, self.design.design_name), choices)
+        if choice == "w" and can_switch:
+            self.design.adopt_active()
+            self.agent.reset()
+            self.undo_stack = []
+            self.log.write("adopted_design", name=self.design.design_name)
+            print("Working with \"%s\" now (a new conversation)." % self.design.design_name)
+            return True
         if choice == "b":
             if self.design.activate():
                 print("Back in \"%s\"." % self.design.design_name)
@@ -602,8 +614,11 @@ class App:
             self.report_turn_error(error, printer.has_changing_script)
             return
         result = outcome["result"]
-        self.undo_stack.append({"snapshot": snapshot, "history_length": history_length,
-                                "start_signature": result["start_signature"]})
+        # Only a request that changed the design can be undone: "/undo" after a question about the
+        # size must take back the change before it, not the question.
+        if result["changed"]:
+            self.undo_stack.append({"snapshot": snapshot, "history_length": history_length,
+                                    "start_signature": result["start_signature"]})
         self.print_result(result)
 
     def wait_for(self, done):
@@ -890,7 +905,7 @@ class App:
         current = self.agent.signature()
         self.log.write("undo", count=count)
         if current == target["start_signature"]:
-            print("Undone: %s. The design is as it was before." % doctor.plural(count, "request"))
+            print("Undone: %s. The design is as it was before." % doctor.plural(count, "change"))
         else:
             print("Undone as far as possible, but the design differs from before (a change outside the "
                   "timeline?). Fusion's own Undo (Ctrl+Z) can go further back.")

@@ -39,7 +39,8 @@ def run_case(case, by_id, cache, ladder, ladder_dir, fusion, ollama, details, mo
     run_ladder.build_reference_state(fusion, case, by_id, include_case_reference=False)
     session_id = new_session_id()
     # The bench document gets the app's session mark too, so the app's active-document check passes.
-    must(fusion.run_script(fusion_scripts.mark_active_script(session_id)), "mark")
+    # Its start state stands for the model's own earlier work, not for a part the user made.
+    must(fusion.run_script(fusion_scripts.mark_active_script(session_id, records_user_steps=False)), "mark")
     record = {"id": case["id"], "prompt": case["prompt"], "expected": expected}
     try:
         agent = Agent(fusion, ollama, session_id, model=model, think=False, has_vision=details["has_vision"],

@@ -719,7 +719,7 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
     size: the three overall dimensions in any order; diameters: every diameter the request names (of the
     part and of the holes); volume: expected volume in mm3 (0.5% tolerance); bodies: expected body count;
     operations: names the request asks for, e.g. ["chamfer"] for фаска, ["fillet"] for скругление."""
-    found = list(root.bRepBodies)
+    found = _all_bodies()
     problems = []
     for operation in operations or []:
         prefix = _OPERATION_PREFIXES.get(operation)
@@ -768,8 +768,10 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
         if len(problems) == 1:
             problems.append("only the volume differs: first recheck your volume formula (box a*b*c, "
                             "cylinder pi*r*r*h, hole pi*r*r*L where L is the length of material the hole "
-                            "goes through, r = diameter / 2); if the formula is right, the part is wrong; "
-                            "if you are not sure about the formula, run check() again without volume")
+                            "goes through, r = diameter / 2); if the formula is right, the part is wrong, "
+                            "most often a hole or a cut is in the wrong place, partly outside the part "
+                            "(compare its position with the box from ... to ... of the body); if you are not "
+                            "sure about the formula, run check() again without volume")
     summary = "bodies %d, size %s mm, cylinder diameters %s, volume %s mm3" % (
         len(found), " x ".join(_fmt(v) for v in actual_size), sorted(all_diameters), _fmt(total_volume))
     if problems:
@@ -780,7 +782,7 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
 
 def state_summary():
     """One line about the design: bodies, size, cylinder diameters, volume and the timeline."""
-    found = list(root.bRepBodies)
+    found = _all_bodies()
     low = [None, None, None]
     high = [None, None, None]
     diameters = set()
@@ -802,17 +804,37 @@ def state_summary():
         len(found), size, sorted(diameters), _fmt(volume), ", ".join(steps) or "empty"))
 
 
+def _user_steps():
+    """How many first timeline steps are the user's own part (the design was opened by the user)."""
+    attribute = design.attributes.itemByName("fusion-agent", "user_steps")
+    if attribute is None:
+        return 0
+    try:
+        return int(attribute.value)
+    except ValueError:
+        return 0
+
+
 def undo(steps=1):
     """Delete the last steps of the timeline (each sketch, plane and feature is one step, see describe())."""
     timeline = design.timeline
-    if steps < 1 or steps > timeline.count:
-        raise ValueError("steps must be from 1 to %d" % timeline.count)
+    own_steps = timeline.count - _user_steps()
+    if own_steps < 1:
+        raise ValueError("there are no steps of yours to undo: the timeline is the user's own part; "
+                         "change it with set_parameter() or add features")
+    if steps < 1 or steps > own_steps:
+        raise ValueError("steps must be from 1 to %d: the first %d steps are the user's own part" % (
+            own_steps, _user_steps()))
     timeline.markerPosition = timeline.count - steps
     timeline.deleteAllAfterMarker()
 
 
 def clear():
     """Delete everything in the design, to build it again from scratch."""
+    if _user_steps() > 0:
+        raise ValueError("clear() would delete the user's own part: this design was opened by the user. "
+                         "Change it with set_parameter() (describe() lists the parameters) or add features; "
+                         "undo() removes only the steps you added")
     timeline = design.timeline
     timeline.moveToBeginning()
     timeline.deleteAllAfterMarker()
@@ -852,50 +874,160 @@ def describe_edges(body=None, limit=60):
                                                  _xyz([v * 10 for v in box.maxPoint.asArray()])))
 
 
+def _all_bodies():
+    """The bodies of the root component and of the components in it (as occurrence proxies)."""
+    found = list(root.bRepBodies)
+    for occurrence in root.allOccurrences:
+        for body in occurrence.bRepBodies:
+            found.append(body)
+    return found
+
+
+def _parameter_value(parameter):
+    """The value of a parameter in mm, degrees or as a plain number."""
+    if parameter.unit in ("mm", "cm", "m", "in", "ft"):
+        return "%s mm" % _fmt(parameter.value * 10)
+    if parameter.unit == "deg":
+        return "%s deg" % _fmt(math.degrees(parameter.value))
+    return _fmt(parameter.value)
+
+
+def _parameter_text(parameter):
+    """name=expression, plus the value when the expression is not a plain number, plus the comment."""
+    expression = parameter.expression
+    text = "%s=%s" % (parameter.name, expression)
+    plain = expression.replace("mm", "").replace("deg", "").strip()
+    try:
+        float(plain)
+    except ValueError:
+        text += " (= %s)" % _parameter_value(parameter)
+    if parameter.comment:
+        text += ' "%s"' % parameter.comment
+    return text
+
+
+def _parameter_owner(parameter):
+    """The name of the feature, sketch or plane that a model parameter belongs to, or None."""
+    owner = parameter.createdBy
+    if owner is None:
+        return None
+    name = getattr(owner, "name", None)
+    if name:
+        return name
+    sketch = getattr(owner, "parentSketch", None)
+    if sketch is not None:
+        return sketch.name
+    return None
+
+
+def _extrude_axis(entity):
+    """The axis X, Y or Z of an extrude from a sketch on a main plane, else None: tells the model that the
+    extrude's distance is the size along that axis (a plate extruded along Z: d1 is its thickness)."""
+    extrude = adsk.fusion.ExtrudeFeature.cast(entity)
+    if extrude is None:
+        return None
+    try:
+        profile = extrude.profile
+        collection = adsk.core.ObjectCollection.cast(profile)
+        if collection is not None:
+            profile = collection.item(0)
+        sketch = adsk.fusion.Profile.cast(profile).parentSketch
+        normal = sketch.transform.getAsCoordinateSystem()[3]
+    except Exception:
+        return None
+    for name, value in (("X", normal.x), ("Y", normal.y), ("Z", normal.z)):
+        if abs(abs(value) - 1) < 1e-6:
+            return name
+    return None
+
+
+def _body_text(body, label):
+    box = body.boundingBox
+    low = [value * 10 for value in box.minPoint.asArray()]
+    high = [value * 10 for value in box.maxPoint.asArray()]
+    size = [high[i] - low[i] for i in range(3)]
+    diameters = set()
+    for face in body.faces:
+        if isinstance(face.geometry, adsk.core.Cylinder):
+            diameters.add(round(face.geometry.radius * 20, 3))
+    text = "  %s: volume %s mm3, size %s mm, box from %s to %s, faces %d, cylinder diameters %s" % (
+        label, _fmt(body.volume * 1000), " x ".join(_fmt(value) for value in size),
+        _xyz(low), _xyz(high), body.faces.count, sorted(diameters))
+    if body.material is not None:
+        text += ", material %s, mass %s g" % (body.material.name, _fmt(body.physicalProperties.mass * 1000))
+    return text
+
+
 def describe():
-    """Print what is in the design: bodies with volume, box and cylinder diameters (mm), sketches, features."""
-    bodies = list(root.bRepBodies)
-    print("bodies: %d" % len(bodies))
-    for body in bodies:
-        box = body.boundingBox
-        low = [value * 10 for value in box.minPoint.asArray()]
-        high = [value * 10 for value in box.maxPoint.asArray()]
-        size = [high[i] - low[i] for i in range(3)]
-        diameters = set()
-        for face in body.faces:
-            if isinstance(face.geometry, adsk.core.Cylinder):
-                diameters.add(round(face.geometry.radius * 20, 3))
-        print("  %s: volume %s mm3, size %s mm, box from %s to %s, faces %d, cylinder diameters %s" % (
-            body.name, _fmt(body.volume * 1000), " x ".join(_fmt(value) for value in size),
-            _xyz(low), _xyz(high), body.faces.count, sorted(diameters)))
-    for sketch in root.sketches:
-        circles = []
-        for each_circle in sketch.sketchCurves.sketchCircles:
-            center = [value * 10 for value in each_circle.worldGeometry.center.asArray()]
-            circles.append("d%s at %s" % (_fmt(each_circle.radius * 20), _xyz(center)))
-        lines = sketch.sketchCurves.sketchLines.count
-        text = "  sketch %s: %d lines, %d circles" % (sketch.name, lines, len(circles))
-        if circles:
-            text += ": " + "; ".join(circles[:12])
-        print(text)
-    parameters_by_feature = {}
+    """Print what is in the design: bodies with volume, box, cylinder diameters (mm), material and mass;
+    user parameters; sketches; the timeline with the dimensions of every step."""
+    body_lines = []
+    for body in root.bRepBodies:
+        body_lines.append(_body_text(body, body.name))
+    for occurrence in root.allOccurrences:
+        for body in occurrence.bRepBodies:
+            body_lines.append(_body_text(body, "%s (component %s)" % (body.name, occurrence.component.name)))
+    print("bodies: %d" % len(body_lines))
+    for line in body_lines[:20]:
+        print(line)
+    if len(body_lines) > 20:
+        print("  ... %d more bodies not shown" % (len(body_lines) - 20))
+
+    user_parameters = [design.userParameters.item(i) for i in range(design.userParameters.count)]
+    if user_parameters:
+        texts = [_parameter_text(parameter) for parameter in user_parameters[:40]]
+        print("  user parameters: " + "; ".join(texts))
+
+    sketch_lines = []
+    is_users_design = _user_steps() > 0
+    for component in design.allComponents:
+        for sketch in component.sketches:
+            circles = []
+            for each_circle in sketch.sketchCurves.sketchCircles:
+                center = [value * 10 for value in each_circle.worldGeometry.center.asArray()]
+                circles.append("d%s at %s" % (_fmt(each_circle.radius * 20), _xyz(center)))
+            lines = sketch.sketchCurves.sketchLines.count
+            name = sketch.name if component == root else "%s/%s" % (component.name, sketch.name)
+            text = "  sketch %s: %d lines, %d circles" % (name, lines, len(circles))
+            if circles:
+                text += ": " + "; ".join(circles[:12])
+            if is_users_design and sketch.sketchDimensions.count == 0:
+                # A sketch the user drew without sizes: no parameter holds them, so say how to change them.
+                text += " (no dimensions: change its sizes with material, box join or cut)"
+            sketch_lines.append(text)
+    for line in sketch_lines[:15]:
+        print(line)
+    if len(sketch_lines) > 15:
+        print("  ... %d more sketches not shown" % (len(sketch_lines) - 15))
+
+    parameters_by_owner = {}
     for parameter in design.allParameters:
         model_parameter = adsk.fusion.ModelParameter.cast(parameter)
-        if model_parameter is None or model_parameter.createdBy is None:
+        if model_parameter is None:
             continue
         if model_parameter.role in ("TaperAngle", "TangencyWeight", "ExtraOffset"):
             continue
-        owner = model_parameter.createdBy.name
-        parameters_by_feature.setdefault(owner, []).append("%s=%s" % (parameter.name, parameter.expression))
+        owner = _parameter_owner(model_parameter)
+        if owner is None:
+            continue
+        parameters_by_owner.setdefault(owner, []).append(_parameter_text(model_parameter))
     steps = []
     for i in range(design.timeline.count):
         item = design.timeline.item(i)
-        owner_parameters = parameters_by_feature.get(item.name)
-        if owner_parameters and not item.name.startswith("Sketch"):
-            steps.append("%s [%s]" % (item.name, ", ".join(owner_parameters)))
+        label = item.name
+        axis = _extrude_axis(item.entity)
+        if axis is not None:
+            label += " (along %s)" % axis
+        owner_parameters = parameters_by_owner.get(item.name)
+        if owner_parameters:
+            steps.append("%s [%s]" % (label, ", ".join(owner_parameters[:12])))
         else:
-            steps.append(item.name)
+            steps.append(label)
         if item.healthState != adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState:
             print("  PROBLEM in %s: %s" % (item.name, item.errorOrWarningMessage))
-    print("  timeline (%d steps): %s" % (len(steps), ", ".join(steps)))
+    if len(steps) > 80:
+        steps = ["(%d first steps not shown)" % (len(steps) - 80)] + steps[-80:]
+    print("  timeline (%d steps): %s" % (design.timeline.count, ", ".join(steps)))
+    if _user_steps() > 0:
+        print("  the user opened this design: its first %d timeline steps are the user's own part" % _user_steps())
 '''

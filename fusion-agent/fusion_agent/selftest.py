@@ -1,8 +1,9 @@
-"""`fusion-agent --selftest`: three quick tasks through the real loop, checked against hand-computed numbers.
+"""`fusion-agent --selftest`: four quick tasks through the real loop, checked against hand-computed numbers.
 
 Each task runs in a new design the self-test marks as its own; it closes only those designs.
 """
 import math
+import re
 import time
 
 from fusion_agent import doctor, term
@@ -33,8 +34,28 @@ SHAFT = {
     "volume": math.pi * (10 * 10 * 30 + 8 * 8 * 40 + 6 * 6 * 25),
     "diameters": [12, 16, 20],
 }
-# Each inner list runs in one new design, in order (the edit works on the plate).
-GROUPS = [[PLATE, THICKER], [SHAFT]]
+# A question: the design must stay as it is and the answer must give the number.
+QUESTION = {
+    "title": "question: how thick",
+    "request": "Какая сейчас толщина у пластины?",
+    "extents": [10, 50, 80],
+    "volume": 80 * 50 * 10 - 4 * math.pi * 3 * 3 * 10,
+    "diameters": [6],
+    "answer": 10,
+}
+# Each inner list runs in one new design, in order (the edit and the question work on the plate).
+GROUPS = [[PLATE, THICKER, QUESTION], [SHAFT]]
+
+
+def answer_problems(task, result):
+    """For a question: the design did not change and the answer names the expected number."""
+    found = []
+    if result["changed"]:
+        found.append("the design changed on a question")
+    numbers = [float(number.replace(",", ".")) for number in re.findall(r"\d+(?:[.,]\d+)?", result["final_answer"])]
+    if not any(abs(number - task["answer"]) < 0.01 for number in numbers):
+        found.append("the answer does not say %s: %r" % (task["answer"], result["final_answer"][:120]))
+    return found
 
 
 def problems_of(task, signature):
@@ -84,6 +105,8 @@ def run_selftest(model):
                 try:
                     result = agent.turn(task["request"])
                     found = problems_of(task, result["end_signature"] or agent.signature())
+                    if "answer" in task:
+                        found += answer_problems(task, result)
                 except Exception as error:
                     found = ["%s: %s" % (type(error).__name__, error)]
                 seconds = time.time() - task_started

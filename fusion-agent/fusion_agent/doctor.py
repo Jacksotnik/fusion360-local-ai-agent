@@ -344,9 +344,8 @@ def document_result(info):
                            ["The app needs the timeline: type /new for a new parametric design."])
     if kind == "empty":
         return CheckResult("Design", OK, "\"%s\" is an empty design: the app will work in it" % name)
-    return CheckResult("Design", WARN, "\"%s\" already has %s and %s" % (
-        name, plural(info.get("bodies", 0), "body", "bodies"), plural(info.get("timeline", 0), "timeline step")),
-        ["The app asks before working in it. For a clean start: File > New Design, or type /new."])
+    return CheckResult("Design", OK, "\"%s\" has %s and %s: the app can change it or answer questions about it" % (
+        name, plural(info.get("bodies", 0), "body", "bodies"), plural(info.get("timeline", 0), "timeline step")))
 
 
 def print_results(results, stream=None):

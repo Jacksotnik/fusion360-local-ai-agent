@@ -30,7 +30,8 @@ class DocumentKindTest(unittest.TestCase):
     def test_results(self):
         self.assertEqual(doctor.document_result(design()).status, doctor.OK)
         content = doctor.document_result(design(bodies=2, timeline=5))
-        self.assertEqual(content.status, doctor.WARN)
+        # An open part with content is fine: the app offers to change it or answer questions about it.
+        self.assertEqual(content.status, doctor.OK)
         self.assertIn("2 bodies and 5 timeline steps", content.detail)
         self.assertIn("/new", doctor.document_result({"has_document": False}).hint[0])
         # A document problem never blocks the start: the user can type /new.

@@ -1,0 +1,180 @@
+{
+ "note": "Plain-language requests (everyday words, no CAD terms), DEV set: the prompt may be tuned on these. start/reference are CAD helper code; volume is the hand-computed volume in mm3 (a Python expression, math available); the reference must match it before any model run.",
+ "cases": [
+  {
+   "id": "D-tile-half-cm",
+   "prompt": "Сделай квадратную плитку 5 на 5 см толщиной полсантиметра.",
+   "start": null,
+   "reference": "box(50, 50, 5, corner=(0, 0, 0))",
+   "volume": "50*50*5"
+  },
+  {
+   "id": "D-washer-words",
+   "prompt": "Нужна шайбочка: кружок диаметром 3 см с дыркой посередине на 1 см, толщина 2 мм.",
+   "start": null,
+   "reference": "tube(30, 10, 2, base=(0, 0, 0))",
+   "volume": "math.pi*(15*15 - 5*5)*2"
+  },
+  {
+   "id": "D-cube-rounded-all",
+   "prompt": "Сделай кубик 3 см и закругли ему все углы и края на 2 мм, чтобы был гладкий.",
+   "start": null,
+   "reference": "box(30, 30, 30, corner=(0, 0, 0))\nfillet(find_edges(), 2)",
+   "volume": "26**3 + 6*26*26*2 + 3*math.pi*26*2*2 + 4/3*math.pi*2**3"
+  },
+  {
+   "id": "D-bar-two-holes",
+   "prompt": "Сделай деревянный брусок 10 на 4 см и высотой 2 см и просверли в нём сверху две дырки насквозь диаметром 5 мм, в 2 см от каждого конца, посередине по ширине.",
+   "start": null,
+   "reference": "box(100, 40, 20, corner=(0, 0, 0))\nholes([(20, 20), (80, 20)], 5)",
+   "volume": "100*40*20 - 2*math.pi*2.5*2.5*20"
+  },
+  {
+   "id": "D-straw",
+   "prompt": "Сделай трубочку длиной 10 см: толщина снаружи 2 см, а внутри дырка 1.5 см.",
+   "start": null,
+   "reference": "tube(20, 15, 100, base=(0, 0, 0))",
+   "volume": "math.pi*(10*10 - 7.5*7.5)*100"
+  },
+  {
+   "id": "D-phone-stand",
+   "prompt": "Сделай подставку под телефон: пластинка 8 на 6 см толщиной 5 мм, а на ней у заднего края стоит стенка во всю ширину 8 см, такой же толщины. Общая высота подставки 7 см.",
+   "start": null,
+   "reference": "box(80, 60, 5, corner=(0, 0, 0))\nbox(80, 5, 65, corner=(0, 55, 5), operation='join')",
+   "volume": "80*60*5 + 80*5*65"
+  },
+  {
+   "id": "D-open-box",
+   "prompt": "Сделай коробочку без крышки: снаружи 6 на 4 см, высота 3 см, стенки и дно толщиной 2 мм.",
+   "start": null,
+   "reference": "box(60, 40, 30, corner=(0, 0, 0))\nshell(2, 'top')",
+   "volume": "60*40*30 - 56*36*28"
+  },
+  {
+   "id": "D-key-ring",
+   "prompt": "Сделай колечко для ключей: снаружи 3 см, дырка внутри 2.4 см, толщиной 3 мм.",
+   "start": null,
+   "reference": "tube(30, 24, 3, base=(0, 0, 0))",
+   "volume": "math.pi*(15*15 - 12*12)*3"
+  },
+  {
+   "id": "D-edit-twice-thicker",
+   "prompt": "Сделай её в два раза толще.",
+   "start": "box(50, 30, 10, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(50, 30, 20, corner=(0, 0, 0))",
+   "volume": "50*30*20"
+  },
+  {
+   "id": "D-edit-bigger-hole",
+   "prompt": "Сделай дырку побольше, 12 мм.",
+   "start": "box(60, 40, 5, corner=(0, 0, 0))\nholes([(30, 20)], 8)",
+   "reference": "set_diameter(find_circles(diameter=8), 12)",
+   "volume": "60*40*5 - math.pi*6*6*5"
+  },
+  {
+   "id": "D-wheel-axle",
+   "prompt": "Сделай колёсико: диаметр 4 см, ширина 1 см, в центре дырка под ось 4 мм.",
+   "start": null,
+   "reference": "tube(40, 4, 10, base=(0, 0, 0))",
+   "volume": "math.pi*(20*20 - 2*2)*10"
+  },
+  {
+   "id": "D-sign-nail-hole",
+   "prompt": "Сделай табличку 10 на 5 см толщиной 3 мм с закруглёнными уголками на 1 см и дырочкой 4 мм для гвоздика посередине, в 1 см от верхнего края.",
+   "start": null,
+   "reference": "box(100, 50, 3, corner=(0, 0, 0), corner_radius=10)\nholes([(50, 40)], 4)",
+   "volume": "(100*50 - (4 - math.pi)*10*10)*3 - math.pi*2*2*3"
+  },
+  {
+   "id": "D-edit-cut-sharp-edges",
+   "prompt": "Срежь у этого бруска острые края сверху на 1 мм, чтобы не царапались.",
+   "start": "box(40, 30, 10, corner=(0, 0, 0))",
+   "reference": "chamfer(find_edges(kind='line', z=10), 1)",
+   "volume": "40*30*10 - 1*1*(40 + 30) + 4*1**3/3"
+  },
+  {
+   "id": "D-ruler",
+   "prompt": "Сделай линейку длиной 15 см, шириной 3 см и толщиной 2 мм.",
+   "start": null,
+   "reference": "box(150, 30, 2, corner=(0, 0, 0))",
+   "volume": "150*30*2"
+  },
+  {
+   "id": "D-keychain",
+   "prompt": "Сделай брелок: кружок 4 см толщиной 3 мм, у края дырочка 4 мм для колечка, центр дырочки в 5 мм от края.",
+   "start": null,
+   "reference": "cylinder(40, 3, base=(0, 0, 0))\ndrill(0, 15, 0, 4, axis='Z')",
+   "volume": "math.pi*(20*20 - 2*2)*3"
+  },
+  {
+   "id": "D-cube-hole-through",
+   "prompt": "Сделай кубик 2 см с дыркой 8 мм насквозь через центр, сверху вниз.",
+   "start": null,
+   "reference": "box(20, 20, 20, corner=(0, 0, 0))\ndrill(10, 10, 0, 8, axis='Z')",
+   "volume": "20**3 - math.pi*4*4*20"
+  },
+  {
+   "id": "D-cross",
+   "prompt": "Сделай плоский крестик толщиной 5 мм из двух полосок 6 на 1 см, которые пересекаются посередине.",
+   "start": null,
+   "reference": "box(60, 10, 5, corner=(0, 25, 0))\nbox(10, 60, 5, corner=(25, 0, 0), operation='join')",
+   "volume": "2*60*10*5 - 10*10*5"
+  },
+  {
+   "id": "D-table-leg",
+   "prompt": "Сделай круглую ножку для стола диаметром 3 см и высотой 40 см.",
+   "start": null,
+   "reference": "cylinder(30, 400, base=(0, 0, 0))",
+   "volume": "math.pi*15*15*400"
+  },
+  {
+   "id": "D-cork",
+   "prompt": "Сделай пробку: снизу узкая часть диаметром 1.8 см и высотой 2 см, а сверху шляпка диаметром 2.5 см и высотой 5 мм.",
+   "start": null,
+   "reference": "shaft([(18, 20), (25, 5)])",
+   "volume": "math.pi*(9*9*20 + 12.5*12.5*5)"
+  },
+  {
+   "id": "D-u-clip",
+   "prompt": "Сделай скобу буквой П из полоски шириной 2 см и толщиной 4 мм: ширина скобы 6 см, общая высота 3 см.",
+   "start": null,
+   "reference": "channel(60, 30, 4, 20)",
+   "volume": "(60*4 + 2*26*4)*20"
+  },
+  {
+   "id": "D-edit-lower",
+   "prompt": "Сделай его пониже, высотой 2 см.",
+   "start": "cylinder(20, 30, base=(0, 0, 0))",
+   "reference": "clear()\ncylinder(20, 20, base=(0, 0, 0))",
+   "volume": "math.pi*10*10*20"
+  },
+  {
+   "id": "D-edit-remove-holes",
+   "prompt": "Убери все дырки, пусть будет просто пластина.",
+   "start": "box(60, 40, 5, corner=(0, 0, 0))\nholes([(10, 10), (50, 10), (10, 30), (50, 30)], 4)",
+   "reference": "clear()\nbox(60, 40, 5, corner=(0, 0, 0))",
+   "volume": "60*40*5"
+  },
+  {
+   "id": "D-handle-rounded-ends",
+   "prompt": "Сделай рукоятку: цилиндр диаметром 2.5 см и длиной 12 см, оба конца по краю закругли на 5 мм.",
+   "start": null,
+   "reference": "cylinder(25, 120, base=(0, 0, 0))\nfillet(find_edges(kind='circle'), 5)",
+   "volume": "math.pi*12.5*12.5*120 - 2*2*math.pi*(12.5 - 5*(10 - 3*math.pi)/(3*(4 - math.pi)))*5*5*(1 - math.pi/4)"
+  },
+  {
+   "id": "D-hex-nut",
+   "prompt": "Сделай шестигранную гайку: от грани до грани 13 мм, толщина 6.5 мм, дырка в центре 8 мм.",
+   "start": null,
+   "reference": "sk = new_sketch('XY')\nr = 6.5 / math.cos(math.radians(30))\npolygon(sk, [(r*math.cos(math.radians(60*k)), r*math.sin(math.radians(60*k))) for k in range(6)])\ncircle(sk, 0, 0, 8)\nextrude(sk, 6.5)",
+   "volume": "(math.sqrt(3)/2*13*13 - math.pi*4*4)*6.5"
+  },
+  {
+   "id": "D-coaster-rim",
+   "prompt": "Сделай подставку под стакан: круг 9 см толщиной 5 мм, а по краю бортик высотой 5 мм и толщиной 3 мм.",
+   "start": null,
+   "reference": "cylinder(90, 5, base=(0, 0, 0))\ntube(90, 84, 5, base=(0, 0, 5), operation='join')",
+   "volume": "math.pi*(45*45*5 + (45*45 - 42*42)*5)"
+  }
+ ]
+}

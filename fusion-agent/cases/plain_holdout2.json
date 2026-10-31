@@ -1,0 +1,146 @@
+{
+ "note": "Plain-language requests, second HONEST set: written after plain_holdout.json had been used for tuning, to measure the finished configuration. Never tune the prompt on it; record the numbers before looking at the failures.",
+ "cases": [
+  {
+   "id": "Q-domino",
+   "prompt": "Сделай доминошку: плоский брусочек 5 на 2.5 см, толщиной 8 мм.",
+   "start": null,
+   "reference": "box(50, 25, 8, corner=(0, 0, 0))",
+   "volume": "50*25*8"
+  },
+  {
+   "id": "Q-dice-side-hole",
+   "prompt": "Сделай кубик со стороной 25 мм и просверли в нём сбоку сквозную дырку 6 мм через середину.",
+   "start": null,
+   "reference": "box(25, 25, 25, corner=(0, 0, 0))\ndrill(0, 12.5, 12.5, 6, axis='X')",
+   "volume": "25*25*25 - math.pi*3*3*25"
+  },
+  {
+   "id": "Q-flowerpot",
+   "prompt": "Сделай горшочек для цветка: круглый, снаружи 8 см в диаметре и 7 см в высоту, стенки и дно толщиной 3 мм.",
+   "start": null,
+   "reference": "cylinder(80, 70, base=(0, 0, 0))\nshell(3, 'top')",
+   "volume": "math.pi*40*40*70 - math.pi*37*37*67"
+  },
+  {
+   "id": "Q-tray",
+   "prompt": "Сделай поднос 25 на 15 см, высотой 2 см, открытый сверху, толщина стенок и дна 4 мм.",
+   "start": null,
+   "reference": "box(250, 150, 20, corner=(0, 0, 0))\nshell(4, 'top')",
+   "volume": "250*150*20 - 242*142*16"
+  },
+  {
+   "id": "Q-spacer",
+   "prompt": "Сделай проставку: трубка длиной 15 мм, снаружи 12 мм, внутри 8 мм.",
+   "start": null,
+   "reference": "tube(12, 8, 15, base=(0, 0, 0))",
+   "volume": "math.pi*(6*6 - 4*4)*15"
+  },
+  {
+   "id": "Q-wheel",
+   "prompt": "Сделай колесо диаметром 6 см и шириной 2 см, с дыркой по центру 8 мм.",
+   "start": null,
+   "reference": "cylinder(60, 20, base=(0, 0, 0))\ndrill(0, 0, 0, 8, axis='Z')",
+   "volume": "math.pi*(30*30 - 4*4)*20"
+  },
+  {
+   "id": "Q-tower",
+   "prompt": "Сделай башенку из двух квадратных брусков: внизу 4 на 4 см высотой 2 см, а сверху по центру 2 на 2 см высотой 3 см.",
+   "start": null,
+   "reference": "box(40, 40, 20, corner=(0, 0, 0))\nbox(20, 20, 30, corner=(10, 10, 20), operation='join')",
+   "volume": "40*40*20 + 20*20*30"
+  },
+  {
+   "id": "Q-hook-plate",
+   "prompt": "Сделай пластинку для крючка 6 на 3 см толщиной 4 мм с двумя дырочками по 4 мм на средней линии, в 1 см от левого и правого края.",
+   "start": null,
+   "reference": "box(60, 30, 4, corner=(0, 0, 0))\nholes([(10, 15), (50, 15)], 4)",
+   "volume": "60*30*4 - 2*math.pi*2*2*4"
+  },
+  {
+   "id": "Q-thick-ring",
+   "prompt": "Сделай толстое кольцо: снаружи 5 см, дырка 3 см, высота 1 см.",
+   "start": null,
+   "reference": "tube(50, 30, 10, base=(0, 0, 0))",
+   "volume": "math.pi*(25*25 - 15*15)*10"
+  },
+  {
+   "id": "Q-jar-lid",
+   "prompt": "Сделай крышечку для банки: круглая, диаметр 7 см, высота 1.5 см, пустая внутри и открытая снизу, толщина 2 мм.",
+   "start": null,
+   "reference": "cylinder(70, 15, base=(0, 0, 0))\nshell(2, 'bottom')",
+   "volume": "math.pi*35*35*15 - math.pi*33*33*13"
+  },
+  {
+   "id": "Q-l-bracket",
+   "prompt": "Сделай уголок буквой Г из полоски шириной 3 см и толщиной 5 мм: одна сторона 5 см, другая 4 см.",
+   "start": null,
+   "reference": "angle_profile(50, 40, 5, 30)",
+   "volume": "(50*5 + 35*5)*30"
+  },
+  {
+   "id": "Q-smooth-bar",
+   "prompt": "Сделай брусок 10 на 3 на 2 см и закругли ему все края на 3 мм.",
+   "start": null,
+   "reference": "box(100, 30, 20, corner=(0, 0, 0))\nfillet(find_edges(), 3)",
+   "volume": "94*24*14 + 2*3*(94*24 + 24*14 + 94*14) + math.pi*3*3*(94 + 24 + 14) + 4/3*math.pi*3**3"
+  },
+  {
+   "id": "Q-edit-wider",
+   "prompt": "Сделай её пошире: 6 см вместо 4.",
+   "start": "box(80, 40, 10, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(80, 60, 10, corner=(0, 0, 0))",
+   "volume": "80*60*10"
+  },
+  {
+   "id": "Q-edit-hole-wider",
+   "prompt": "Сделай дырку пошире — 2 см.",
+   "start": "box(60, 60, 8, corner=(0, 0, 0))\ndrill(30, 30, 0, 10, axis='Z')",
+   "reference": "clear()\nbox(60, 60, 8, corner=(0, 0, 0))\ndrill(30, 30, 0, 20, axis='Z')",
+   "volume": "60*60*8 - math.pi*10*10*8"
+  },
+  {
+   "id": "Q-edit-three-holes",
+   "prompt": "Просверли в ней три дырки по 5 мм посередине по ширине: одну в центре и две в 2 см от концов.",
+   "start": "box(100, 20, 5, corner=(0, 0, 0))",
+   "reference": "holes([(20, 10), (50, 10), (80, 10)], 5)",
+   "volume": "100*20*5 - 3*math.pi*2.5*2.5*5"
+  },
+  {
+   "id": "Q-edit-round-top",
+   "prompt": "Закругли у него верхний край на 4 мм.",
+   "start": "cylinder(40, 30, base=(0, 0, 0))",
+   "reference": "fillet(find_edges(kind='circle', z=30), 4)",
+   "volume": "math.pi*20*20*30 - 2*math.pi*(20 - 4*(10 - 3*math.pi)/(12 - 3*math.pi))*4*4*(1 - math.pi/4)"
+  },
+  {
+   "id": "Q-candle-holder",
+   "prompt": "Сделай подсвечник: диск диаметром 8 см и толщиной 1 см, а сверху по центру трубочка высотой 3 см, снаружи 3 см, внутри 2 см.",
+   "start": null,
+   "reference": "cylinder(80, 10, base=(0, 0, 0))\ntube(30, 20, 30, base=(0, 0, 10), operation='join')",
+   "volume": "math.pi*40*40*10 + math.pi*(15*15 - 10*10)*30"
+  },
+  {
+   "id": "Q-tag",
+   "prompt": "Сделай бирку 4 на 2 см толщиной 2 мм с закруглёнными уголками по 3 мм и дырочкой 3 мм в центре.",
+   "start": null,
+   "reference": "box(40, 20, 2, corner=(0, 0, 0), corner_radius=3)\ndrill(20, 10, 0, 3, axis='Z')",
+   "volume": "(40*20 - (4 - math.pi)*3*3)*2 - math.pi*1.5*1.5*2"
+  },
+  {
+   "id": "Q-shelf",
+   "prompt": "Сделай полочку: доска 200 на 100 мм толщиной 10 мм, а снизу под ней у одного длинного края планка во всю длину 200 мм, высотой 30 мм и толщиной 10 мм.",
+   "start": null,
+   "reference": "box(200, 100, 10, corner=(0, 0, 30))\nbox(200, 10, 30, corner=(0, 0, 0), operation='join')",
+   "volume": "200*100*10 + 200*10*30"
+  },
+  {
+   "id": "Q-ask-size",
+   "prompt": "А какого он размера?",
+   "start": "cylinder(40, 10, base=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "math.pi*20*20*10",
+   "answer": [[40, 4], [10, 1]]
+  }
+ ]
+}

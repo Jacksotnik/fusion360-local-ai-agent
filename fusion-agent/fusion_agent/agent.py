@@ -163,9 +163,77 @@ def loggable(messages):
     return result
 
 
+# A request that starts with one of these words asks about the design and needs no change.
+INFO_WORDS = {
+    "какой", "какая", "какое", "какие", "какого", "какую", "каким", "какими", "каков", "какова", "каково", "каковы",
+    "сколько", "что", "чему", "чем", "чего", "где", "когда", "почему", "зачем", "как", "кто", "из", "есть",
+    "скажи", "сказать", "скажите", "покажи", "показать", "покажите", "перечисли", "перечислить", "перечислите",
+    "назови", "назвать", "назовите", "опиши", "описать", "опишите", "расскажи", "рассказать", "расскажите",
+    "посчитай", "посчитать", "посчитайте", "подсчитай", "измерь", "измерить", "измерьте", "узнать", "проверь",
+    "проверить", "проверьте", "объясни", "объяснить",
+    "what", "which", "how", "why", "where", "when", "who", "is", "are", "does", "show", "list", "tell",
+    "describe", "measure", "explain",
+}
+# Leading words that do not change the meaning ("а какая толщина", "ну скажи").
+FILLER_WORDS = {"а", "и", "ну", "так", "ещё", "еще", "теперь", "пожалуйста", "please", "ok", "ок", "хорошо"}
+# Polite openings of a request to act ("можешь сделать её толще?"): a question mark after them is not a question.
+POLITE_WORDS = {"можешь", "можете", "можно", "сможешь", "сможете", "не", "мог", "могла", "могли", "бы", "ты", "вы",
+                "мне", "нам", "could", "can", "would", "will", "you", "me"}
+
+
+def is_question(request):
+    """True when the request only asks about the design (a size, a parameter, the mass), so leaving the
+    design unchanged is the right outcome and the "nothing changed" nudge must not be sent."""
+    words = re.findall(r"[\w-]+", request.lower())
+    while words and words[0] in FILLER_WORDS:
+        words.pop(0)
+    is_polite = False
+    while words and words[0] in POLITE_WORDS:
+        words.pop(0)
+        is_polite = True
+    if not words:
+        return False
+    if words[0] in INFO_WORDS:
+        return True
+    if is_polite:
+        return False
+    sentences = [sentence for sentence in re.split(r"[.!?\n]+", request) if sentence.strip()]
+    return request.rstrip().endswith("?") and len(sentences) == 1
+
+
+# "8 на 6 см", "2,5 см", "1 сантиметр", "6x4 cm": one size or several sizes followed by centimeters.
+CENTIMETER_SIZES = re.compile(
+    r"(\d+(?:[.,]\d+)?(?:\s*(?:на|x|х|×)\s*\d+(?:[.,]\d+)?)*)\s*(?:см|cm|сантиметр[а-яё]*)(?![\w])",
+    re.IGNORECASE)
+HALF_CENTIMETER = re.compile(r"пол[\s-]?сантиметра", re.IGNORECASE)
+ONE_AND_A_HALF_CENTIMETERS = re.compile(r"полтора\s+сантиметра", re.IGNORECASE)
+NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def millimeters_text(number_text):
+    value = float(number_text.replace(",", ".")) * 10
+    return ("%.3f" % value).rstrip("0").rstrip(".")
+
+
+def with_millimeters(request):
+    """The request with the size in mm added after every size given in centimeters: "7 см (70 мм)".
+    The model converted diameters but copied heights as they were ("высотой 1 см" became 1 mm), and a
+    rule in the prompt did not stop it. The user's own text is kept; only the copy sent to the model
+    gets the additions."""
+    def add_millimeters(match):
+        sizes = NUMBER.sub(lambda number: millimeters_text(number.group(0)), match.group(1))
+        return "%s (%s мм)" % (match.group(0), sizes)
+
+    text = CENTIMETER_SIZES.sub(add_millimeters, request)
+    text = HALF_CENTIMETER.sub(lambda match: match.group(0) + " (5 мм)", text)
+    text = ONE_AND_A_HALF_CENTIMETERS.sub(lambda match: match.group(0) + " (15 мм)", text)
+    return text
+
+
 def state_prefix(state):
     """The text put before the request: the describe() output, or a note that the design is empty."""
-    if state.strip().startswith("bodies: 0"):
+    lines = [line.strip() for line in state.splitlines() if line.strip()]
+    if lines == ["bodies: 0", "timeline (0 steps):"]:
         return "The design is empty.\n\n"
     return "Current design (describe()):\n" + state.strip() + "\n\n"
 
@@ -277,8 +345,9 @@ class Agent:
         return must(self.fusion.run_script(script, read_only=True), "active check").strip() == "session"
 
     def user_message(self, request):
-        """The request, with the current design state attached (saves a describe() call)."""
-        return state_prefix(self.describe()) + request
+        """The request, with the current design state attached (saves a describe() call) and sizes in
+        centimeters also given in mm."""
+        return state_prefix(self.describe()) + with_millimeters(request)
 
     # --- The loop -------------------------------------------------------------------------------
 
@@ -313,7 +382,7 @@ class Agent:
             if images:
                 message["images"] = list(images)
             self.messages.append(message)
-            result = self._agent_turn(start_signature)
+            result = self._agent_turn(start_signature, allow_nudges=not is_question(request))
         except BaseException:
             del self.messages[history_length:]
             raise
@@ -321,8 +390,9 @@ class Agent:
         result["start_signature"] = start_signature
         return result
 
-    def _agent_turn(self, start_signature):
-        """Answer the last user message of the conversation: the model calls tools until it gives a final answer."""
+    def _agent_turn(self, start_signature, allow_nudges=True):
+        """Answer the last user message of the conversation: the model calls tools until it gives a final answer.
+        allow_nudges=False for a question: an unchanged design is then the expected outcome."""
         calls = []
         nudges = 0
         status = "max_calls"
@@ -382,13 +452,13 @@ class Agent:
             final_answer = message.get("content", "")
             end_signature = self.signature()
             is_unchanged = end_signature == start_signature
-            if is_unchanged and nudges < MAX_NUDGES:
+            if is_unchanged and allow_nudges and nudges < MAX_NUDGES:
                 nudges += 1
                 strip_thinking(self.messages)
                 self.messages.append({"role": "user", "content": NUDGE_TEXT})
                 self.listener.nudged(nudges)
                 continue
-            status = "answered_unchanged" if is_unchanged else "answered"
+            status = "answered_unchanged" if is_unchanged and allow_nudges else "answered"
             break
 
         if end_signature is None and status != "left_session_design":

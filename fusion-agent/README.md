@@ -32,7 +32,7 @@ Optional: `pipx install .` (or `pip install .`) in this folder gives a global `f
 ```
 fusion-agent [--model NAME] [--think] [--verbose] [--no-screenshots] [--new]
 fusion-agent doctor        # only the startup checks, with a hint for each problem
-fusion-agent --selftest    # three quick tasks in new designs, pass/fail with seconds
+fusion-agent --selftest    # four quick tasks in new designs, pass/fail with seconds
 fusion-agent --version
 ```
 
@@ -45,15 +45,31 @@ again. If the chosen model is missing but usable ones are installed, the app lis
 The app works in **one design** and marks it (design attribute `fusion-agent/session`):
 
 - an empty design that is active in Fusion is taken as it is;
-- a design that already has bodies is used only after you answer `y`;
+- a design you opened or made yourself is taken after one question (Enter means yes): the app can
+  change it or answer questions about it;
 - `/new` (or `--new`) opens a new empty design.
 
 Before every request it checks that this design is still the active document; if not, it asks: back
-to the session design, a new design, or skip. It never saves, closes or touches another document, and
-it refuses model scripts that reach for documents. Saving the design is up to you.
+to the session design, work with the design that is active now, a new design, or skip. It never saves
+or closes a document, and it refuses model scripts that reach for documents. Saving the design is up
+to you.
 
-Type requests in any language; the model answers in the language of the question (the prompt's
-examples are Russian, and so were the measured requests). While the model works you see a spinner with
+**Your own models.** Open a part in Fusion, start the app and ask, in plain words:
+
+- questions: "Какая толщина у пластины?", "Сколько она весит?", "Перечисли параметры модели",
+  "Из чего она сделана?" The model answers from the design state (bodies, sizes, user parameters, the
+  dimensions of every sketch and feature, material and mass) and does not change the design;
+- changes: "Сделай пластину толще — 10 мм", "Отверстие сделай побольше, 12 мм", "Скругли углы на 5 мм".
+  Sizes are changed through the model's own parameters (a user parameter when the dimension uses one,
+  so everything that depends on it follows); holes, fillets and chamfers are added on top.
+
+The steps you made yourself are protected: the model cannot delete them (`clear()` refuses, `undo()`
+stops at them), and `/undo` takes back only what the app changed, parameter values included.
+
+Type requests in any language and in plain words ("пластинка", "дырочка", "полсантиметра", "сними
+острые края"); sizes can be in centimeters (the app adds the mm value for the model: "7 см (70 мм)").
+The model answers in the language of the question (the prompt's examples are Russian, and so were the
+measured requests). While the model works you see a spinner with
 seconds and one grey line per script it runs (`/verbose on` shows the scripts themselves). After the
 answer comes a grey line like `8.1 s · 2 model calls · 24 t/s · context 5.1k/32k`, and, when the design
 changed, a screenshot.
@@ -70,7 +86,7 @@ changed, a screenshot.
 | `/paste` | attach the picture from the clipboard (also Alt+V) |
 | `/model [name]` | list the installed models that can call tools, or switch to one |
 | `/think on\|off` | thinking mode: slower (1.5-3 minutes per part), more accurate for parts of many operations |
-| `/undo [n]` | undo the last n requests: the design (timeline and changed dimensions) and the conversation |
+| `/undo [n]` | undo the last n changes: the design (timeline, changed dimensions and parameters) and the conversation; questions are skipped |
 | `/reset` | new conversation; the design stays |
 | `/verbose on\|off` | show the scripts the model runs |
 | `/screenshots on\|off` | a screenshot after each change |
@@ -118,7 +134,7 @@ per request, the design state attached to every request.
 | ✖ Fusion MCP does not answer | In Fusion: your profile name (upper right) > Preferences > General > API > under "Preferences for Scripting and Programming" tick **Fusion MCP Server**, port 27182 > Apply > OK (Autodesk help: "Connecting to the Fusion MCP server"). Another address: set `FUSION_MCP_URL`. |
 | ✖ Script run: output was lost | Fusion's MCP lost script output; restart Fusion. (The app guards against the known cause on every script.) |
 | ! Design: no document / not a design / not in the Design workspace / direct modeling | Open a new design (File > New Design), switch to the DESIGN workspace, or type `/new`. The app needs a parametric design with a timeline. |
-| ! Design: already has N bodies | The app asks before working in it; `/new` gives a clean design. |
+| ✔ Design: "X" has N bodies | The app asks once and then works with it (changes or questions); `/new` gives a clean design. |
 
 Windows: if Russian text shows as question marks, use Windows Terminal (the launcher sets UTF-8).
 
@@ -135,21 +151,51 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
 ## Validation
 
 - Unit tests (no Fusion needed): `.venv\Scripts\python -m unittest discover -s tests`.
-- `fusion-agent --selftest`: a plate with holes, the edit "make it thicker" and a stepped shaft through
-  the real loop, checked against hand-computed volumes. On the Windows laptop: 3/3 in 19 s.
+- `fusion-agent --selftest`: a plate with holes, the edit "make it thicker", the question "how thick is
+  it now" (the design must stay as it is) and a stepped shaft through the real loop, checked against
+  hand-computed volumes. On the Windows laptop: 4/4 in 21 s.
+- Task sets of this app (`cases/`, runner `tools/run_cases.py`, every reference checked against a
+  hand-computed volume): requests in plain words (`plain_dev.json`, 25, and `plain_holdout.json`, 25)
+  and the user's own models (`user_models_dev.json`, 12, and `user_models_holdout.json`, 11: plates,
+  a bracket in a component, a flange held by user parameters, a filleted block; changes and questions
+  about parameters, size, mass and material). The holdout sets are honest: nothing was tuned on them
+  before their first numbers were written down. With `gemma4-12b:q8_0`, fast mode, 2026-10-31:
+
+  | Set | Before (v0.1.0) | After, honest (first runs) | After tuning on it |
+  |---|---|---|---|
+  | plain words, `plain_holdout` (25) | 20/25, 21/25 | 23/25, 22/25 | 25/25, 25/25, 24/25 |
+  | plain words, `plain_holdout2` (20) | | 16/20, 19/20 | |
+  | plain words, `plain_holdout3` (18), final configuration | | 16/18, 15/18 | |
+  | your own models, `user_models_holdout` (11) | 9/11 | 11/11, 11/11, 11/11 | |
+  | plain words, `plain_dev` (25) | | | 25/25, 25/25 |
+  | your own models, `user_models_dev` (12) | | | 12/12 (four runs) |
+
+  Each tuning round fixed what the previous honest set showed (sizes in centimeters copied as mm, a
+  wall thickness counted once instead of on each side, a fillet of a round edge listed as a diameter);
+  the newest honest set, written before the final configuration ran, gives about 86 %. Its misses:
+  "make it shorter" on a plate the app built (the model changes the thickness dimension), the argument
+  order of a П-shaped strip, a rounded slot made rectangular. Questions are answered in 2-5 s.
+  Summaries: `results/plain-*/`, `results/user-*/`.
 - No regression against the bench: `tools/ladder_regression.py` runs fusion-ladder's graded tasks
   (`cases.json`, 11, and `cases_holdout2.json`, 12) through this package's loop and compares with the
   bench's reference geometry. With `gemma4-12b:q8_0`, fast mode, 2026-10-31: **23/23 and 22/23, median
   7.4 s per task** (the bench itself: 23/23, median 9-10 s). The one failure was the model reading "total
-  length 20" of a flanged bushing as 20 + 3 mm. Summaries: `results/reg-r1/`, `results/reg-r2/`.
+  length 20" of a flanged bushing as 20 + 3 mm. Summaries: `results/reg-r1/`, `results/reg-r2/`. With the
+  changes for plain words and your own models: **23/23, median 7.4 s** (`results/reg-r9/`).
 - The REPL was driven in a Windows pseudo-console (ConPTY, the layer Windows Terminal uses): startup
   hints, a non-empty design, a switched or closed session design, pictures by path, paste and Alt+V,
   model switching, Ctrl+C during an answer.
 
 ## Known limits
 
-- The CAD helpers cover the root component only, sketches on the XY/XZ/YZ planes (with offsets), and no
-  threads, sweeps, lofts or text; the model can still try the raw Fusion API.
+- The CAD helpers build in the root component only, sketches on the XY/XZ/YZ planes (with offsets), and no
+  threads, sweeps, lofts or text; the model can still try the raw Fusion API. In a design you made,
+  bodies inside components are described and checked and their parameters can be changed, but new
+  features go into the root component.
+- Your own model is changed through its parameters and dimensions. A size that no dimension holds (a
+  sketch drawn without sizes, an imported body) is changed by adding or cutting material.
+- The weakest edit is the length or width of a plate the app built itself ("make it shorter, 7 cm"):
+  the model sometimes changes the thickness instead. `/undo` and "build it again 70 x 50 x 8 mm" fix it.
 - The weak spot of the 12B model is spatial placement in parts of many operations (which end, which
   flange, groove width versus depth). `/think on` helps, at 3-4 times the time.
 - `/undo` restores the timeline and changed dimensions; a change made outside them is reported, and

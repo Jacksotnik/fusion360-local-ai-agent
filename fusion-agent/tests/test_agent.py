@@ -79,6 +79,48 @@ class StatePrefixTest(unittest.TestCase):
         self.assertTrue(prefix.endswith("Extrude1 [d1=20.00 mm]\n\n"))
 
 
+    def test_sketches_without_bodies_are_not_empty(self):
+        state = "bodies: 0\n  sketch Sketch1: 4 lines, 0 circles\n  timeline (1 steps): Sketch1 [d1=80 mm]\n"
+        self.assertTrue(agent.state_prefix(state).startswith("Current design (describe()):"))
+
+
+class IsQuestionTest(unittest.TestCase):
+    def test_questions(self):
+        for request in ["Какая толщина у пластины?", "Сколько весит эта деталь?", "Из чего она сделана?",
+                        "Перечисли параметры модели.", "Какие размеры у бруска", "А какой диаметр отверстия?",
+                        "Покажи деталь сверху", "Толщина пластины?", "Можешь сказать, сколько она весит?",
+                        "Можно узнать объём?", "What is the wall thickness?", "List the parameters"]:
+            self.assertTrue(agent.is_question(request), request)
+
+    def test_requests_to_change(self):
+        for request in ["Сделай пластину толще — 10 мм.", "Дырку сделай побольше, 12 мм.",
+                        "Можешь сделать её толще?", "Не мог бы ты скруглить углы?", "Сделай её в два раза толще",
+                        "Сделай пластину толще. Сколько она теперь весит?", "Make it 10 mm thicker", ""]:
+            self.assertFalse(agent.is_question(request), request)
+
+
+class WithMillimetersTest(unittest.TestCase):
+    def test_sizes_in_centimeters_get_millimeters(self):
+        cases = {
+            "Общая высота подставки 7 см.": "Общая высота подставки 7 см (70 мм).",
+            "пластинка 8 на 6 см толщиной 5 мм": "пластинка 8 на 6 см (80 на 60 мм) толщиной 5 мм",
+            "диаметр 2,5 см и 1.5 см": "диаметр 2,5 см (25 мм) и 1.5 см (15 мм)",
+            "кружок 2.2 см": "кружок 2.2 см (22 мм)",
+            "брусок 6x4 см": "брусок 6x4 см (60x40 мм)",
+            "длиной 12 сантиметров": "длиной 12 сантиметров (120 мм)",
+            "толщиной полсантиметра": "толщиной полсантиметра (5 мм)",
+            "высотой полтора сантиметра": "высотой полтора сантиметра (15 мм)",
+            "a 3 cm cube": "a 3 cm (30 мм) cube",
+        }
+        for request, expected in cases.items():
+            self.assertEqual(agent.with_millimeters(request), expected)
+
+    def test_other_text_is_kept(self):
+        for request in ["Сделай пластину 80 на 50 мм толщиной 6 мм", "Смотри, сделай смесь", "Какая толщина?",
+                        "отверстие под винт M6", ""]:
+            self.assertEqual(agent.with_millimeters(request), request)
+
+
 class RepeatDetectorTest(unittest.TestCase):
     def call(self, script):
         return {"function": {"name": "fusion_script", "arguments": {"script": script}}}
