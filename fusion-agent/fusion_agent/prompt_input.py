@@ -1,4 +1,6 @@
 """The prompt_toolkit input line: history, completion, labels for pictures and long pastes, keys."""
+import os
+
 from prompt_toolkit import PromptSession
 from prompt_toolkit.application import run_in_terminal
 from prompt_toolkit.completion import Completer, Completion, PathCompleter
@@ -93,6 +95,11 @@ def build_prompt_session(app):
         data = event.data.replace("\r\n", "\n").replace("\r", "\n")
         if data.endswith("\n"):
             data = data[:-1]
+        bare_path = data.strip().strip('"')
+        if bare_path.lower().endswith(images.IMAGE_EXTENSIONS) and os.path.isfile(bare_path):
+            # A dropped or pasted path with spaces but without quotes: quote it so it is read as one path.
+            event.current_buffer.insert_text('"%s" ' % bare_path)
+            return
         if data.count("\n") + 1 > 3:
             event.current_buffer.insert_text(labels.add_paste(data))
             return
@@ -117,6 +124,8 @@ def build_prompt_session(app):
 
     def relabel(buffer):
         """A picture path typed or dropped into the line becomes a label like [Image: part.png]."""
+        if buffer.text.lstrip().startswith("/"):
+            return  # commands such as /image take the path itself
         found = images.find_image_paths(buffer.text)
         if not found:
             return

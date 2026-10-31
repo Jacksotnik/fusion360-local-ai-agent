@@ -95,11 +95,10 @@ def load_image(path):
     """Read a PNG/JPEG/WebP file up to 10 MB into an Attachment."""
     from PIL import Image, UnidentifiedImageError
 
-    name = os.path.basename(path)
-    try:
-        size = os.path.getsize(path)
-    except OSError:
-        raise ImageError("%s: file not found" % path) from None
+    name = os.path.basename(path) or path
+    if not os.path.isfile(path):
+        raise ImageError("file not found: %s" % path)
+    size = os.path.getsize(path)
     if size > MAX_FILE_BYTES:
         raise ImageError("%s is %.1f MB; pictures up to 10 MB are taken" % (name, size / 1024 / 1024))
     try:
