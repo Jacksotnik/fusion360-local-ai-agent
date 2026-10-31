@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# fusion-agent launcher for macOS and Linux.
+# Finds Python 3.10+, creates .venv on the first run, installs the requirements when they change,
+# then starts the app and passes every argument through.
+
+# Resolve the real folder of this file, also when it is started through a symlink.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+    DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    case "$SOURCE" in
+        /*) ;;
+        *) SOURCE="$DIR/$SOURCE" ;;
+    esac
+done
+HERE="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+VENV="$HERE/.venv"
+VENV_PY="$VENV/bin/python"
+
+find_python() {
+    for candidate in python3.13 python3.12 python3.11 python3.10 python3 python; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            if "$candidate" -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >/dev/null 2>&1; then
+                echo "$candidate"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
+python_hint() {
+    echo "Python 3.10 or newer was not found."
+    if [ "$(uname -s)" = "Darwin" ]; then
+        echo "  1. Install Python 3.12 from https://www.python.org/downloads/macos/"
+        echo "     or with Homebrew: brew install python@3.12"
+    else
+        echo "  1. Install Python 3.10 or newer with venv, e.g.: sudo apt install python3 python3-venv"
+    fi
+    echo "  2. Open a new terminal window and run fusion-agent again."
+}
+
+if [ ! -x "$VENV_PY" ]; then
+    BASE_PY="$(find_python)"
+    if [ -z "$BASE_PY" ]; then
+        python_hint
+        exit 1
+    fi
+    echo "First run: creating the Python environment in $VENV ..."
+    if ! "$BASE_PY" -m venv "$VENV"; then
+        echo "Could not create the Python environment in $VENV."
+        echo "  On Debian/Ubuntu install venv first: sudo apt install python3-venv"
+        echo "  Then delete the folder .venv and run fusion-agent again."
+        exit 1
+    fi
+fi
+
+if ! "$VENV_PY" -c "import sys" >/dev/null 2>&1; then
+    echo "The Python environment in $VENV is broken."
+    echo "  Delete the folder .venv and run fusion-agent again."
+    exit 1
+fi
+
+if ! cmp -s "$HERE/requirements.txt" "$VENV/installed-requirements.txt"; then
+    echo "Installing the requirements ..."
+    if ! "$VENV_PY" -m pip install --disable-pip-version-check --quiet -r "$HERE/requirements.txt"; then
+        echo "pip could not install the requirements. Check the internet connection and run fusion-agent again."
+        exit 1
+    fi
+    cp "$HERE/requirements.txt" "$VENV/installed-requirements.txt"
+fi
+
+export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
+exec "$VENV_PY" -X utf8 -m fusion_agent "$@"

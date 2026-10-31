@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fusion-agent"
+dynamic = ["version"]
+description = "A local model (Ollama) designs and edits parts in Autodesk Fusion through Fusion's MCP server, from the terminal."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "prompt_toolkit>=3.0.43",
+    "Pillow>=10.0",
+]
+
+[project.scripts]
+fusion-agent = "fusion_agent.cli:main"
+
+[tool.setuptools]
+packages = ["fusion_agent"]
+
+[tool.setuptools.package-data]
+fusion_agent = ["prompts/*.md", "models/*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "fusion_agent.__version__"}
