@@ -105,6 +105,22 @@ def ask_choice(question, choices):
             return answer[:1]
 
 
+def print_model_rows(found, current, numbered):
+    """One line per model: name, size, vision/thinking, and which one the prompt was tuned on."""
+    width = max(len(info["name"]) for info in found)
+    for number, info in enumerate(found, start=1):
+        if numbered:
+            marker = "%2d." % number
+        elif current and models.normalize(info["name"]) == models.normalize(current):
+            marker = " " + term.SYMBOLS["prompt"]
+        else:
+            marker = "  "
+        features = [name for name in ("vision", "thinking") if name in info["capabilities"]]
+        tuned = "  (tuned)" if info["is_tuned"] else ""
+        print(" %s %s  %8s  %s%s" % (marker, info["name"].ljust(width), models.gigabytes(info["size"]),
+                                     ", ".join(features) or "text only", tuned))
+
+
 def open_in_viewer(path):
     if term.IS_WINDOWS:
         os.startfile(str(path))
@@ -298,13 +314,16 @@ class App:
             console.take_ctrl_c_as_key()
         try:
             checks = doctor.wait_until_ready(self.settings["model"], read_line=read_answer,
-                                             include_document=not self.args.new)
+                                             include_document=not self.args.new, choose_model=self.pick_model)
         except (KeyboardInterrupt, EOFError):
             print()
             return 130
         self.fusion = checks.fusion
         self.ollama = checks.ollama
         self.model_details = checks.model_details
+        if checks.model != self.settings["model"]:
+            self.settings["model"] = checks.model
+            config.save_settings(self.settings)
         session_folder = config.new_session_dir()
         self.log = SessionLog(session_folder)
         session_id = new_session_id()
@@ -326,6 +345,20 @@ class App:
         if self.is_interactive:
             return self.prompt_loop()
         return self.plain_loop()
+
+    def pick_model(self, usable_models):
+        """At start, when the chosen model is missing: pick one of the installed ones that call tools."""
+        print("Pick a model from the ones installed in Ollama:")
+        print_model_rows(usable_models, current=None, numbered=True)
+        while True:
+            try:
+                answer = read_answer("Model number (Enter = 1, Ctrl+C quits): ").strip()
+            except EOFError:
+                return None
+            if not answer:
+                return usable_models[0]["name"]
+            if answer.isdigit() and 1 <= int(answer) <= len(usable_models):
+                return usable_models[int(answer) - 1]["name"]
 
     def choose_start_design(self, info):
         kind = doctor.document_kind(info)
@@ -748,14 +781,7 @@ class App:
         if not found:
             print("No installed model can call tools.")
             return
-        width = max(len(info["name"]) for info in found)
-        for info in found:
-            is_current = models.normalize(info["name"]) == models.normalize(self.settings["model"])
-            marker = term.SYMBOLS["prompt"] if is_current else " "
-            features = [name for name in ("vision", "thinking") if info["capabilities"].count(name)]
-            tuned = "  (tuned)" if info["is_tuned"] else ""
-            print(" %s %s  %8s  %s%s" % (marker, info["name"].ljust(width), models.gigabytes(info["size"]),
-                                         ", ".join(features) or "text only", tuned))
+        print_model_rows(found, current=self.settings["model"], numbered=False)
         print("Switch with /model <name>. The prompt was tuned on %s." % TUNED_MODEL)
 
     def switch_model(self, name):

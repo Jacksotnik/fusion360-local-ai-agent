@@ -20,7 +20,7 @@ fusion-agent = "fusion_agent.cli:main"
 packages = ["fusion_agent"]
 
 [tool.setuptools.package-data]
-fusion_agent = ["prompts/*.md", "models/*"]
+fusion_agent = ["prompts/*.md"]
 
 [tool.setuptools.dynamic]
 version = {attr = "fusion_agent.__version__"}

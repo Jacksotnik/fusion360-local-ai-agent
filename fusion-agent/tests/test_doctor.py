@@ -75,5 +75,39 @@ class WaitUntilReadyTest(unittest.TestCase):
         self.assertEqual(rounds, [])
 
 
+
+class ModelHintTest(unittest.TestCase):
+    def test_without_usable_models_the_hint_only_instructs(self):
+        hint = " ".join(doctor.model_hint([]))
+        self.assertIn("can call tools", hint)
+        self.assertIn("Gemma 4 12B", hint)
+        self.assertNotIn("pull", hint)
+        self.assertNotIn("setup", hint)
+
+    def test_with_usable_models_the_hint_lists_them(self):
+        hint = doctor.model_hint([{"name": "a:1"}, {"name": "b:2"}])
+        self.assertIn("--model", hint[0])
+        self.assertEqual(hint[1], "Installed: a:1, b:2")
+
+    def test_start_picks_an_installed_model_when_only_the_model_is_missing(self):
+        missing = [doctor.CheckResult("Model", doctor.FAIL, "x is not installed", is_blocking=True,
+                                      code=doctor.MODEL_UNUSABLE)]
+        passing = [doctor.CheckResult("Model", doctor.OK, "b:2")]
+        rounds = [missing, passing]
+        seen_models = []
+
+        def fake_run(self, include_document):
+            seen_models.append(self.model)
+            self.usable_models = [{"name": "b:2"}]
+            return rounds.pop(0)
+
+        with mock.patch.object(doctor.Doctor, "run", fake_run), \
+                mock.patch("builtins.print"), mock.patch.object(doctor, "print_results"):
+            ready = doctor.wait_until_ready("x:1", read_line=lambda text: self.fail("no Enter wait expected"),
+                                            choose_model=lambda found: found[0]["name"])
+        self.assertEqual(seen_models, ["x:1", "b:2"])
+        self.assertEqual(ready.model, "b:2")
+
+
 if __name__ == "__main__":
     unittest.main()

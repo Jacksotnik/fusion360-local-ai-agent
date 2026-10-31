@@ -2,10 +2,6 @@
 from fusion_agent.agent import TUNED_MODEL
 from fusion_agent.ollama import capabilities
 
-# The tuned tag is built from this Hugging Face tag (it holds the weights and the vision projector).
-HF_SOURCE_TAG = "hf.co/ggml-org/gemma-4-12B-it-GGUF:Q8_0"
-HF_SOURCE_SIZE_TEXT = "about 12.8 GB"
-
 
 def normalize(name):
     """Ollama treats "name" and "name:latest" as the same model."""

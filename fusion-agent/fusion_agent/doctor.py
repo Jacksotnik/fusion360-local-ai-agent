@@ -18,12 +18,13 @@ def fusion_url():
 
 
 class CheckResult:
-    def __init__(self, name, status, detail, hint=None, is_blocking=False):
+    def __init__(self, name, status, detail, hint=None, is_blocking=False, code=""):
         self.name = name
         self.status = status
         self.detail = detail
         self.hint = hint or []
         self.is_blocking = is_blocking
+        self.code = code
 
     @property
     def blocks_start(self):
@@ -47,7 +48,22 @@ def ollama_hint(base_url):
     return steps
 
 
-FUSION_START_HINT = ["Start Autodesk Fusion and wait until it has fully opened (signed in, a design visible)."]
+MODEL_UNUSABLE = "model_unusable"
+
+
+def model_hint(usable_models):
+    """The app installs nothing: it names what is needed and what is installed already."""
+    if usable_models:
+        names = [info["name"] for info in usable_models]
+        shown = ", ".join(names[:8]) + (", ..." if len(names) > 8 else "")
+        return ["Pick an installed model that can call tools: fusion-agent --model <name>",
+                "Installed: %s" % shown]
+    return ["Install a model in Ollama that can call tools; it also needs vision for pictures and screenshots.",
+            "Recommended: Gemma 4 12B: the prompt and the CAD helpers were tuned on it (as %s)." % TUNED_MODEL,
+            "Then run the check again."]
+
+
+FUSION_START_HINT =["Start Autodesk Fusion and wait until it has fully opened (signed in, a design visible)."]
 
 # From Autodesk's help ("Connecting to the Fusion MCP server") and the Fusion blog
 # ("Build Your Own Fusion Add-ins with the Fusion MCP"): Preferences > General > API.
@@ -126,6 +142,7 @@ class Doctor:
         self.ollama = Ollama()
         self.fusion = None
         self.model_details = None
+        self.usable_models = []
         self.document = None
 
     def run(self, include_document=True):
@@ -161,25 +178,19 @@ class Doctor:
 
     def check_model(self):
         try:
-            installed = self.ollama.tags()
-            details = models.model_info(self.ollama, self.model, installed)
+            details = models.model_info(self.ollama, self.model)
+            if details is None or not details["has_tools"]:
+                self.usable_models = models.tool_models(self.ollama)
         except OllamaError as error:
             return CheckResult("Model", FAIL, "could not read the models: %s" % error, is_blocking=True)
-        if details is None:
-            if models.normalize(self.model) == models.normalize(TUNED_MODEL):
-                if models.find_installed(installed, models.HF_SOURCE_TAG) is not None:
-                    note = "builds it from the downloaded Hugging Face model, nothing to download"
-                else:
-                    note = "downloads %s from Hugging Face, asks first" % models.HF_SOURCE_SIZE_TEXT
-                hint = ["Install it: fusion-agent setup-model (%s)." % note]
+        if details is None or not details["has_tools"]:
+            if details is None:
+                detail = "%s is not installed in Ollama" % self.model
             else:
-                hint = ["Pick an installed model: fusion-agent --model <name> (/model in the app lists them).",
-                        "Or install the tuned one: fusion-agent setup-model."]
-            return CheckResult("Model", FAIL, "%s is not installed in Ollama" % self.model, hint, is_blocking=True)
+                detail = "%s cannot call tools" % self.model
+            return CheckResult("Model", FAIL, detail, model_hint(self.usable_models), is_blocking=True,
+                               code=MODEL_UNUSABLE)
         self.model_details = details
-        if not details["has_tools"]:
-            return CheckResult("Model", FAIL, "%s cannot call tools" % self.model,
-                               ["Pick a model with tool calling: /model lists them."], is_blocking=True)
         size = models.gigabytes(details["size"])
         if not details["has_vision"]:
             return CheckResult("Model", WARN, "%s (%s): no vision, so pictures and screenshots are off" % (
@@ -348,9 +359,10 @@ def print_results(results, stream=None):
     stream.flush()
 
 
-def wait_until_ready(model, read_line=input, include_document=True):
-    """Run the checks until nothing blocks the start; between rounds wait for Enter.
-    Returns the Doctor of the passing round (it holds the Fusion connection and the document info)."""
+def wait_until_ready(model, read_line=input, include_document=True, choose_model=None):
+    """Run the checks until nothing blocks the start; between rounds wait for Enter. When only the model
+    is the problem and usable models are installed, choose_model(models) may pick one (None = no pick).
+    Returns the Doctor of the passing round (it holds the Fusion connection, the model and the document)."""
     while True:
         doctor = Doctor(model)
         results = doctor.run(include_document=include_document)
@@ -359,6 +371,12 @@ def wait_until_ready(model, read_line=input, include_document=True):
             print_results([result for result in results if result.status != OK or result.name in ("Model", "Design")])
             return doctor
         print_results(results)
+        is_only_the_model = len(blocking) == 1 and blocking[0].code == MODEL_UNUSABLE
+        if is_only_the_model and doctor.usable_models and choose_model is not None:
+            chosen = choose_model(doctor.usable_models)
+            if chosen:
+                model = chosen
+                continue
         print("Fix the items marked %s, then press Enter to check again (Ctrl+C quits)." % term.SYMBOLS["fail"])
         read_line("")
 

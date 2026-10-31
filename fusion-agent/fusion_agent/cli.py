@@ -12,7 +12,6 @@ DESCRIPTION = ("A local model (Ollama) designs and edits parts in Autodesk Fusio
 COMMANDS_HELP = """commands:
   (none)        start the interactive session
   doctor        run the startup checks and print a hint for each problem
-  setup-model   install the tuned model gemma4-12b:q8_0 (asks before downloading)
 """
 
 
@@ -23,9 +22,10 @@ def build_parser():
         epilog=COMMANDS_HELP,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("command", nargs="?", choices=["doctor", "setup-model"], metavar="command",
-                        help="doctor or setup-model (see below)")
-    parser.add_argument("--model", help="Ollama model to use (default: the last one chosen, else gemma4-12b:q8_0)")
+    parser.add_argument("command", nargs="?", choices=["doctor"], metavar="command",
+                        help="doctor (see below)")
+    parser.add_argument("--model", help="Ollama model that can call tools (default: the last one chosen; "
+                        "recommended: Gemma 4 12B, the prompt was tuned on it)")
     parser.add_argument("--think", action="store_true",
                         help="slow, more accurate mode: the model thinks before answering")
     parser.add_argument("--verbose", action="store_true", help="show the scripts the model runs in Fusion")
@@ -53,7 +53,7 @@ def main(argv=None):
     model = args.model or config.load_settings()["model"]
     if args.command == "doctor":
         return run_doctor(model)
-    if args.command == "setup-model" or args.selftest:
+    if args.selftest:
         print("fusion-agent %s: not implemented yet." % __version__)
         return 1
     from fusion_agent.repl import App
