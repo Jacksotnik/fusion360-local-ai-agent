@@ -533,10 +533,17 @@ class App:
 
     def recover_session_design(self):
         info = self.design.active_info() or {}
-        active_name = info.get("name", "another document")
-        choice = ask_choice("The active document in Fusion is \"%s\", not this session's design \"%s\"." % (
-            active_name, self.design.design_name), {"b": "back to \"%s\"" % self.design.design_name,
-                                                     "n": "new design", "s": "skip this request"})
+        active_name = info.get("name", "")
+        if not active_name:
+            active = "another document"
+        elif active_name == self.design.design_name:
+            # Every unsaved design in Fusion is called "Untitled": the name alone does not tell them apart.
+            active = "another document (also named \"%s\")" % active_name
+        else:
+            active = "\"%s\"" % active_name
+        choice = ask_choice("The active document in Fusion is %s, not this session's design \"%s\"." % (
+            active, self.design.design_name), {"b": "back to the session design", "n": "new design",
+                                               "s": "skip this request"})
         if choice == "b":
             if self.design.activate():
                 print("Back in \"%s\"." % self.design.design_name)

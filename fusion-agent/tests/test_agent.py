@@ -145,5 +145,34 @@ class OllamaHostTest(unittest.TestCase):
         self.check("http://gpu-box:11434", "http://gpu-box:11434")
 
 
+class FakeFusion:
+    def __init__(self):
+        self.scripts = []
+
+    def run_script(self, script, read_only=False):
+        self.scripts.append(script)
+        return True, "ok"
+
+
+class DocumentGuardTest(unittest.TestCase):
+    def run_model_script(self, script):
+        fusion = FakeFusion()
+        model_agent = agent.Agent(fusion, ollama=None, session_id="s", system_prompt="x")
+        call = {"function": {"name": "fusion_script", "arguments": {"script": script}}}
+        return model_agent.run_tool(call, []), fusion.scripts
+
+    def test_scripts_that_touch_documents_never_reach_fusion(self):
+        for script in ["app.documents.add(0)", "doc.save('x')", "doc.saveAs('a', None, '', '')",
+                       "app.activeDocument.close(False)", "app.executeTextCommand('Commands.Start Undo')"]:
+            output, sent = self.run_model_script(script)
+            self.assertTrue(output.startswith("Error: this task does not allow working with documents"), script)
+            self.assertEqual(sent, [], script)
+
+    def test_a_normal_script_runs(self):
+        output, sent = self.run_model_script("box(10, 10, 10, corner=(0, 0, 0))")
+        self.assertEqual(output, "ok")
+        self.assertEqual(len(sent), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
