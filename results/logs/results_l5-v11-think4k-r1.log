@@ -1,0 +1,18 @@
+== L5-lid
+closed 1 bench documents
+   PASS, answered, 4 model calls, 214 s
+== L5-support
+closed 1 bench documents
+   PASS, answered, 2 model calls, 78 s
+== L5-bracket
+closed 1 bench documents
+   FAIL, answered, 2 model calls, 115 s
+== L5-pulley
+closed 1 bench documents
+   PASS, answered, 2 model calls, 69 s
+== L5-housing
+closed 1 bench documents
+   PASS, answered, 10 model calls, 531 s
+== L5-clevis
+closed 1 bench documents
+   PASS, answered, 9 model calls, 1241 s

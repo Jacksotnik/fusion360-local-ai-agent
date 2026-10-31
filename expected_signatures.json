@@ -1,0 +1,1308 @@
+{
+ "L1-cube": {
+  "key": "fac69a65ea78ce3e4e802624ca96ad7d167abf5c",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 8000.0,
+     "extents_mm": [
+      20.0,
+      20.0,
+      20.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L1-cylinder": {
+  "key": "86df00dacea200ba77a9c98de214f4d515687c5a",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 7068.583,
+     "extents_mm": [
+      10.0,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      30.0
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L1-plate": {
+  "key": "cad575fc24401659dd97a1fe73fc23dcf0f6c4d4",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 12000.0,
+     "extents_mm": [
+      5.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L2-plate-center-hole": {
+  "key": "96f14c8b30518533bb167d2ca5f3b682987c2229",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11434.513,
+     "extents_mm": [
+      5.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      12.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L2-plate-4-holes": {
+  "key": "4f1442ed8ce4c6d27b470d47f9892537a1df1e04",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11607.301,
+     "extents_mm": [
+      5.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L2-bushing": {
+  "key": "52f5988ece9e2bf205e89bc6627d3b6f3fe7d67b",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 3534.292,
+     "extents_mm": [
+      15.0,
+      20.0,
+      20.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0,
+      20.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L3-bigger-holes": {
+  "key": "1db0189636d51382899f22a852f4022fe06ce523",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11434.513,
+     "extents_mm": [
+      5.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L3-round-corners": {
+  "key": "cab96912786a1a32c7578e2d127130fc5e94671b",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11892.699,
+     "extents_mm": [
+      5.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L3-chamfer": {
+  "key": "b2a2dc0644a87efb5bdc5d89928a8318a3010919",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 3503.923,
+     "extents_mm": [
+      15.0,
+      20.0,
+      20.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0,
+      20.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L4-flange": {
+  "key": "53a768bb522ee7dc291b5eef8999dbf9b0a195eb",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 14061.769,
+     "extents_mm": [
+      6.0,
+      60.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      20.0,
+      60.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L4-revolve-knob": {
+  "key": "19c0dc97aa9d0f16ad958bace4e42a47a07e009a",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 4838.053,
+     "extents_mm": [
+      20.0,
+      20.0,
+      25.0
+     ],
+     "cylinder_diameters_mm": [
+      12.0,
+      20.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-ring": {
+  "key": "620457e2b04a4b94e56721beccb641a5a804c4be",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 2120.575,
+     "extents_mm": [
+      3.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      40.0,
+      50.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-blind-hole": {
+  "key": "7784f5df829cfaedd802db67bf94335d871f0397",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 7858.628,
+     "extents_mm": [
+      10.0,
+      20.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-pin-chamfers": {
+  "key": "fb6e0d7a3fc513f72ec1a02fa14d73923db02cba",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 1484.926,
+     "extents_mm": [
+      8.0,
+      8.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-angle": {
+  "key": "b7b8442fcd003fcbbce583bd573e8015d903a93b",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 6600.0,
+     "extents_mm": [
+      25.0,
+      30.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-hex": {
+  "key": "d347fdbef4eccb96293403e9e21b39ef6eac466f",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 2502.813,
+     "extents_mm": [
+      10.0,
+      17.0,
+      19.63
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-cup": {
+  "key": "759e38be44d27393e9023a12ead1d6a0505eb139",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 8629.955,
+     "extents_mm": [
+      30.0,
+      30.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      26.0,
+      30.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-slot-plate": {
+  "key": "752ddcc559d75b66e5d3ed75e62a20402e169bad",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 23122.407,
+     "extents_mm": [
+      6.0,
+      50.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-hole-grid": {
+  "key": "564b18d84e2c89d50b0714907ded538cf8d15f84",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 10146.571,
+     "extents_mm": [
+      3.0,
+      50.0,
+      70.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-shaft-step": {
+  "key": "7cb9c0a9e7bf9b9dd61aa61595142ac43fefbe0e",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 6572.212,
+     "extents_mm": [
+      16.0,
+      16.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0,
+      16.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-edit-thicker": {
+  "key": "9f635fe5432925119a70cc45c166c8f21739fa30",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 19200.0,
+     "extents_mm": [
+      8.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-edit-boss": {
+  "key": "004b1f63c677c2c1de6a18d80ac20f1f5e6b82b9",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 13445.133,
+     "extents_mm": [
+      15.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      12.0,
+      20.0
+     ],
+     "faces": 9
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H-edit-round-all": {
+  "key": "9268f61053c4cf4e6593015b9939a75703012541",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 7804.696,
+     "extents_mm": [
+      20.0,
+      20.0,
+      20.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0
+     ],
+     "faces": 26
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-disk-square-hole": {
+  "key": "344b66c93a74d3f77d888a5fa8bb571e24f60686",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 4626.548,
+     "extents_mm": [
+      4.0,
+      40.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      40.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-block-axial-hole": {
+  "key": "f27c33b4158d65119e2816fa2210e4af16c112d0",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 49287.611,
+     "extents_mm": [
+      30.0,
+      30.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-channel": {
+  "key": "7ced26a9ab4db6aa9309a6352ef2f8130f2121fd",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 6600.0,
+     "extents_mm": [
+      15.0,
+      20.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-flanged-bushing": {
+  "key": "52eb4bd3d94b17b530809326a0080298fa7600c8",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 3204.425,
+     "extents_mm": [
+      20.0,
+      24.0,
+      24.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0,
+      16.0,
+      24.0
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-plate-rounded-holes": {
+  "key": "6c6c55edc1e9a4a70809983008f1b87a3a7f6c0f",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 28565.487,
+     "extents_mm": [
+      5.0,
+      60.0,
+      100.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0,
+      20.0
+     ],
+     "faces": 14
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-cube-chamfer-all": {
+  "key": "96f6ab91589f412c0903cf6fec638d542c2f91e3",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 26322.667,
+     "extents_mm": [
+      30.0,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 26
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-button": {
+  "key": "53c1606cd265c5d0eb75da82d415c05423f37805",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 2400.052,
+     "extents_mm": [
+      8.0,
+      20.0,
+      20.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-edit-shaft-chamfer": {
+  "key": "a2727c1c913fd02d4889e774a08f37b67407e931",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 4820.25,
+     "extents_mm": [
+      20.0,
+      20.0,
+      25.0
+     ],
+     "cylinder_diameters_mm": [
+      12.0,
+      20.0
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-edit-longer": {
+  "key": "28fcfbd7824bb5ec2d79a29f5a81a161c108c3a2",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 16000.0,
+     "extents_mm": [
+      5.0,
+      40.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-square-flange": {
+  "key": "f5ec5f425dc5f8778d82c69ae0e8369ba8d4d905",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 12436.46,
+     "extents_mm": [
+      6.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      20.0
+     ],
+     "faces": 11
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-pin-cross-hole": {
+  "key": "a5349bab71ed0685a794a56693d36fb235973eb8",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 5506.001,
+     "extents_mm": [
+      12.0,
+      12.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0,
+      12.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H2-edit-axial-hole": {
+  "key": "bcdaaaea11811ef619fc76f7298c9c972a4c4db7",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 6283.185,
+     "extents_mm": [
+      10.0,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0,
+      30.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-holes-row": {
+  "key": "c6e28ee83044d3fa2f7645178e31b8c2373bea84",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 24977.655,
+     "extents_mm": [
+      15.0,
+      25.0,
+      70.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0
+     ],
+     "faces": 9
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-cyl-hex-hole": {
+  "key": "7c809d465a7c4c8c9252db55c8fc2bc96f8d5f4c",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11175.282,
+     "extents_mm": [
+      12.0,
+      36.0,
+      36.0
+     ],
+     "cylinder_diameters_mm": [
+      36.0
+     ],
+     "faces": 9
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-box-shell": {
+  "key": "ede9e859aff8df24fe06e68d4d2ff19f53eebe1d",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 22728.0,
+     "extents_mm": [
+      30.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 11
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-angle-30": {
+  "key": "fa575ed5933019c77fafddfa36374e2f5bebfdb5",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11000.0,
+     "extents_mm": [
+      30.0,
+      30.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-disk-chamfers": {
+  "key": "e5a0828bf26a676f4ca1256614022012be0dc222",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 15361.603,
+     "extents_mm": [
+      8.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      50.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-counterbore": {
+  "key": "27071e51bfd12d13ab23531ffa6c2a6094f8c9a2",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 27522.754,
+     "extents_mm": [
+      8.0,
+      40.0,
+      90.0
+     ],
+     "cylinder_diameters_mm": [
+      6.6,
+      11.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-stepped-shaft": {
+  "key": "fc544e41a10c3f7d913d9a1519c6bca2cd5dba24",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 25258.405,
+     "extents_mm": [
+      30.0,
+      30.0,
+      65.0
+     ],
+     "cylinder_diameters_mm": [
+      12.0,
+      20.0,
+      30.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-slot-45": {
+  "key": "2f0aa91ee87c2d7151c13236fde91885fbd45ab0",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 19928.761,
+     "extents_mm": [
+      6.0,
+      60.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-edit-thicker-round": {
+  "key": "89a4518675a47a99b211330ecba4c008993f9d6b",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 23077.257,
+     "extents_mm": [
+      10.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0,
+      8.0
+     ],
+     "faces": 14
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-edit-holes-chamfer": {
+  "key": "e39fc7c49fe988e32ec2fb83ac67ccacded5567d",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 6237.109,
+     "extents_mm": [
+      10.0,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0,
+      30.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-edit-hub": {
+  "key": "c0307b558d8a3bada9c5e098c729b831c79a7754",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 18962.653,
+     "extents_mm": [
+      16.0,
+      60.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      20.0,
+      32.0,
+      60.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "H3-cube-3-holes": {
+  "key": "3a5a13f57a7c0f80d1190224a32447c41db8ab38",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 12579.166,
+     "extents_mm": [
+      25.0,
+      25.0,
+      25.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "P-plate-holes": {
+  "key": "6d68d0f5d5849669fc4570d378360d56afcaedef",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 21436.46,
+     "extents_mm": [
+      6.0,
+      50.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      20.0
+     ],
+     "faces": 11
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "P-flange-8": {
+  "key": "8d1a89a8454e11291b6591d5597d0a428a6f7f64",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11780.972,
+     "extents_mm": [
+      5.0,
+      60.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0,
+      20.0,
+      60.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "P-angle-holes": {
+  "key": "11e2b5de3abf7627d068d78face33d5c6907ddfa",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 7684.381,
+     "extents_mm": [
+      30.0,
+      30.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0
+     ],
+     "faces": 11
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "P-box-open": {
+  "key": "b5cbb0aee26dfb2a91ca47c60a5c361d1f544970",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11421.858,
+     "extents_mm": [
+      20.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      10.0
+     ],
+     "faces": 19
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "P-shaft-steps": {
+  "key": "8b83dc97eac9219fcb30d5d217bebeb6dec7a263",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11733.849,
+     "extents_mm": [
+      24.0,
+      24.0,
+      55.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0,
+      16.0,
+      24.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5-lid": {
+  "key": "804a58aca1c499a0b873df01aa2c933f5fbc4a1b",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 17379.291,
+     "extents_mm": [
+      10.0,
+      70.0,
+      70.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0,
+      56.0,
+      60.0,
+      70.0
+     ],
+     "faces": 11
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5-support": {
+  "key": "d8991bba97513f79db88650a78768b73ba5622e5",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 29604.955,
+     "extents_mm": [
+      40.0,
+      48.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      8.0,
+      20.0
+     ],
+     "faces": 14
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5-bracket": {
+  "key": "e345f848df08b1a38dc726ca18639889a7a107bc",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 12376.881,
+     "extents_mm": [
+      30.0,
+      40.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      8.0,
+      10.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5-pulley": {
+  "key": "aa194f39acc9a958f35f9b8c2f96ad60a941c0cf",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 32044.245,
+     "extents_mm": [
+      20.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0,
+      40.0,
+      50.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5-housing": {
+  "key": "c466c5d8e9e59104c9d4b2847b5515625247a65e",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 26423.932,
+     "extents_mm": [
+      30.0,
+      50.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0,
+      7.0,
+      12.0
+     ],
+     "faces": 23
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5-clevis": {
+  "key": "61ac15c83a837c0eccf210dfd51a5c4f0bb86f06",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 19660.708,
+     "extents_mm": [
+      20.0,
+      20.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5b-flange-hub": {
+  "key": "a264548548a4f74fac8128c0732e653b2f095219",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 49423.536,
+     "extents_mm": [
+      23.0,
+      80.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0,
+      20.0,
+      40.0,
+      80.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5b-u-bracket": {
+  "key": "452a0253190fb4017ea1c2e7fcea232c5056551a",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 4955.177,
+     "extents_mm": [
+      20.0,
+      25.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0
+     ],
+     "faces": 11
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5b-spacer": {
+  "key": "5287390270aec57e291c205ab9193f09f5ea02fe",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 18877.952,
+     "extents_mm": [
+      10.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      5.5,
+      25.0
+     ],
+     "faces": 16
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5b-stepped-block": {
+  "key": "33e7a62a99a621b65dc8f2b8358fcdbb9f3c5c22",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 30429.204,
+     "extents_mm": [
+      20.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5b-roller": {
+  "key": "8a2e61c017e2451b4612de5513692e1a8e0b37f8",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 23658.287,
+     "extents_mm": [
+      30.0,
+      30.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      12.0,
+      30.0
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "L5b-plate-slots": {
+  "key": "d389032bba0d83dffb98cbaad0861084bd59bdd3",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 23277.257,
+     "extents_mm": [
+      5.0,
+      50.0,
+      100.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0
+     ],
+     "faces": 14
+    }
+   ],
+   "unhealthy": []
+  }
+ }
+}

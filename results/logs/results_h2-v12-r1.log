@@ -1,0 +1,36 @@
+== H2-disk-square-hole
+closed 1 bench documents
+   PASS, answered, 2 model calls, 10 s
+== H2-block-axial-hole
+closed 1 bench documents
+   PASS, answered, 2 model calls, 9 s
+== H2-channel
+closed 1 bench documents
+   PASS, answered, 5 model calls, 18 s
+== H2-flanged-bushing
+closed 1 bench documents
+   PASS, answered, 2 model calls, 14 s
+== H2-plate-rounded-holes
+closed 1 bench documents
+   PASS, answered, 4 model calls, 23 s
+== H2-cube-chamfer-all
+closed 1 bench documents
+   PASS, answered, 2 model calls, 8 s
+== H2-pin-cross-hole
+closed 1 bench documents
+   PASS, answered, 2 model calls, 8 s
+== H2-button
+closed 1 bench documents
+   PASS, answered, 4 model calls, 18 s
+== H2-edit-axial-hole
+closed 1 bench documents
+   PASS, answered, 2 model calls, 8 s
+== H2-edit-shaft-chamfer
+closed 1 bench documents
+   PASS, answered, 3 model calls, 12 s
+== H2-edit-longer
+closed 1 bench documents
+   PASS, answered, 2 model calls, 16 s
+== H2-square-flange
+closed 1 bench documents
+   PASS, answered, 2 model calls, 15 s

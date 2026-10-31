@@ -1,0 +1,41 @@
+{
+ "note": "Graded tasks from simple to complex. 'start' is a reference case id whose result is the starting design (null = empty design). 'reference' is the body of run() that builds the expected result on top of the start state. Lengths in mm; the Fusion API uses cm, so the reference scripts use MM = 0.1.",
+ "cases": [
+  {"id": "L1-cube", "level": 1, "start": null,
+   "prompt": "Сделай куб со стороной 20 мм.",
+   "reference": "sk = root.sketches.add(root.xYConstructionPlane)\nsk.sketchCurves.sketchLines.addTwoPointRectangle(P(0, 0), P(20, 20))\nextrude(sk.profiles.item(0), 20)"},
+  {"id": "L1-cylinder", "level": 1, "start": null,
+   "prompt": "Сделай цилиндр диаметром 30 мм и высотой 10 мм.",
+   "reference": "sk = root.sketches.add(root.xYConstructionPlane)\nsk.sketchCurves.sketchCircles.addByCenterRadius(P(0, 0), 15 * MM)\nextrude(sk.profiles.item(0), 10)"},
+  {"id": "L1-plate", "level": 1, "start": null,
+   "prompt": "Сделай прямоугольную пластину 60 на 40 мм толщиной 5 мм.",
+   "reference": "sk = root.sketches.add(root.xYConstructionPlane)\nsk.sketchCurves.sketchLines.addTwoPointRectangle(P(0, 0), P(60, 40))\nextrude(sk.profiles.item(0), 5)"},
+
+  {"id": "L2-plate-center-hole", "level": 2, "start": null,
+   "prompt": "Сделай пластину 60 на 40 мм толщиной 5 мм со сквозным отверстием диаметром 12 мм по центру.",
+   "reference": "sk = root.sketches.add(root.xYConstructionPlane)\nsk.sketchCurves.sketchLines.addTwoPointRectangle(P(0, 0), P(60, 40))\nsk.sketchCurves.sketchCircles.addByCenterRadius(P(30, 20), 6 * MM)\nextrude(outer_profile(sk), 5)"},
+  {"id": "L2-plate-4-holes", "level": 2, "start": null,
+   "prompt": "Сделай пластину 60 на 40 мм толщиной 5 мм и 4 сквозных отверстия диаметром 5 мм по углам, центры отверстий в 8 мм от краёв.",
+   "reference": "sk = root.sketches.add(root.xYConstructionPlane)\nsk.sketchCurves.sketchLines.addTwoPointRectangle(P(0, 0), P(60, 40))\nfor x, y in ((8, 8), (52, 8), (8, 32), (52, 32)):\n    sk.sketchCurves.sketchCircles.addByCenterRadius(P(x, y), 2.5 * MM)\nextrude(outer_profile(sk), 5)"},
+  {"id": "L2-bushing", "level": 2, "start": null,
+   "prompt": "Сделай втулку: наружный диаметр 20 мм, внутренний 10 мм, высота 15 мм.",
+   "reference": "sk = root.sketches.add(root.xYConstructionPlane)\nsk.sketchCurves.sketchCircles.addByCenterRadius(P(0, 0), 10 * MM)\nsk.sketchCurves.sketchCircles.addByCenterRadius(P(0, 0), 5 * MM)\nextrude(outer_profile(sk), 15)"},
+
+  {"id": "L3-bigger-holes", "level": 3, "start": "L2-plate-4-holes",
+   "prompt": "Увеличь все четыре отверстия до диаметра 6 мм, центры не сдвигай.",
+   "reference": "sk = root.sketches.item(0)\nfor circle in sk.sketchCurves.sketchCircles:\n    circle.radius = 3 * MM"},
+  {"id": "L3-round-corners", "level": 3, "start": "L1-plate",
+   "prompt": "Скругли четыре вертикальных угла пластины радиусом 5 мм.",
+   "reference": "body = root.bRepBodies.item(0)\nedges = [e for e in body.edges if abs(e.boundingBox.maxPoint.z - e.boundingBox.minPoint.z) > 0.4 and e.geometry.objectType.endswith('Line3D')]\nfillet(edges, 5)"},
+  {"id": "L3-chamfer", "level": 3, "start": "L2-bushing",
+   "prompt": "Сними фаску 1 мм по наружной кромке верхнего торца втулки.",
+   "reference": "body = root.bRepBodies.item(0)\nedges = [e for e in body.edges if e.geometry.objectType.endswith('Circle3D') and abs(e.geometry.radius - 1.0) < 1e-6 and abs(e.geometry.center.z - 1.5) < 1e-6]\nchamfer(edges, 1)"},
+
+  {"id": "L4-flange", "level": 4, "start": null,
+   "prompt": "Сделай фланец: диск диаметром 60 мм толщиной 6 мм, по центру сквозное отверстие диаметром 20 мм и 6 сквозных отверстий диаметром 6 мм, равномерно по окружности диаметром 45 мм.",
+   "reference": "sk = root.sketches.add(root.xYConstructionPlane)\nsk.sketchCurves.sketchCircles.addByCenterRadius(P(0, 0), 30 * MM)\nsk.sketchCurves.sketchCircles.addByCenterRadius(P(0, 0), 10 * MM)\nfor k in range(6):\n    angle = math.radians(60 * k)\n    sk.sketchCurves.sketchCircles.addByCenterRadius(P(22.5 * math.cos(angle), 22.5 * math.sin(angle)), 3 * MM)\nextrude(outer_profile(sk), 6)"},
+  {"id": "L4-revolve-knob", "level": 4, "start": null,
+   "prompt": "Сделай телом вращения ступенчатый вал: участок диаметром 20 мм длиной 10 мм, затем участок диаметром 12 мм длиной 15 мм, ось вала вертикальная.",
+   "reference": "sk = root.sketches.add(root.xZConstructionPlane)\nlines = sk.sketchCurves.sketchLines\npts = [(0, 0), (10, 0), (10, 10), (6, 10), (6, 25), (0, 25)]\nsketch_points = [Q(sk, x, z) for x, z in pts]\nfor i in range(len(sketch_points)):\n    lines.addByTwoPoints(sketch_points[i], sketch_points[(i + 1) % len(sketch_points)])\nrevolve(sk.profiles.item(0), root.zConstructionAxis)"}
+ ]
+}

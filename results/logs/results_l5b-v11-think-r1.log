@@ -1,0 +1,18 @@
+== L5b-flange-hub
+closed 1 bench documents
+   PASS, answered, 4 model calls, 123 s
+== L5b-u-bracket
+closed 1 bench documents
+   FAIL, answered, 11 model calls, 514 s
+== L5b-spacer
+closed 1 bench documents
+   PASS, max_calls, 20 model calls, 358 s
+== L5b-stepped-block
+closed 1 bench documents
+   PASS, answered, 2 model calls, 59 s
+== L5b-roller
+closed 1 bench documents
+   PASS, answered, 2 model calls, 36 s
+== L5b-plate-slots
+closed 1 bench documents
+   PASS, answered, 4 model calls, 153 s

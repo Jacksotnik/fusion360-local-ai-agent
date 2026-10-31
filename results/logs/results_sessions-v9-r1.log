@@ -1,0 +1,16 @@
+== S1-plate-boss
+   step 1: PASS, 2 model calls, 4 s 
+   step 2: PASS, 2 model calls, 4 s 
+   step 3: PASS, 2 model calls, 6 s 
+   step 4: PASS, 2 model calls, 6 s 
+   step 5: PASS, 2 model calls, 6 s 
+   step 6: FAIL, 2 model calls, 5 s body 1: volume 26323.447 instead of 26139.663 mm3; body 1: cylinder diameters [6.0, 7.0, 12.0, 16.0, 24.0] instead of [7.0, 12.0, 16.0, 24.0] mm
+   step 7: FAIL, 2 model calls, 6 s body 1: volume 26266.898 instead of 26103.011 mm3; body 1: cylinder diameters [6.0, 7.0, 12.0, 16.0, 24.0] instead of [7.0, 12.0, 16.0, 24.0] mm
+   step 8: FAIL, 2 model calls, 6 s body 1: volume 27284.774 instead of 27120.888 mm3; body 1: cylinder diameters [6.0, 7.0, 12.0, 16.0, 24.0] instead of [7.0, 12.0, 16.0, 24.0] mm
+== S2-shaft
+   step 1: PASS, 2 model calls, 6 s 
+   step 2: FAIL, 8 model calls, 102 s body 1: volume 16540.485 instead of 16446.238 mm3
+   step 3: FAIL, 2 model calls, 5 s body 1: volume 16521.636 instead of 16394.925 mm3
+   step 4: FAIL, 2 model calls, 5 s body 1: volume 16131.779 instead of 16005.068 mm3
+   step 5: FAIL, 2 model calls, 6 s body 1: volume 15707.664 instead of 15439.581 mm3
+   step 6: FAIL, 3 model calls, 57 s body 1: volume 18849.256 instead of 18581.174 mm3

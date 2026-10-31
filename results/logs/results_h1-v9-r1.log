@@ -1,0 +1,36 @@
+== H-ring
+closed 1 bench documents
+   PASS, answered, 2 model calls, 8 s
+== H-blind-hole
+closed 1 bench documents
+   PASS, answered, 2 model calls, 9 s
+== H-pin-chamfers
+closed 1 bench documents
+   PASS, answered, 3 model calls, 12 s
+== H-angle
+closed 1 bench documents
+   PASS, answered, 2 model calls, 7 s
+== H-hex
+closed 1 bench documents
+   PASS, answered, 4 model calls, 65 s
+== H-cup
+closed 1 bench documents
+   PASS, answered, 3 model calls, 36 s
+== H-slot-plate
+closed 1 bench documents
+   PASS, answered, 3 model calls, 14 s
+== H-hole-grid
+closed 1 bench documents
+   PASS, answered, 2 model calls, 20 s
+== H-shaft-step
+closed 1 bench documents
+   PASS, answered, 2 model calls, 7 s
+== H-edit-thicker
+closed 1 bench documents
+   PASS, answered, 3 model calls, 7 s
+== H-edit-boss
+closed 1 bench documents
+   PASS, answered, 2 model calls, 10 s
+== H-edit-round-all
+closed 1 bench documents
+   PASS, answered, 2 model calls, 6 s

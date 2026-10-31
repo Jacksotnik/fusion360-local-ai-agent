@@ -1,0 +1,15 @@
+== P-plate-holes
+closed 1 bench documents
+   PASS, answered, 2 model calls, 12 s
+== P-flange-8
+closed 1 bench documents
+   PASS, answered, 2 model calls, 11 s
+== P-angle-holes
+closed 1 bench documents
+   PASS, answered, 4 model calls, 66 s
+== P-box-open
+closed 1 bench documents
+   PASS, answered, 2 model calls, 9 s
+== P-shaft-steps
+closed 1 bench documents
+   PASS, answered, 2 model calls, 9 s
