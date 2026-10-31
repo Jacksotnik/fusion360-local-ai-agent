@@ -192,6 +192,10 @@ class TurnCancelled(Exception):
 class AgentListener:
     """Receives what happens during a turn. The REPL prints it; the default prints nothing."""
 
+    def status(self, text):
+        """What the turn is doing right now: "model" or a tool name."""
+        pass
+
     def model_call(self, stats):
         pass
 
@@ -328,6 +332,7 @@ class Agent:
 
         for _ in range(MAX_MODEL_CALLS):
             self._check_cancelled()
+            self.listener.status("model")
             started = time.time()
             response = self._chat()
             seconds = time.time() - started
@@ -355,6 +360,7 @@ class Agent:
                 for call in tool_calls:
                     self._check_cancelled()
                     tool_name = call.get("function", {}).get("name", "")
+                    self.listener.status(tool_name)
                     output = self.run_tool(call, screenshots)
                     if repeats.check(call, output):
                         output += "\n" + REPEAT_TEXT

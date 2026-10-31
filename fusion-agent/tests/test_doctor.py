@@ -68,7 +68,7 @@ class WaitUntilReadyTest(unittest.TestCase):
         passing = [doctor.CheckResult("Ollama", doctor.OK, "up")]
         rounds = [failing, passing]
         presses = []
-        with mock.patch.object(doctor.Doctor, "run", side_effect=lambda: rounds.pop(0)), \
+        with mock.patch.object(doctor.Doctor, "run", side_effect=lambda include_document: rounds.pop(0)), \
                 mock.patch("builtins.print"), mock.patch.object(doctor, "print_results"):
             doctor.wait_until_ready("m", read_line=presses.append)
         self.assertEqual(len(presses), 1)

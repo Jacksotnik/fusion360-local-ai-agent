@@ -348,12 +348,12 @@ def print_results(results, stream=None):
     stream.flush()
 
 
-def wait_until_ready(model, read_line=input):
+def wait_until_ready(model, read_line=input, include_document=True):
     """Run the checks until nothing blocks the start; between rounds wait for Enter.
     Returns the Doctor of the passing round (it holds the Fusion connection and the document info)."""
     while True:
         doctor = Doctor(model)
-        results = doctor.run()
+        results = doctor.run(include_document=include_document)
         blocking = [result for result in results if result.blocks_start]
         if not blocking:
             print_results([result for result in results if result.status != OK or result.name in ("Model", "Design")])

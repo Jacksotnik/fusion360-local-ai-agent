@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from fusion_agent import __version__
-from fusion_agent.agent import TUNED_MODEL
+from fusion_agent import config
 from fusion_agent.doctor import run_doctor
 
 DESCRIPTION = ("A local model (Ollama) designs and edits parts in Autodesk Fusion through Fusion's MCP server. "
@@ -50,8 +50,11 @@ def make_output_safe():
 def main(argv=None):
     make_output_safe()
     args = build_parser().parse_args(argv)
-    model = args.model or TUNED_MODEL
+    model = args.model or config.load_settings()["model"]
     if args.command == "doctor":
         return run_doctor(model)
-    print("fusion-agent %s: not implemented yet (%s)." % (__version__, args.command or "session"))
-    return 0
+    if args.command == "setup-model" or args.selftest:
+        print("fusion-agent %s: not implemented yet." % __version__)
+        return 1
+    from fusion_agent.repl import App
+    return App(args).run()
