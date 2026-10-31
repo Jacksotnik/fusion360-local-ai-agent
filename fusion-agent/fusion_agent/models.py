@@ -1,4 +1,6 @@
 """Which Ollama models are installed and what they can do."""
+import re
+
 from fusion_agent.agent import TUNED_MODEL
 from fusion_agent.ollama import capabilities
 
@@ -11,10 +13,17 @@ def normalize(name):
     return name
 
 
+QUANT_TAG = re.compile(r"^(i?q\d\w*|f16|fp16|bf16|f32|latest)$", re.IGNORECASE)
+
+
 def short_name(name):
-    """A short label for the prompt: "gemma4-12b:q8_0" -> "gemma4-12b", "hf.co/a/B-GGUF:Q4" -> "B-GGUF"."""
+    """A short label for the prompt: the last path part; the tag is dropped only when it is just the
+    quantization or "latest" ("gemma4-12b:q8_0" -> "gemma4-12b", "gemma4-uncensored:e2b" stays)."""
     last = name.split("/")[-1]
-    return last.split(":")[0] or name
+    base, _, tag = last.partition(":")
+    if not tag or QUANT_TAG.match(tag):
+        return base or name
+    return last
 
 
 def find_installed(installed, name):

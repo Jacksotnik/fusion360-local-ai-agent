@@ -54,7 +54,7 @@ def main(argv=None):
     if args.command == "doctor":
         return run_doctor(model)
     if args.selftest:
-        print("fusion-agent %s: not implemented yet." % __version__)
-        return 1
+        from fusion_agent.selftest import run_selftest
+        return run_selftest(model)
     from fusion_agent.repl import App
     return App(args).run()

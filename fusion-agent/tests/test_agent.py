@@ -174,5 +174,16 @@ class DocumentGuardTest(unittest.TestCase):
         self.assertEqual(len(sent), 1)
 
 
+class ShortNameTest(unittest.TestCase):
+    def test_short_names(self):
+        from fusion_agent.models import short_name
+        self.assertEqual(short_name("gemma4-12b:q8_0"), "gemma4-12b")
+        self.assertEqual(short_name("gemma4-uncensored:e2b"), "gemma4-uncensored:e2b")
+        self.assertEqual(short_name("gemma4-uncensored:26b"), "gemma4-uncensored:26b")
+        self.assertEqual(short_name("hf.co/HauhauCS/Gemma4-12B-QAT:Q4_K_M"), "Gemma4-12B-QAT")
+        self.assertEqual(short_name("hf.co/nvidia/Bolt-GGUF:latest"), "Bolt-GGUF")
+        self.assertEqual(short_name("llama3.2"), "llama3.2")
+
+
 if __name__ == "__main__":
     unittest.main()
