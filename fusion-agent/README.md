@@ -173,9 +173,9 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   | plain words, `plain_holdout5` (22) | | 19/22, 20/22 | 22/22 |
   | plain words, `plain_holdout6` (24) | | 22/24, 23/24 | 22/24 |
   | plain words, `plain_holdout7` (25) | | 23/25, 23/25 | 24/25 (the same at temperature 0.3 and 0) |
-  | plain words, `plain_holdout8` (26), **final configuration** | | **26/26, 26/26, 26/26** | |
+  | plain words, `plain_holdout8` (26), **final configuration** | | **26/26, 26/26, 26/26, 25/26** | |
   | machine parts, `parts_dev` (12) | | | 12/12 |
-  | the owner's exam, `exam_photo.json`: a photo of a hub flange plus sizes in words | | **PASS in 7 of 8 runs**; 142 s and 10 calls at first, **15 s and 2 calls** on the final code | |
+  | the owner's exam, `exam_photo.json`: a photo of a hub flange plus sizes in words | | **PASS in 8 of 9 runs**; 142 s and 10 calls at first, 15-65 s and 2-5 calls on the final code | |
 
   Each tuning round fixed what the previous honest set showed, in the tool rather than in the prompt
   where words had failed: sizes in centimeters copied as mm; a wall thickness counted once; the length
@@ -204,9 +204,11 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   7.4 s per task** (the bench itself: 23/23, median 9-10 s). The one failure was the model reading "total
   length 20" of a flanged bushing as 20 + 3 mm. Summaries: `results/reg-r1/`, `results/reg-r2/`. With the
   changes for plain words and your own models: **23/23, median 7.4 s** (`results/reg-r9/`). With the
-  final code of 2026-11-01 (helpers for machine parts, hints, request marks): **23/23, median 7.7 s**
-  (`results/reg-r12/`); the two runs before the request marks gave 21/23 and 20/23, every miss a disk
-  built as a box, which is what the `cylinder()` mark fixed.
+  final code of 2026-11-01 (helpers for machine parts, hints, request marks): **23/23 and 23/23, median
+  8 s, max 77 s** (`results/reg-r12/`, `results/reg-r13/`); the two runs before the request marks gave
+  21/23 and 20/23, every miss a disk built as a box, which is what the `cylinder()` mark fixed. A script
+  repeated after CHECK OK now gets "answer the user" instead of "find what is wrong": before that, three
+  correct parts per run hit the 20-call limit (200-300 s) with the model re-running a finished script.
 - The REPL was driven in a Windows pseudo-console (ConPTY, the layer Windows Terminal uses): startup
   hints, a non-empty design, a switched or closed session design, pictures by path, paste and Alt+V,
   model switching, Ctrl+C during an answer.

@@ -1001,7 +1001,18 @@ def fillet(edges, radius):
     fillet_input.addConstantRadiusEdgeSet(_edge_collection(edges), _length(radius), True)
     return _add(lambda: fillets.add(fillet_input), "fillet",
                 _edges_summary(edges) + " Select only the edges the request names, e.g. find_edges(parallel_to='Z')"
-                " for the vertical corners of a plate; the radius must fit the faces next to the edges.")
+                " for the vertical corners of a plate; the radius must fit the faces next to the edges."
+                + _already_done_text("Fillet", "fillet"))
+
+
+def _already_done_text(prefix, what):
+    """When the timeline already holds such a feature, say so: the model re-runs a finished fillet."""
+    names = [design.timeline.item(i).name for i in range(design.timeline.count)]
+    done = [name for name in names if name.startswith(prefix)]
+    if not done:
+        return ""
+    return (" The timeline already has %s: if that is the %s the request asks for, it is DONE, the edges are "
+            "already rounded; do not run it again, run check() and answer." % (", ".join(done), what))
 
 
 def chamfer(edges, distance):
@@ -1010,7 +1021,8 @@ def chamfer(edges, distance):
     chamfer_input = chamfers.createInput2()
     chamfer_input.chamferEdgeSets.addEqualDistanceChamferEdgeSet(_edge_collection(edges), _length(distance), True)
     return _add(lambda: chamfers.add(chamfer_input), "chamfer",
-                _edges_summary(edges) + " Select only the edges the request names; the distance must fit the faces.")
+                _edges_summary(edges) + " Select only the edges the request names; the distance must fit the faces."
+                + _already_done_text("Chamfer", "chamfer"))
 
 
 def find_circles(diameter=None):
@@ -1159,6 +1171,10 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
             if not any(abs(wanted - d) <= 0.01 for d in all_diameters):
                 if any(abs(wanted - size) < 1e-6 for size in _SPLINE_SIZES):
                     notes.append("%s is a spline size, not a round face: accepted" % _fmt(wanted))
+                elif any(abs(2 * wanted - d) <= 0.01 for d in all_diameters) and any(
+                        design.timeline.item(i).name.startswith("Fillet") for i in range(design.timeline.count)):
+                    notes.append("%s is the fillet radius; its round face has diameter %s: accepted" % (
+                        _fmt(wanted), _fmt(2 * wanted)))
                 elif len(footprint) == 2 and all(abs(wanted - f) <= 0.01 for f in footprint):
                     problems.append("no cylindrical face of diameter %s: the part is a square %s x %s block, "
                                     "not a disk; a диск / круг of diameter D is cylinder(D, thickness), not "

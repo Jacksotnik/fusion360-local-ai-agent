@@ -34,6 +34,9 @@ TOO_LONG_TEXT = ("Твой ответ оборвался: он слишком д
 REPEAT_TEXT = ("Note: this is exactly the script you already ran, with the same result. Repeating it will not "
                "help. Read the message again, find which number or which part is wrong, and change the approach.")
 
+REPEAT_OK_TEXT = ("Note: this is the same script as before and CHECK OK again: the part matches the request. "
+                  "Nothing more to build. Answer the user now, in words, without calling fusion_script.")
+
 REPEAT_STOP_TEXT = ("STOP: you have run this exact script %d times and got this exact result every time. The part "
                     "is most likely right and the numbers in your check() are wrong. Use the Measured line: run "
                     "check() only with the numbers you are sure of (or without size= and volume=), and when it says "
@@ -496,7 +499,9 @@ class Agent:
                     self.listener.status(tool_name)
                     output = self.run_tool(call, screenshots)
                     repeat_count = repeats.check(call, output)
-                    if repeat_count >= 2 and "CHECK FAILED" in output:
+                    if repeat_count >= 1 and "CHECK OK" in output:
+                        output += "\n" + REPEAT_OK_TEXT
+                    elif repeat_count >= 2 and "CHECK FAILED" in output:
                         output += "\n" + REPEAT_STOP_TEXT % (repeat_count + 1)
                     elif repeat_count >= 1:
                         output += "\n" + REPEAT_TEXT
