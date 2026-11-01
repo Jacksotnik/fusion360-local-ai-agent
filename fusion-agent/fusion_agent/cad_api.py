@@ -562,6 +562,202 @@ def shaft(sections, base=(0, 0, 0), axis="Z", bore=None, operation="new"):
     return _add(lambda: revolves.add(revolve_input), "shaft")
 
 
+def arc(sketch, start, through, end):
+    """Arc through three (u, v) points in mm: from start, through the middle point, to end."""
+    _sketch_argument(sketch, "arc")
+    return sketch.sketchCurves.sketchArcs.addByThreePoints(
+        _point(sketch, *start), _point(sketch, *through), _point(sketch, *end))
+
+
+def outline(sketch, points):
+    """Closed outline through (u, v) points in mm, like polygon(); a point written as (u, v, "arc") is
+    not a corner: the outline passes through it by an arc from the previous point to the next one."""
+    _sketch_argument(sketch, "outline")
+    corners = []
+    arcs_through = {}
+    for point in points:
+        if len(point) == 3 and point[2] == "arc":
+            if not corners:
+                raise ValueError('outline(): an "arc" point needs a corner before it')
+            arcs_through[len(corners) - 1] = (point[0], point[1])
+        else:
+            corners.append((point[0], point[1]))
+    if len(corners) < 2:
+        raise ValueError("outline() needs at least two corner points")
+    lines = sketch.sketchCurves.sketchLines
+    for index in range(len(corners)):
+        start = corners[index]
+        end = corners[(index + 1) % len(corners)]
+        if abs(start[0] - end[0]) < 1e-9 and abs(start[1] - end[1]) < 1e-9:
+            continue
+        through = arcs_through.get(index)
+        if through is None:
+            lines.addByTwoPoints(_point(sketch, *start), _point(sketch, *end))
+        else:
+            arc(sketch, start, through, end)
+
+
+def _check_profile_arcs(outline_points):
+    """An "arc" point between two corners must be the arc's widest place: an arc that bulges far beyond
+    its three points means the model kept a corner the "arc" point was meant to replace."""
+    for index in range(1, len(outline_points) - 1):
+        point = outline_points[index]
+        if len(point) != 3:
+            continue
+        (u1, v1), (u2, v2), (u3, v3) = outline_points[index - 1][:2], point[:2], outline_points[index + 1][:2]
+        d = 2 * (u1 * (v2 - v3) + u2 * (v3 - v1) + u3 * (v1 - v2))
+        if abs(d) < 1e-9:
+            raise ValueError('the "arc" point (%s, %s) lies on the straight line between its corners: '
+                             'an arc needs a point off that line' % (_fmt(u2 * 2), _fmt(v2)))
+        cu = ((u1 * u1 + v1 * v1) * (v2 - v3) + (u2 * u2 + v2 * v2) * (v3 - v1) + (u3 * u3 + v3 * v3) * (v1 - v2)) / d
+        cv = ((u1 * u1 + v1 * v1) * (u3 - u2) + (u2 * u2 + v2 * v2) * (u1 - u3) + (u3 * u3 + v3 * v3) * (u2 - u1)) / d
+        radius = math.hypot(u1 - cu, v1 - cv)
+        a1, a2, a3 = (math.atan2(v - cv, u - cu) for u, v in ((u1, v1), (u2, v2), (u3, v3)))
+        # Sweep from the start to the end through the middle point.
+        sweep = (a3 - a1) % (2 * math.pi)
+        middle = (a2 - a1) % (2 * math.pi)
+        if middle > sweep:
+            sweep = sweep - 2 * math.pi
+        widest = max(cu + radius * math.cos(a1 + sweep * k / 40.0) for k in range(41))
+        narrowest = min(cu + radius * math.cos(a1 + sweep * k / 40.0) for k in range(41))
+        if widest > max(u1, u2, u3) + 0.5 or narrowest < -1e-6:
+            raise ValueError('the arc from (%s, %s) through (%s, %s) to (%s, %s) bulges out to diameter %s: an '
+                             '"arc" point REPLACES the corner at its height, e.g. a barrel is '
+                             '[(60, 0), (80, 50, "arc"), (60, 100)], not [(60, 0), (60, 50), (80, 50, "arc"), ...]' % (
+                                 _fmt(u1 * 2), _fmt(v1), _fmt(u2 * 2), _fmt(v2), _fmt(u3 * 2), _fmt(v3), _fmt(widest * 2)))
+
+
+def revolved_profile(points, base=(0, 0, 0), axis="Z", operation="new"):
+    """ТЕЛО ВРАЩЕНИЯ (bottle, vase, knob, handle, dome, bowl) from its outline, listed from the bottom up
+    as (diameter, height) points measured from base along the axis. A point (diameter, height, r) is a
+    corner rounded with radius r (rounded shoulders, a rounded bottom edge); a point (diameter, height,
+    "arc") is not a corner but a point the outline passes through by an arc from the previous point to the
+    next: a bulge (barrel, dome) when its diameter is bigger than its neighbours, a waist when smaller.
+    The first and the last point may lie on the axis (diameter 0: a tip or a dome top). Prints the overall
+    size and the volume (use it in check(volume=...))."""
+    base = _xyz_argument(base, "base", "revolved_profile")
+    axis = axis.upper()
+    if axis == "Z":
+        plane, along_index, radial_index = "XZ", 2, 0
+    elif axis == "X":
+        plane, along_index, radial_index = "XY", 0, 1
+    elif axis == "Y":
+        plane, along_index, radial_index = "XY", 1, 0
+    else:
+        raise ValueError("axis must be 'X', 'Y' or 'Z', got %r" % axis)
+    if len(points) < 2:
+        raise ValueError("revolved_profile() needs at least two (diameter, height) points")
+    corners = []
+    rounds = []
+    outline_points = []
+    previous_height = None
+    for point in points:
+        if len(point) not in (2, 3):
+            raise ValueError("every point is (diameter, height), (diameter, height, round_radius) or "
+                             "(diameter, height, \"arc\"); got %r" % (point,))
+        diameter, height = float(point[0]), float(point[1])
+        if diameter < 0:
+            raise ValueError("a diameter cannot be negative: %r" % (point,))
+        if previous_height is not None and height < previous_height - 1e-9:
+            raise ValueError("the points go from the bottom up: heights must not decrease (%r)" % (point,))
+        previous_height = height
+        if len(point) == 3 and point[2] == "arc":
+            if outline_points and len(outline_points[-1]) == 3:
+                raise ValueError('two "arc" points in a row: an "arc" point lies between two corners, '
+                                 'e.g. [(60, 0), (80, 50, "arc"), (60, 100)] for a barrel')
+            outline_points.append((diameter / 2, height, "arc"))
+            continue
+        if corners and abs(corners[-1][0] - diameter) < 1e-9 and abs(corners[-1][1] - height) < 1e-9:
+            if outline_points and len(outline_points[-1]) == 3:
+                raise ValueError('the "arc" point (%s, %s) must differ from the corners around it: an "arc" '
+                                 'point REPLACES the corner there, e.g. [(60, 0), (80, 50, "arc"), (60, 100)]' % (
+                                     _fmt(outline_points[-1][0] * 2), _fmt(outline_points[-1][1])))
+            continue  # the same corner twice is one corner
+        outline_points.append((diameter / 2, height))
+        corners.append((diameter, height))
+        if len(point) == 3 and float(point[2]) > 0:
+            rounds.append((diameter, height, float(point[2])))
+    if len(corners) < 2:
+        raise ValueError("revolved_profile() needs at least two different (diameter, height) corners")
+    for index, point in enumerate(outline_points):
+        if len(point) == 3 and (index == 0 or index == len(outline_points) - 1):
+            raise ValueError('an "arc" point lies between two corners; the first and the last point are corners')
+    _check_profile_arcs(outline_points)
+    first_corner, last_corner = corners[0], corners[-1]
+    if outline_points[0][0] > 0:
+        outline_points.insert(0, (0, first_corner[1]))
+    if outline_points[-1][0] > 0:
+        outline_points.append((0, last_corner[1]))
+    offset_index = 3 - along_index - radial_index
+    sketch = new_sketch(plane, offset=base[offset_index])
+    in_plane = [i for i in range(3) if i != offset_index]
+
+    def at(along, radius):
+        point = list(base)
+        point[along_index] += along
+        point[radial_index] += radius
+        return (point[in_plane[0]], point[in_plane[1]])
+
+    placed = []
+    for point in outline_points:
+        u, v = at(point[1], point[0])
+        placed.append((u, v, "arc") if len(point) == 3 else (u, v))
+    outline(sketch, placed)
+    start = at(first_corner[1], 0)
+    end = at(last_corner[1], 0)
+    axis_line = sketch.sketchCurves.sketchLines.addByTwoPoints(_point(sketch, *start), _point(sketch, *end))
+    axis_line.isConstruction = True
+    revolves = root.features.revolveFeatures
+    revolve_input = revolves.createInput(solid_profiles(sketch), axis_line, _OPERATIONS[operation])
+    revolve_input.setAngleExtent(False, adsk.core.ValueInput.createByString("360 deg"))
+    feature = _add(lambda: revolves.add(revolve_input), "revolved_profile",
+                   "The outline must not cross itself; an \"arc\" point lies between two corners.")
+    body = feature.bodies.item(0)
+    axis_name = "xyz"[along_index]
+    for diameter, height, radius in rounds:
+        if diameter <= 0:
+            raise ValueError("a point on the axis (diameter 0) has no edge to round; round the point next to it")
+        filters = {axis_name: base[along_index] + height}
+        edges = find_edges(kind="circle", diameter=diameter, body=body, **filters)
+        if not edges:
+            raise ValueError("no corner edge at diameter %s, height %s to round: this point lies on a straight "
+                             "part of the outline" % (_fmt(diameter), _fmt(height)))
+        fillet(edges, radius)
+    low, high = _extents_mm()
+    print("revolved_profile: overall size %s x %s x %s mm, volume %s mm3 (use it in check(volume=...))" % (
+        _fmt(high[0] - low[0]), _fmt(high[1] - low[1]), _fmt(high[2] - low[2]), _fmt(body.volume * 1000)))
+    return feature
+
+
+def sphere(diameter, center=(0, 0, 0), operation="new"):
+    """Шар of this DIAMETER (radius = diameter / 2) with its center at center=(x, y, z)."""
+    center = _xyz_argument(center, "center", "sphere")
+    radius = diameter / 2.0
+    base = (center[0], center[1], center[2] - radius)
+    print("sphere: diameter %s (radius %s), center (%s, %s, %s), from z=%s to z=%s" % (
+        _fmt(diameter), _fmt(radius), _fmt(center[0]), _fmt(center[1]), _fmt(center[2]),
+        _fmt(center[2] - radius), _fmt(center[2] + radius)))
+    return revolved_profile([(0, 0), (diameter, radius, "arc"), (0, diameter)], base=base, operation=operation)
+
+
+def dome(diameter, base=(0, 0, 0), operation="new", up=True):
+    """Купол, полусфера: half a sphere of this DIAMETER standing on the horizontal plane z = base z with
+    its rim centered at base=(x, y, z); it bulges up (+Z), or down with up=False (a rounded bottom).
+    Height = diameter / 2. Volume = 2/3 * pi * (diameter/2)**3. operation="join" puts it on a part."""
+    base = _xyz_argument(base, "base", "dome")
+    radius = diameter / 2.0
+    middle = radius * math.sqrt(0.5)
+    if up:
+        points = [(diameter, 0), (2 * middle, middle, "arc"), (0, radius)]
+        start = base
+    else:
+        points = [(0, 0), (2 * middle, radius - middle, "arc"), (diameter, radius)]
+        start = (base[0], base[1], base[2] - radius)
+    print("dome: diameter %s, height %s, from z=%s to z=%s, volume %s mm3" % (
+        _fmt(diameter), _fmt(radius), _fmt(start[2]), _fmt(start[2] + radius), _fmt(2.0 / 3 * math.pi * radius ** 3)))
+    return revolved_profile(points, base=start, operation=operation)
+
+
 def _profile(points, length, base):
     """Extrude a cross-section drawn on XZ (u = x, v = z, relative to base) along +Y by length."""
     base = _xyz_argument(base, "base", "profile")

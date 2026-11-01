@@ -1,0 +1,40 @@
+{
+ "note": "Bodies of revolution (bottle-like things): corners, rounded corners, arcs. Tunable set, 2026-11-01.",
+ "cases": [
+  {
+   "id": "R-vase-two-cones",
+   "prompt": "Сделай вазу телом вращения: диаметр дна 60 мм, на высоте 100 мм диаметр 90 мм, вверху на высоте 150 мм диаметр 50 мм.",
+   "start": null,
+   "reference": "revolved_profile([(60, 0), (90, 100), (50, 150)])",
+   "volume": "math.pi*100/3*(30*30 + 30*45 + 45*45) + math.pi*50/3*(45*45 + 45*25 + 25*25)"
+  },
+  {
+   "id": "R-sphere",
+   "prompt": "Сделай шар диаметром 40 мм.",
+   "start": null,
+   "reference": "sphere(40, center=(0, 0, 20))",
+   "volume": "4.0/3*math.pi*20**3"
+  },
+  {
+   "id": "R-dome-on-cylinder",
+   "prompt": "Сделай цилиндр диаметром 80 мм высотой 20 мм, а сверху на нём купол: полусфера того же диаметра.",
+   "start": null,
+   "reference": "revolved_profile([(80, 0), (80, 20), (80*math.cos(math.pi/4), 20 + 40*math.sin(math.pi/4), 'arc'), (0, 60)])",
+   "volume": "math.pi*40*40*20 + 2.0/3*math.pi*40**3"
+  },
+  {
+   "id": "R-barrel",
+   "prompt": "Сделай бочонок телом вращения высотой 100 мм: диаметр торцов 60 мм, в середине выпуклый до 80 мм.",
+   "start": null,
+   "reference": "revolved_profile([(60, 0), (80, 50, 'arc'), (60, 100)])",
+   "volume": "math.pi*((-90)**2*100 + 130**2*100 - (2*50**3/3) + 2*(-90)*2*(50/2*math.sqrt(130**2 - 50**2) + 130**2/2*math.asin(50/130)))"
+  },
+  {
+   "id": "R-knob-rounded-top",
+   "prompt": "Сделай круглую ручку: цилиндр диаметром 30 мм высотой 20 мм, верхнее ребро скруглено радиусом 5 мм.",
+   "start": null,
+   "reference": "revolved_profile([(30, 0), (30, 20, 5)])",
+   "volume": "math.pi*15*15*20 - 2*math.pi*(15 - 5*(5.0/6 - math.pi/4)/(1 - math.pi/4))*(5*5*(1 - math.pi/4))"
+  }
+ ]
+}
