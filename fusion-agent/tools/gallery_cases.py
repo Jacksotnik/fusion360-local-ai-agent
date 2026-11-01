@@ -223,18 +223,21 @@ def build_case(design):
         loops = []
         offsets = []
         seen = {}
+        shared = set()
         for profile_ref in entity["profiles"]:
             profile = sketch["profiles"][profile_ref["profile"]]
             for loop in profile["loops"]:
                 data = loop_to_2d(loop, plane, sketch["transform"], normal_index, offsets)
                 key = json.dumps(data, sort_keys=True)
-                # A loop shared by two extruded regions (the ring and the disk inside it) is no hole.
                 if key in seen:
-                    if loop["is_outer"]:
-                        loops[seen[key]] = (True, data)
+                    # A loop that bounds two extruded regions (the ring and the disk inside it) is no
+                    # boundary of the extruded shape at all: the regions merge, the loop is dropped.
+                    if loops[seen[key]][0] != loop["is_outer"]:
+                        shared.add(key)
                     continue
                 seen[key] = len(loops)
                 loops.append((loop["is_outer"], data))
+        loops = [loops[index] for key, index in sorted(seen.items(), key=lambda item: item[1]) if key not in shared]
         if max(offsets) - min(offsets) > 1e-3:
             raise Skip("sketch points off the plane")
         offset = sum(offsets) / len(offsets)

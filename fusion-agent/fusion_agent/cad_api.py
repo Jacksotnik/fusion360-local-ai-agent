@@ -312,9 +312,25 @@ def extrude(sketch, distance, operation="new", symmetric=False):
         extent = adsk.fusion.DistanceExtentDefinition.create(_length(abs(distance)))
         extrude_input.setOneSideExtent(extent, _direction_sign(sketch, distance))
     where = _extents_text() if operation != "new" else ""
-    return _add(lambda: extrudes.add(extrude_input), "extrude (%s)" % operation,
-                "For join/cut/intersect the sketch shapes must overlap the body; check positions with describe()."
-                + (" Now " + where + "." if where else ""))
+    volume_before = sum(body.volume for body in _all_bodies()) if operation == "join" else 0
+    feature = _add(lambda: extrudes.add(extrude_input), "extrude (%s)" % operation,
+                   "For join/cut/intersect the sketch shapes must overlap the body; check positions with describe()."
+                   + (" Now " + where + "." if where else ""))
+    if operation == "join":
+        added = (sum(body.volume for body in _all_bodies()) - volume_before) * 1000
+        if added < 1e-6:
+            _, _, normal_axis = _sketch_frame_axis(sketch)
+            raise ValueError("extrude (join) of %s mm added nothing: the new piece lies entirely inside the part "
+                             "(%s). To add material at an end of the part extrude the other way (a negative "
+                             "distance goes toward -%s) or start the sketch on the end face (offset=)." % (
+                                 _fmt(distance), where, normal_axis))
+    return feature
+
+
+def _sketch_frame_axis(sketch):
+    """Origin, normal axis index and the axis letter of a sketch's plane."""
+    origin, normal_axis, _ = _sketch_frame(sketch)
+    return origin, normal_axis, "XYZ"[normal_axis]
 
 
 def cut(sketch, depth=None):
