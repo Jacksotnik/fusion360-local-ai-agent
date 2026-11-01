@@ -177,7 +177,10 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   | machine parts, `parts_dev` (12) | | | 12/12 |
   | the owner's exam, `exam_photo.json`: a photo of a hub flange plus sizes in words | | **PASS in 8 of 9 runs**; 142 s and 10 calls at first, 15-65 s and 2-5 calls on the final code | |
   | bodies of revolution, `revolve_dev` (5: a two-cone vase, a sphere, a dome on a cylinder, a barrel, a knob with a rounded top), evening of 2026-11-01 | | | 3/5, 4/5, 5/5 as the helper's checks were fixed |
-  | **real designs, `gallery_holdout` (51 from the Fusion 360 Gallery data): a picture plus the steps in words** | | **43/51 (84 %)** | **48/51 (94 %)** after one prompt line about arcs |
+  | **real designs, `gallery_holdout` (51 from the Fusion 360 Gallery data): a picture plus the steps in words** | | **43/51 (84 %)** | **48/51 (94 %)** after one prompt line about arcs; 47/51, then 49/51 after the round-3 fixes |
+  | **real designs, `gallery_holdout2` (62, train split), late evening** | | **61/62 (98 %)** | |
+  | gears, threads, hexagons, `gears_dev` (8: gears with bore and hub, nut, bolt, threaded shaft and hole, socket-head screw) | | | 8/8 |
+  | Qwen3.5-9B on the same tool (comparison, no tuning): holdout8 22/26, revolve 4/5, exam PASS, gallery 42/51, gallery2 28/32 | | | dropped: less precise, fakes results under pressure |
 
   Each tuning round fixed what the previous honest set showed, in the tool rather than in the prompt
   where words had failed: sizes in centimeters copied as mm; a wall thickness counted once; the length
