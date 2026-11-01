@@ -42,6 +42,13 @@ REPEAT_STOP_TEXT = ("STOP: you have run this exact script %d times and got this 
                     "check() only with the numbers you are sure of (or without size= and volume=), and when it says "
                     "CHECK OK, answer the user.")
 
+REPEAT_STUCK_TEXT = ("STOP: you have run this exact script %d times with this exact result. Running it again changes "
+                     "nothing. Read the state line: which number is wrong? Change the script (another dimension, "
+                     "another helper, material added or cut), or answer the user with what you could not do.")
+
+# After this many identical script-and-result pairs the turn ends: the model is stuck.
+MAX_REPEATS = 5
+
 NUDGE_TEXT = ("Модель в Fusion не изменилась: геометрия та же, что была до задачи. "
               "Сделай это через fusion_script и проверь результат.")
 
@@ -282,6 +289,19 @@ def with_dimension_hints(request):
     return text
 
 
+MATERIAL_HINT = '[the %s: no dimension holds it, so add material with box(..., operation="join") against that ' \
+                'end or cut it off with operation="cut"; the extrude dimension is the thickness, not the %s]'
+
+
+def with_material_hints(request):
+    """For a part whose sketch carries no named dimensions: the edit verb gets the material note instead
+    (the model otherwise sets the only dimension it sees, the extrude thickness, to the new length)."""
+    text = request
+    for pattern, name in DIMENSION_HINTS:
+        text = pattern.sub(lambda match: "%s %s" % (match.group(0), MATERIAL_HINT % (name, name)), text, count=1)
+    return text
+
+
 def state_prefix(state):
     """The text put before the request: the describe() output, or a note that the design is empty."""
     lines = [line.strip() for line in state.splitlines() if line.strip()]
@@ -411,6 +431,8 @@ class Agent:
         text = with_shape_hints(with_millimeters(request))
         if "\"width, along" in state or "\"length, along" in state:
             text = with_dimension_hints(text)
+        elif "bodies: 0" not in state and "sketch " in state and "the user opened this design" not in state:
+            text = with_material_hints(text)
         return state_prefix(state) + text
 
     # --- The loop -------------------------------------------------------------------------------
@@ -493,6 +515,7 @@ class Agent:
 
             if tool_calls:
                 screenshots = []
+                is_stuck = False
                 for call in tool_calls:
                     self._check_cancelled()
                     tool_name = call.get("function", {}).get("name", "")
@@ -503,8 +526,12 @@ class Agent:
                         output += "\n" + REPEAT_OK_TEXT
                     elif repeat_count >= 2 and "CHECK FAILED" in output:
                         output += "\n" + REPEAT_STOP_TEXT % (repeat_count + 1)
+                    elif repeat_count >= 2:
+                        output += "\n" + REPEAT_STUCK_TEXT % (repeat_count + 1)
                     elif repeat_count >= 1:
                         output += "\n" + REPEAT_TEXT
+                    if repeat_count + 1 >= MAX_REPEATS and "CHECK OK" not in output:
+                        is_stuck = True
                     self.listener.tool_result(tool_name, call.get("function", {}).get("arguments"), output)
                     tool_message = {"role": "tool", "tool_name": tool_name, "content": output}
                     if call.get("id"):
@@ -513,6 +540,9 @@ class Agent:
 
                 if not self.is_session_active():
                     status = "left_session_design"
+                    break
+                if is_stuck:
+                    status = "repeat_stuck"
                     break
 
                 for shot in screenshots:

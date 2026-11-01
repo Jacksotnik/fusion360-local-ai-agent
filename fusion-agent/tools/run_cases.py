@@ -139,11 +139,21 @@ def expected_signature(bench, case, cache):
         signature = bench.signature()
     finally:
         bench.close()
-    hand_volume = eval(case["volume"], {"math": math})
-    built_volume = sum(body["volume_mm3"] for body in signature["bodies"])
-    if abs(built_volume - hand_volume) > 0.001 * hand_volume:
-        raise ValueError("%s: the reference has volume %.3f, the hand calculation %.3f" % (
-            case["id"], built_volume, hand_volume))
+    if case.get("volume") is None:
+        # No hand formula (involute teeth, modeled threads): the reference is held by its overall size.
+        wanted = sorted(case["size"])
+        bodies = signature["bodies"]
+        if len(bodies) != 1:
+            raise ValueError("%s: the reference has %d bodies" % (case["id"], len(bodies)))
+        got = sorted(bodies[0]["extents_mm"])
+        if any(abs(a - b) > max(0.05, 0.02 * b) for a, b in zip(got, wanted)):
+            raise ValueError("%s: the reference has size %s, expected %s" % (case["id"], got, wanted))
+    else:
+        hand_volume = eval(case["volume"], {"math": math})
+        built_volume = sum(body["volume_mm3"] for body in signature["bodies"])
+        if abs(built_volume - hand_volume) > 0.001 * hand_volume:
+            raise ValueError("%s: the reference has volume %.3f, the hand calculation %.3f" % (
+                case["id"], built_volume, hand_volume))
     cache[case["id"]] = {"key": key, "signature": signature}
     with open(CACHE_PATH, "w", encoding="utf-8") as file:
         json.dump(cache, file, ensure_ascii=False, indent=1)
@@ -152,7 +162,13 @@ def expected_signature(bench, case, cache):
 
 def run_case(bench, case, cache, ollama, details, args, system_prompt, out_dir):
     started = time.time()
-    expected = expected_signature(bench, case, cache)
+    try:
+        expected = expected_signature(bench, case, cache)
+    except Exception as error:
+        record = {"id": case["id"], "prompt": case["prompt"], "status": "error", "passed": False,
+                  "problems": ["reference error: %s" % error], "seconds": round(time.time() - started, 1)}
+        print("%-28s FAIL  %s" % (case["id"], record["problems"][0]), flush=True)
+        return record
     record = {"id": case["id"], "prompt": case["prompt"], "expected": expected}
     bench.fresh_design(case)
     try:

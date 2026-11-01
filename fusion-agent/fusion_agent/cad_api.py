@@ -27,6 +27,7 @@ _SCRIPT_CLEARED = False
 _NEW_BASE_BODIES = 0
 _SPLINE_SIZES = set()
 _RIM_SIZES = {}
+_NOMINAL_SIZES = {}  # a size the request names -> (what the part measures, why): gear tips, threads
 
 _AXES = {"X": 0, "Y": 1, "Z": 2}
 _OPERATIONS = {
@@ -604,13 +605,27 @@ def outline(sketch, points):
     for index in range(len(corners)):
         start = corners[index]
         end = corners[(index + 1) % len(corners)]
-        if abs(start[0] - end[0]) < 1e-9 and abs(start[1] - end[1]) < 1e-9:
-            continue
         through = arcs_through.get(index)
+        if abs(start[0] - end[0]) < 1e-9 and abs(start[1] - end[1]) < 1e-9:
+            if through is not None:
+                raise ValueError('outline(): the arc through (%s, %s) starts and ends at the same corner (%s, %s): '
+                                 'an "arc" point lies between two DIFFERENT corners, and a corner is written once; '
+                                 'remove the repeated corner' % (_fmt(through[0]), _fmt(through[1]), _fmt(start[0]), _fmt(start[1])))
+            continue
         if through is None:
             lines.addByTwoPoints(_point(sketch, *start), _point(sketch, *end))
-        else:
-            arc(sketch, start, through, end)
+            continue
+        for corner in (start, end):
+            if abs(through[0] - corner[0]) < 1e-9 and abs(through[1] - corner[1]) < 1e-9:
+                raise ValueError('outline(): the "arc" point (%s, %s) coincides with a corner; it is the point the '
+                                 'arc passes THROUGH between the corner before it and the corner after it' % (
+                                     _fmt(through[0]), _fmt(through[1])))
+        cross = (end[0] - start[0]) * (through[1] - start[1]) - (end[1] - start[1]) * (through[0] - start[0])
+        if abs(cross) < 1e-9:
+            raise ValueError('outline(): the "arc" point (%s, %s) lies on the straight line from (%s, %s) to (%s, %s); '
+                             'an arc needs a point off that line' % (_fmt(through[0]), _fmt(through[1]),
+                                                                     _fmt(start[0]), _fmt(start[1]), _fmt(end[0]), _fmt(end[1])))
+        arc(sketch, start, through, end)
 
 
 def _check_profile_arcs(outline_points):
@@ -772,6 +787,241 @@ def dome(diameter, base=(0, 0, 0), operation="new", up=True):
     print("dome: diameter %s, height %s, from z=%s to z=%s, volume %s mm3" % (
         _fmt(diameter), _fmt(radius), _fmt(start[2]), _fmt(start[2] + radius), _fmt(2.0 / 3 * math.pi * radius ** 3)))
     return revolved_profile(points, base=start, operation=operation)
+
+
+def _involute_half_angle(radius, base_radius, pitch_radius, teeth, pressure_angle):
+    """Half the tooth's angular thickness at this radius, for an involute flank (radians)."""
+    def involute(alpha):
+        return math.tan(alpha) - alpha
+    half_at_pitch = math.pi / (2 * teeth)
+    alpha_here = math.acos(min(1.0, base_radius / radius))
+    return half_at_pitch + involute(math.radians(pressure_angle)) - involute(alpha_here)
+
+
+def gear_points(cx, cy, module, teeth, pressure_angle=20, flank_points=8):
+    """Outline (u, v) of a spur gear with involute teeth: pitch diameter module * teeth, outer diameter
+    module * (teeth + 2), root diameter module * (teeth - 2.5). For polygon(); spur_gear() uses it."""
+    if teeth < 6:
+        raise ValueError("gear_points() needs at least 6 teeth")
+    if module <= 0:
+        raise ValueError("the module must be above 0 (pitch diameter = module * teeth)")
+    pitch_radius = module * teeth / 2.0
+    outer_radius = pitch_radius + module
+    root_radius = pitch_radius - 1.25 * module
+    base_radius = pitch_radius * math.cos(math.radians(pressure_angle))
+    flank_start = max(base_radius, root_radius)
+    points = []
+    for tooth in range(teeth):
+        center = 2 * math.pi * tooth / teeth
+        root_half = _involute_half_angle(flank_start, base_radius, pitch_radius, teeth, pressure_angle)
+        # the root between this tooth and the previous one, then the right flank up, the left flank down
+        if root_radius < flank_start - 1e-9:
+            points.append((root_radius, center - root_half))
+        for step in range(flank_points + 1):
+            radius = flank_start + (outer_radius - flank_start) * step / float(flank_points)
+            points.append((radius, center - _involute_half_angle(radius, base_radius, pitch_radius, teeth, pressure_angle)))
+        points.append((outer_radius, center))  # the tip itself, so the outer diameter is exact
+        for step in range(flank_points, -1, -1):
+            radius = flank_start + (outer_radius - flank_start) * step / float(flank_points)
+            points.append((radius, center + _involute_half_angle(radius, base_radius, pitch_radius, teeth, pressure_angle)))
+        if root_radius < flank_start - 1e-9:
+            points.append((root_radius, center + root_half))
+    return [(cx + r * math.cos(a), cy + r * math.sin(a)) for r, a in points]
+
+
+def spur_gear(module, teeth, width, base=(0, 0, 0), bore=None, axis="Z", pressure_angle=20, operation="new"):
+    """ШЕСТЕРНЯ, зубчатое колесо (прямозубое): involute teeth of this module and count, width along the
+    axis from base=(x, y, z) (the center of the bottom face). bore: diameter of the through hole.
+    Pitch diameter = module * teeth, outer diameter = module * (teeth + 2) (the size across the tips),
+    root diameter = module * (teeth - 2.5). Prints these and the volume (use it in check(volume=...));
+    the outer size for check(size=...) is the outer diameter."""
+    base = _xyz_argument(base, "base", "spur_gear")
+    plane, (u_index, v_index, n_index) = _axis_plane(axis)
+    sketch = new_sketch(plane, offset=base[n_index])
+    polygon(sketch, gear_points(base[u_index], base[v_index], module, teeth, pressure_angle))
+    if bore:
+        if bore >= module * (teeth - 2.5):
+            raise ValueError("the bore %s must be smaller than the root diameter %s" % (_fmt(bore), _fmt(module * (teeth - 2.5))))
+        circle(sketch, base[u_index], base[v_index], bore)
+    feature = extrude(sketch, width, operation=operation)
+    body = feature.bodies.item(0)
+    print("spur_gear: module %s, %d teeth, pitch diameter %s, outer diameter %s (size across the tips), root "
+          "diameter %s, width %s%s; volume %s mm3 (use it in check(volume=...))" % (
+              _fmt(module), teeth, _fmt(module * teeth), _fmt(module * (teeth + 2)), _fmt(module * (teeth - 2.5)),
+              _fmt(width), (", bore %s" % _fmt(bore)) if bore else "", _fmt(body.volume * 1000)))
+    _SPLINE_SIZES.update((module * (teeth + 2), module * teeth, module * (teeth - 2.5)))
+    low, high = _extents_mm()
+    for index in (u_index, v_index):
+        _NOMINAL_SIZES.setdefault(round(module * (teeth + 2), 6), []).append(
+            (high[index] - low[index], "the outer diameter of the gear (its teeth span %s)" % _fmt(high[index] - low[index])))
+    return feature
+
+
+def hexagon_points(cx, cy, across_flats, angle=0):
+    """Six corners of a regular hexagon by its size ACROSS FLATS (размер под ключ); angle turns it."""
+    radius = across_flats / math.sqrt(3)  # across corners / 2
+    return [(cx + radius * math.cos(math.radians(angle + 60 * k)), cy + radius * math.sin(math.radians(angle + 60 * k)))
+            for k in range(6)]
+
+
+def hex_prism(across_flats, height, base=(0, 0, 0), axis="Z", bore=None, operation="new"):
+    """ШЕСТИГРАННИК (a nut body, a bolt head, a hex standoff): a regular hexagonal prism of this size
+    across flats (размер под ключ) and height along the axis from base=(x, y, z), the center of its bottom.
+    bore: a through hole of this diameter. Across corners = across_flats * 2 / sqrt(3).
+    Volume = across_flats**2 * sqrt(3) / 2 * height (minus the bore)."""
+    base = _xyz_argument(base, "base", "hex_prism")
+    plane, (u_index, v_index, n_index) = _axis_plane(axis)
+    sketch = new_sketch(plane, offset=base[n_index])
+    polygon(sketch, hexagon_points(base[u_index], base[v_index], across_flats))
+    if bore:
+        circle(sketch, base[u_index], base[v_index], bore)
+    _SPLINE_SIZES.update((across_flats, across_flats * 2 / math.sqrt(3)))
+    return extrude(sketch, height, operation=operation)
+
+
+def hex_socket(across_flats, depth, center=(0, 0, 0), axis="Z"):
+    """ВНУТРЕННИЙ ШЕСТИГРАННИК (под ключ, a socket in a screw head): a hexagonal pocket of this size
+    across flats cut depth mm into the part from the surface point center=(x, y, z), along -axis."""
+    center = _xyz_argument(center, "center", "hex_socket")
+    plane, (u_index, v_index, n_index) = _axis_plane(axis)
+    sketch = new_sketch(plane, offset=center[n_index])
+    polygon(sketch, hexagon_points(center[u_index], center[v_index], across_flats))
+    print("hex_socket: %s across flats, %s deep; material removed %s mm3" % (
+        _fmt(across_flats), _fmt(depth), _fmt(across_flats ** 2 * math.sqrt(3) / 2 * depth)))
+    return _cut_into_body(sketch, depth)
+
+
+def _cylindrical_faces(diameter, axis_index=None):
+    """Cylindrical faces of this diameter (optionally with their axis along this world axis)."""
+    result = []
+    for body in _all_bodies():
+        for face in body.faces:
+            geometry = face.geometry
+            if geometry.surfaceType != adsk.core.SurfaceTypes.CylinderSurfaceType:
+                continue
+            if abs(geometry.radius * 20 - diameter) > 0.01:
+                continue
+            if axis_index is not None:
+                direction = geometry.axis.asArray()
+                if abs(abs(direction[axis_index]) - 1) > 1e-6:
+                    continue
+            result.append(face)
+    return result
+
+
+def _thread_designation(diameter, pitch, internal):
+    """ISO metric thread type, designation and class for this nominal diameter and pitch (None = coarse)."""
+    threads = root.features.threadFeatures
+    query = threads.threadDataQuery
+    thread_type = None
+    for name in query.allThreadTypes:
+        if "ISO Metric" in name and "profile" in name:
+            thread_type = name
+            break
+    if thread_type is None:
+        raise ValueError("Fusion has no ISO Metric thread table here; types: %s" % list(query.allThreadTypes)[:6])
+    size = None
+    for candidate in query.allSizes(thread_type):
+        try:
+            if abs(float(candidate) - diameter) < 1e-6:
+                size = candidate
+                break
+        except ValueError:
+            continue
+    if size is None:
+        raise ValueError("no ISO metric thread of diameter %s; sizes: %s" % (_fmt(diameter), list(query.allSizes(thread_type))))
+    designations = list(query.allDesignations(thread_type, size))
+    if not designations:
+        raise ValueError("no thread designation for M%s" % size)
+    designation = designations[0]  # the coarse pitch comes first
+    if pitch is not None:
+        wanted = [d for d in designations if d.lower().endswith("x" + _fmt(pitch)) or d.lower().endswith("x%.2f" % pitch)]
+        if not wanted:
+            raise ValueError("M%s has no pitch %s; designations: %s" % (size, _fmt(pitch), designations))
+        designation = wanted[0]
+    classes = list(query.allClasses(internal, thread_type, designation))
+    if not classes:
+        raise ValueError("no thread class for %s" % designation)
+    thread_class = classes[0]
+    for candidate in classes:
+        if candidate in ("6H", "6g"):
+            thread_class = candidate
+    return thread_type, designation, thread_class
+
+
+def thread(diameter, length=None, base=None, axis="Z", internal=False, pitch=None, modeled=True):
+    """РЕЗЬБА, metric ISO (M6, M8, M10 ...): on the cylindrical face of this nominal diameter along the axis.
+    internal=False: the outside of a shaft or pin of this diameter; internal=True: a hole of this
+    diameter (drill the hole with the nominal size, e.g. 8 for M8). length=None: the whole face; a length
+    threads that much from the face end nearest to base=(x, y, z). pitch=None: the coarse pitch
+    (M8x1.25, M10x1.5); modeled=True cuts the real helix (slow to display), False marks it cosmetically.
+    check(operations=["thread"]) sees it in the timeline."""
+    axis_index = _AXES[axis.upper()]
+    faces = _cylindrical_faces(diameter, axis_index)
+    if not faces:
+        raise ValueError("no cylindrical face of diameter %s along %s to thread; faces of the part: %s. Build the "
+                         "shaft or drill the hole with the nominal diameter first." % (
+                             _fmt(diameter), axis.upper(), sorted(set(_round_face_diameters()))))
+    if len(faces) > 1:
+        if base is None:
+            raise ValueError("%d cylindrical faces of diameter %s: give base=(x, y, z) near the one to thread" % (
+                len(faces), _fmt(diameter)))
+        base = _xyz_argument(base, "base", "thread")
+        faces.sort(key=lambda face: _distance_to_box(base, face.boundingBox))
+    face = faces[0]
+    threads = root.features.threadFeatures
+    thread_type, designation, thread_class = _thread_designation(diameter, pitch, internal)
+    info = threads.createThreadInfo(internal, thread_type, designation, thread_class)
+    collection = adsk.core.ObjectCollection.create()
+    collection.add(face)
+    thread_input = threads.createInput(collection, info)
+    thread_input.isModeled = modeled
+    if length is None:
+        thread_input.isFullLength = True
+    else:
+        thread_input.isFullLength = False
+        thread_input.threadLength = _length(length)
+        if base is not None:
+            low, high = _range_mm(face.boundingBox, axis_index)
+            if abs(base[axis_index] - high) < abs(base[axis_index] - low):
+                thread_input.isRightHanded = True
+                thread_input.threadOffset = _length(0)
+    feature = _add(lambda: threads.add(thread_input), "thread",
+                   "Fusion could not cut a %s thread on this face: a thread needs a plain cylindrical face of the "
+                   "nominal diameter, long enough for the length; try modeled=False." % designation)
+    if modeled and not internal:
+        low, high = _extents_mm()
+        for index in range(3):
+            if index != axis_index:
+                _NOMINAL_SIZES.setdefault(round(diameter, 6), []).append(
+                    (high[index] - low[index], "the nominal thread diameter (the cut thread measures %s)" % _fmt(high[index] - low[index])))
+    _SPLINE_SIZES.add(diameter)
+    print("thread: %s %s on the %s face of diameter %s%s (%s)" % (
+        designation, thread_class, "inside of the hole" if internal else "outside", _fmt(diameter),
+        "" if length is None else ", length %s" % _fmt(length), "modeled" if modeled else "cosmetic"))
+    return feature
+
+
+def _distance_to_box(point, box):
+    low = box.minPoint.asArray()
+    high = box.maxPoint.asArray()
+    total = 0.0
+    for i in range(3):
+        value = point[i] * MM
+        if value < low[i]:
+            total += (low[i] - value) ** 2
+        elif value > high[i]:
+            total += (value - high[i]) ** 2
+    return total
+
+
+def _round_face_diameters():
+    result = []
+    for body in _all_bodies():
+        for face in body.faces:
+            if face.geometry.surfaceType == adsk.core.SurfaceTypes.CylinderSurfaceType:
+                result.append(round(face.geometry.radius * 20, 3))
+    return result
 
 
 def _profile(points, length, base):
@@ -1298,13 +1548,23 @@ def set_parameter(name, value):
         parameter.expression = str(value)
     design.computeAll()
     comment = (' "%s"' % parameter.comment) if parameter.comment else ""
-    print("set_parameter: %s%s = %s" % (name, comment, parameter.expression))
+    holder = ""
+    try:
+        created_by = parameter.createdBy
+        if created_by is not None:
+            holder = " (held by %s" % created_by.name
+            if getattr(created_by, "extentOne", None) is not None or created_by.objectType.endswith("ExtrudeFeature"):
+                holder += ": the extrude distance, i.e. the thickness or height, not a sketch size"
+            holder += ")"
+    except Exception:
+        holder = ""
+    print("set_parameter: %s%s = %s%s" % (name, comment, parameter.expression, holder))
     state_summary()
 
 
 _OPERATION_PREFIXES = {
     "fillet": "Fillet", "chamfer": "Chamfer", "shell": "Shell", "mirror": "Mirror",
-    "circular_pattern": "C-Pattern", "rectangular_pattern": "R-Pattern",
+    "circular_pattern": "C-Pattern", "rectangular_pattern": "R-Pattern", "thread": "Thread",
 }
 
 
@@ -1375,6 +1635,25 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
                         wanted_size = candidate
                         break
         if any(abs(a - b) > 0.01 for a, b in zip(actual_size, wanted_size)):
+            # A nominal size (a gear's outer diameter, a thread's nominal diameter) is accepted for what it measures.
+            remaining = list(actual_size)
+            matched = []
+            for value in wanted_size:
+                exact = [a for a in remaining if abs(a - value) <= 0.01]
+                if exact:
+                    remaining.remove(exact[0])
+                    matched.append(exact[0])
+                    continue
+                for measured, why in _NOMINAL_SIZES.get(round(value, 6), []):
+                    near = [a for a in remaining if abs(a - measured) <= 0.01]
+                    if near:
+                        remaining.remove(near[0])
+                        matched.append(near[0])
+                        notes.append("size %s is %s: accepted" % (_fmt(value), why))
+                        break
+            if len(matched) == len(wanted_size):
+                wanted_size = sorted(matched)
+        if any(abs(a - b) > 0.01 for a, b in zip(actual_size, wanted_size)):
             problems.append("size is %s mm, expected %s" % (
                 " x ".join(_fmt(v) for v in actual_size), " x ".join(_fmt(v) for v in wanted_size)))
     if diameters is not None:
@@ -1382,7 +1661,7 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
         for wanted in diameters:
             if not any(abs(wanted - d) <= 0.01 for d in all_diameters):
                 if any(abs(wanted - size) < 1e-6 for size in _SPLINE_SIZES):
-                    notes.append("%s is a spline size, not a round face: accepted" % _fmt(wanted))
+                    notes.append("%s is a spline, gear, hexagon or thread size, not a plain round face: accepted" % _fmt(wanted))
                 elif any(abs(2 * wanted - d) <= 0.01 for d in all_diameters) and any(
                         design.timeline.item(i).name.startswith("Fillet") for i in range(design.timeline.count)):
                     notes.append("%s is the fillet radius; its round face has diameter %s: accepted" % (

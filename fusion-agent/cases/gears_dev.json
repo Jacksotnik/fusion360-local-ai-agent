@@ -1,0 +1,101 @@
+{
+ "note": "Gears, hexagons and threads (tunable set, 2026-11-01 evening). References whose volume has no hand formula (involute teeth, modeled threads) carry volume null and are checked by their overall size instead.",
+ "cases": [
+  {
+   "id": "T-spur-gear-bore",
+   "prompt": "Сделай прямозубую шестерню: модуль 2, 20 зубьев, ширина 10 мм, по центру отверстие 8 мм.",
+   "start": null,
+   "reference": "spur_gear(2, 20, 10, bore=8)",
+   "volume": null,
+   "size": [
+    44,
+    44,
+    10
+   ]
+  },
+  {
+   "id": "T-spur-gear-plain",
+   "prompt": "Сделай зубчатое колесо модуль 1.5, 30 зубьев, толщиной 6 мм.",
+   "start": null,
+   "reference": "spur_gear(1.5, 30, 6)",
+   "volume": null,
+   "size": [
+    48,
+    48,
+    6
+   ]
+  },
+  {
+   "id": "T-hex-nut",
+   "prompt": "Сделай гайку M8: шестигранник под ключ 13 мм, высота 6.5 мм, резьбовое отверстие M8.",
+   "start": null,
+   "reference": "hex_prism(13, 6.5, bore=8)\nthread(8, internal=True)",
+   "volume": null,
+   "size": [
+    15.011,
+    13,
+    6.5
+   ]
+  },
+  {
+   "id": "T-bolt",
+   "prompt": "Сделай болт M8 длиной 40 мм: головка шестигранная под ключ 13 мм высотой 5.3 мм, стержень диаметром 8 мм, резьба на последних 20 мм.",
+   "start": null,
+   "reference": "hex_prism(13, 5.3, base=(0, 0, 0))\ncylinder(8, 40, base=(0, 0, 5.3), operation='join')\nthread(8, 20, base=(0, 0, 45.3))",
+   "volume": null,
+   "size": [
+    15.011,
+    13,
+    45.3
+   ]
+  },
+  {
+   "id": "T-threaded-shaft",
+   "prompt": "Сделай вал диаметром 10 мм длиной 50 мм с резьбой M10 по всей длине.",
+   "start": null,
+   "reference": "cylinder(10, 50, base=(0, 0, 0))\nthread(10)",
+   "volume": null,
+   "size": [
+    10,
+    10,
+    50
+   ]
+  },
+  {
+   "id": "T-threaded-hole-plate",
+   "prompt": "Сделай пластину 30 на 30 мм толщиной 10 мм с резьбовым отверстием M6 по центру насквозь.",
+   "start": null,
+   "reference": "box(30, 30, 10, corner=(0, 0, 0))\ndrill(15, 15, 10, 6, axis='Z')\nthread(6, internal=True)",
+   "volume": null,
+   "size": [
+    30,
+    30,
+    10
+   ]
+  },
+  {
+   "id": "T-gear-with-hub",
+   "prompt": "Сделай шестерню модуль 2, 16 зубьев, ширина 8 мм, сверху на ней ступица диаметром 20 мм высотой 10 мм, сквозное отверстие 6 мм по оси.",
+   "start": null,
+   "reference": "spur_gear(2, 16, 8, bore=6)\ntube(20, 6, 10, base=(0, 0, 8), operation='join')",
+   "volume": null,
+   "size": [
+    36,
+    36,
+    18
+   ]
+  },
+  {
+   "id": "T-socket-head",
+   "prompt": "Сделай винт с цилиндрической головкой: головка диаметром 13 мм высотой 8 мм с внутренним шестигранником под ключ 6 мм глубиной 4 мм, стержень диаметром 8 мм длиной 30 мм, резьба M8 на всей длине стержня.",
+   "start": null,
+   "reference": "cylinder(13, 8, base=(0, 0, 0))\ncylinder(8, 30, base=(0, 0, 8), operation='join')\nhex_socket(6, 4, center=(0, 0, 0), axis='Z')\nthread(8, base=(0, 0, 38))",
+   "volume": null,
+   "size": [
+    13,
+    13,
+    38
+   ]
+  }
+ ]
+}
