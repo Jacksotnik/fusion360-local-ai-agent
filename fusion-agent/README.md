@@ -103,7 +103,7 @@ flags apply to one run.
 
 ## Pictures
 
-**In.** Drag a PNG, JPEG or WebP file (up to 10 MB) into the terminal window or type its path: it turns
+**In.** Drag a PNG, JPEG, WebP or AVIF file (up to 10 MB) into the terminal window or type its path: it turns
 into a label like `[Image: part.png]`; add the request and press Enter. Quoted Windows paths
 (`"C:\a b\x.png"`), escaped macOS paths (`/Users/a\ b/x.png`) and `file://` links work. A copied picture
 goes in with **Alt+V** or `/paste`; on macOS also **Ctrl+V** (Cmd+V pastes text only). In Windows Terminal

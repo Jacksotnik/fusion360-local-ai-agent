@@ -83,6 +83,10 @@ class LoadImageTest(unittest.TestCase):
         path = self.save("part.webp", Image.new("RGB", (64, 64), (0, 100, 0)))
         self.assertEqual(images.load_image(path).width, 64)
 
+    def test_avif(self):
+        path = self.save("part.avif", Image.new("RGB", (64, 64), (0, 100, 0)))
+        self.assertEqual(images.load_image(path).width, 64)
+
     def test_rejects_big_files_and_non_images(self):
         path = os.path.join(self.folder, "huge.png")
         with open(path, "wb") as file:

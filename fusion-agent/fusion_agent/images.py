@@ -8,8 +8,8 @@ import urllib.request
 
 from fusion_agent import term
 
-IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
-ACCEPTED_FORMATS = ("PNG", "JPEG", "MPO", "WEBP")
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".avif")
+ACCEPTED_FORMATS = ("PNG", "JPEG", "MPO", "WEBP", "AVIF")
 MAX_FILE_BYTES = 10 * 1024 * 1024
 MAX_SIDE = 1024
 
@@ -92,7 +92,7 @@ def attachment_from_image(image, name, source_path=None):
 
 
 def load_image(path):
-    """Read a PNG/JPEG/WebP file up to 10 MB into an Attachment."""
+    """Read a PNG/JPEG/WebP/AVIF file up to 10 MB into an Attachment."""
     from PIL import Image, UnidentifiedImageError
 
     name = os.path.basename(path) or path
@@ -104,7 +104,7 @@ def load_image(path):
     try:
         with Image.open(path) as image:
             if image.format not in ACCEPTED_FORMATS:
-                raise ImageError("%s is %s; PNG, JPEG and WebP are taken" % (name, image.format))
+                raise ImageError("%s is %s; PNG, JPEG, WebP and AVIF are taken" % (name, image.format))
             image.load()
             return attachment_from_image(image, name, source_path=path)
     except (UnidentifiedImageError, OSError) as error:
@@ -129,5 +129,5 @@ def grab_clipboard():
             if path.lower().endswith(IMAGE_EXTENSIONS) and os.path.isfile(path):
                 attachments.append(load_image(path))
     if not attachments:
-        raise ImageError("the clipboard holds files, but no PNG, JPEG or WebP picture")
+        raise ImageError("the clipboard holds files, but no PNG, JPEG, WebP or AVIF picture")
     return attachments
