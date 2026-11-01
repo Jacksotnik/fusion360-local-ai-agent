@@ -176,6 +176,8 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   | plain words, `plain_holdout8` (26), **final configuration** | | **26/26, 26/26, 26/26, 25/26** | |
   | machine parts, `parts_dev` (12) | | | 12/12 |
   | the owner's exam, `exam_photo.json`: a photo of a hub flange plus sizes in words | | **PASS in 8 of 9 runs**; 142 s and 10 calls at first, 15-65 s and 2-5 calls on the final code | |
+  | bodies of revolution, `revolve_dev` (5: a two-cone vase, a sphere, a dome on a cylinder, a barrel, a knob with a rounded top), evening of 2026-11-01 | | | 3/5, 4/5, 5/5 as the helper's checks were fixed |
+  | **real designs, `gallery_holdout` (51 from the Fusion 360 Gallery data): a picture plus the steps in words** | | **43/51 (84 %)** | **48/51 (94 %)** after one prompt line about arcs |
 
   Each tuning round fixed what the previous honest set showed, in the tool rather than in the prompt
   where words had failed: sizes in centimeters copied as mm; a wall thickness counted once; the length
@@ -195,6 +197,27 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   (`cases/exam_photo.json`, the photo `cases/exam_flange.jpg` attached to the request) passed in 7 of
   8 runs (the miss: two bolt holes placed into the rim cutouts); the time fell from 142 s and 10 model
   calls to 15 s and 2 calls as the hints removed the wasted calls.
+- Bodies of revolution (evening of 2026-11-01). The owner's picture of a bottle ("diameter 100, height
+  300") came out as a stepped cylinder in 3 of 3 runs: no helper or example knew curved profiles. Added
+  `revolved_profile([(D, z), (D, z, r), (D, z, "arc"), ...])` (an outline from the bottom up: corners,
+  rounded corners, arc points for bellies, domes and waists; it prints the volume), `outline()` and
+  `arc()` for sketches with curved sides, `sphere()`, `dome()`; the prompt got a bottle example and the
+  rule that "height N" of a thing on a picture is its overall height. The bottle then came out with
+  rounded shoulders, a neck, a lip and a cap at 300 mm in 3 of 3 runs (8-16 s), though that is the
+  prompt's own example copied; the tunable `revolve_dev` set is the real measure (`results/revolve-r*/`,
+  `results/bottle-r*/`).
+- Real designs from the Fusion 360 Gallery data (Hugging Face `harrisonxliang/Fusion360Dataset`, the
+  Autodesk Gallery reconstruction set: a picture, the build history and the measured volume of 8 625
+  designs). `tools/gallery_cases.py` turns the simple ones (lines, arcs, circles; one-sided or symmetric
+  extrudes; 10..500 mm; up to four timeline steps) into tasks: the picture plus the steps in words with
+  every size in mm, a reference that replays the history with the helpers, and the Gallery's own volume
+  as the hand volume; 51 of 60 replays matched that volume and were kept (`cases/gallery_holdout.json`,
+  pictures in `cases/gallery/`). The set is honest: its first run, before any tuning, gave **43/51**,
+  six misses from one cause (an arc's through point drawn as a corner, because `outline()` was not in
+  the prompt yet), one through-all cut instead of 8 mm, one rescaling of the given points to the stated
+  size. With the `outline()` line in the prompt: **48/51**, the three misses random (a bigger diameter
+  than written, 27 mm instead of 28 "to reach the total", an empty last script). Median 12.5 s per
+  design. Summaries: `results/gallery-r1/`, `results/gallery-r2/`.
 - Temperature: `tools/run_cases.py --temperature` overrides the sampler for an experiment. On
   `plain_holdout7` 1.0, 0.3 and 0 gave exactly the same 24/25 with the same miss and the same number
   of model calls, so the app keeps the model's own sampler (1.0 / 0.95 / 64).
@@ -209,6 +232,9 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   21/23 and 20/23, every miss a disk built as a box, which is what the `cylinder()` mark fixed. A script
   repeated after CHECK OK now gets "answer the user" instead of "find what is wrong": before that, three
   correct parts per run hit the 20-call limit (200-300 s) with the model re-running a finished script.
+  After the bodies of revolution and the `outline()` prompt line (evening of 2026-11-01): **22/23, median
+  8.2 s** (`results/reg-r14/`; the miss: a chamfer put on both circular edges of a bushing's end instead
+  of the outer one, a random pick seen on the bench before), `plain_holdout8` 26/26 again, selftest 4/4.
 - The REPL was driven in a Windows pseudo-console (ConPTY, the layer Windows Terminal uses): startup
   hints, a non-empty design, a switched or closed session design, pictures by path, paste and Alt+V,
   model switching, Ctrl+C during an answer.
@@ -216,7 +242,8 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
 ## Known limits
 
 - The CAD helpers build in the root component only, sketches on the XY/XZ/YZ planes (with offsets), and no
-  threads, sweeps, lofts or text; the model can still try the raw Fusion API. In a design you made,
+  threads, sweeps, lofts or text; curved shapes are arcs in outlines and bodies of revolution
+  (`revolved_profile`, `sphere`, `dome`), not free-form surfaces; the model can still try the raw Fusion API. In a design you made,
   bodies inside components are described and checked and their parameters can be changed, but new
   features go into the root component.
 - Your own model is changed through its parameters and dimensions. A size that no dimension holds (a
