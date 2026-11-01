@@ -1,0 +1,133 @@
+{
+ "note": "Plain-language requests, fourth HONEST set: written before the final configuration (dimensioned sketches, u_bracket/l_bracket, slot error text) was run, after plain_holdout3.json had been looked at. Never tune the prompt on it; record the numbers before looking at the failures.",
+ "cases": [
+  {
+   "id": "S-lid",
+   "prompt": "Сделай крышку: круг 6 см толщиной 4 мм.",
+   "start": null,
+   "reference": "cylinder(60, 4, base=(0, 0, 0))",
+   "volume": "math.pi*30*30*4"
+  },
+  {
+   "id": "S-open-box",
+   "prompt": "Сделай ящичек 9 на 6 см высотой 4 см без крышки, стенки и дно 2.5 мм.",
+   "start": null,
+   "reference": "box(90, 60, 40, corner=(0, 0, 0))\nshell(2.5, 'top')",
+   "volume": "90*60*40 - 85*55*37.5"
+  },
+  {
+   "id": "S-bushing",
+   "prompt": "Сделай втулочку: снаружи 14 мм, дырка 10 мм, длина 2 см.",
+   "start": null,
+   "reference": "tube(14, 10, 20, base=(0, 0, 0))",
+   "volume": "math.pi*(7*7 - 5*5)*20"
+  },
+  {
+   "id": "S-edit-longer-plate",
+   "prompt": "Сделай её длиннее — 9 см.",
+   "start": "box(60, 40, 5, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(90, 40, 5, corner=(0, 0, 0))",
+   "volume": "90*40*5"
+  },
+  {
+   "id": "S-edit-narrower",
+   "prompt": "Сделай её поуже, 3 см.",
+   "start": "box(80, 50, 10, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(80, 30, 10, corner=(0, 0, 0))",
+   "volume": "80*30*10"
+  },
+  {
+   "id": "S-edit-taller-block",
+   "prompt": "Сделай брусок повыше, 4 см.",
+   "start": "box(50, 30, 20, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(50, 30, 40, corner=(0, 0, 0))",
+   "volume": "50*30*40"
+  },
+  {
+   "id": "S-peg",
+   "prompt": "Сделай колышек: палочка диаметром 6 мм длиной 5 см, а сверху на ней шляпка диаметром 12 мм высотой 3 мм.",
+   "start": null,
+   "reference": "shaft([(6, 50), (12, 3)])",
+   "volume": "math.pi*(3*3*50 + 6*6*3)"
+  },
+  {
+   "id": "S-u-rack",
+   "prompt": "Сделай стойку буквой П из полоски шириной 2.5 см и толщиной 3 мм: ширина 7 см, высота 4 см.",
+   "start": null,
+   "reference": "u_bracket(70, 40, 25, 3)",
+   "volume": "(70*3 + 2*37*3)*25"
+  },
+  {
+   "id": "S-l-corner",
+   "prompt": "Сделай уголок буквой Г из полоски шириной 2 см и толщиной 4 мм, стороны 6 и 3 см.",
+   "start": null,
+   "reference": "l_bracket(60, 30, 20, 4)",
+   "volume": "(60*4 + 26*4)*20"
+  },
+  {
+   "id": "S-plate-slot",
+   "prompt": "Сделай пластинку 6 на 3 см толщиной 3 мм с продолговатой дырочкой посередине: длина 2 см, ширина 6 мм, концы круглые.",
+   "start": null,
+   "reference": "box(60, 30, 3, corner=(0, 0, 0))\nsk = new_sketch(plane='XY')\nslot(sk, 30, 15, 20, 6)\ncut(sk)",
+   "volume": "60*30*3 - (14*6 + math.pi*3*3)*3"
+  },
+  {
+   "id": "S-stand-wall",
+   "prompt": "Сделай подставку: пластинка 10 на 5 см толщиной 6 мм, а на ней у одного длинного края стоит стенка во всю длину 10 см, толщиной 6 мм. Общая высота 5 см.",
+   "start": null,
+   "reference": "box(100, 50, 6, corner=(0, 0, 0))\nbox(100, 6, 44, corner=(0, 44, 6), operation='join')",
+   "volume": "100*50*6 + 100*6*44"
+  },
+  {
+   "id": "S-ask-thickness",
+   "prompt": "Какая у неё толщина?",
+   "start": "box(70, 40, 8, corner=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "70*40*8",
+   "answer": [[8, 0.8]]
+  },
+  {
+   "id": "S-edit-bigger-hole",
+   "prompt": "Дырку сделай пошире, 15 мм.",
+   "start": "box(50, 50, 6, corner=(0, 0, 0))\ndrill(25, 25, 0, 10, axis='Z')",
+   "reference": "clear()\nbox(50, 50, 6, corner=(0, 0, 0))\ndrill(25, 25, 0, 15, axis='Z')",
+   "volume": "50*50*6 - math.pi*7.5*7.5*6"
+  },
+  {
+   "id": "S-roller",
+   "prompt": "Сделай ролик: цилиндр диаметром 3 см и длиной 5 см, посередине по кругу канавка шириной 1 см и глубиной 3 мм.",
+   "start": null,
+   "reference": "shaft([(30, 20), (24, 10), (30, 20)])",
+   "volume": "math.pi*(15*15*40 + 12*12*10)"
+  },
+  {
+   "id": "S-edit-chamfer-vertical",
+   "prompt": "Срежь у пластины четыре вертикальных угла на 3 мм.",
+   "start": "box(60, 40, 10, corner=(0, 0, 0))",
+   "reference": "chamfer(find_edges(parallel_to='Z'), 3)",
+   "volume": "(60*40 - 4*4.5)*10"
+  },
+  {
+   "id": "S-cube-rounded-vertical",
+   "prompt": "Сделай кубик 3 см и закругли ему четыре вертикальных ребра на 5 мм.",
+   "start": null,
+   "reference": "box(30, 30, 30, corner=(0, 0, 0), corner_radius=5)",
+   "volume": "(30*30 - (4 - math.pi)*5*5)*30"
+  },
+  {
+   "id": "S-edit-remove-hole",
+   "prompt": "Убери дырку, пусть будет сплошная пластина.",
+   "start": "box(60, 40, 5, corner=(0, 0, 0))\ndrill(30, 20, 0, 8, axis='Z')",
+   "reference": "clear()\nbox(60, 40, 5, corner=(0, 0, 0))",
+   "volume": "60*40*5"
+  },
+  {
+   "id": "S-ask-weight",
+   "prompt": "Сколько весит?",
+   "start": "cylinder(40, 10, base=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "math.pi*20*20*10",
+   "answer": [[98.65, 0.09865]]
+  }
+ ]
+}

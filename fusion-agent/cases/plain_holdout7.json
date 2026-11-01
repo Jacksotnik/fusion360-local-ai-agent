@@ -1,0 +1,199 @@
+{
+ "note": "Plain-language requests, seventh HONEST set: written 2026-11-01 after plain_holdout6.json had been looked at and the configuration tuned on it (wall_on_edge, slot volume, bracket sides, rebuilt-without-clear hint). Never tune the prompt on it; record the numbers before looking at the failures.",
+ "cases": [
+  {
+   "id": "T-coin",
+   "prompt": "Сделай монетку диаметром 25 мм толщиной 2 мм.",
+   "start": null,
+   "reference": "cylinder(25, 2, base=(0, 0, 0))",
+   "volume": "math.pi*12.5*12.5*2"
+  },
+  {
+   "id": "T-thin-ring",
+   "prompt": "Сделай колечко: снаружи 30 мм, внутри 26 мм, высотой 5 мм.",
+   "start": null,
+   "reference": "tube(30, 26, 5, base=(0, 0, 0))",
+   "volume": "math.pi*(15*15 - 13*13)*5"
+  },
+  {
+   "id": "T-pot",
+   "prompt": "Сделай горшочек: цилиндр диаметром 6 см высотой 5 см, открытый сверху, стенки и дно по 3 мм.",
+   "start": null,
+   "reference": "cylinder(60, 50, base=(0, 0, 0))\nshell(3, 'top')",
+   "volume": "math.pi*(30*30*50 - 27*27*47)"
+  },
+  {
+   "id": "T-bin",
+   "prompt": "Сделай ящик без крышки 10 на 7 см, высотой 5 см, стенки 3 мм и дно 3 мм.",
+   "start": null,
+   "reference": "box(100, 70, 50, corner=(0, 0, 0))\nshell(3, 'top')",
+   "volume": "100*70*50 - 94*64*47"
+  },
+  {
+   "id": "T-bar-three-holes",
+   "prompt": "Сделай планку 9 на 3 см толщиной 4 мм с тремя дырками 5 мм в ряд посередине: одна по центру и по одной в 15 мм от каждого короткого края.",
+   "start": null,
+   "reference": "box(90, 30, 4, corner=(0, 0, 0))\nholes([(15, 15), (45, 15), (75, 15)], 5)",
+   "volume": "90*30*4 - 3*math.pi*2.5*2.5*4"
+  },
+  {
+   "id": "T-rivet",
+   "prompt": "Сделай заклёпку: стерженёк диаметром 5 мм длиной 12 мм, сверху на нём головка диаметром 10 мм высотой 3 мм.",
+   "start": null,
+   "reference": "shaft([(5, 12), (10, 3)])",
+   "volume": "math.pi*(2.5*2.5*12 + 5*5*3)"
+  },
+  {
+   "id": "T-two-step-axle",
+   "prompt": "Сделай ступенчатую ось: толстая часть диаметром 16 мм длиной 30 мм, за ней тонкая диаметром 10 мм длиной 20 мм.",
+   "start": null,
+   "reference": "shaft([(16, 30), (10, 20)])",
+   "volume": "math.pi*(8*8*30 + 5*5*20)"
+  },
+  {
+   "id": "T-roller-groove",
+   "prompt": "Сделай ролик диаметром 5 см длиной 3 см, посередине по кругу канавка шириной 8 мм и глубиной 4 мм.",
+   "start": null,
+   "reference": "cylinder(50, 30, base=(0, 0, 0))\ngroove(50, 8, 4, center=(0, 0, 15))",
+   "volume": "math.pi*(25*25*30 - (25*25 - 21*21)*8)"
+  },
+  {
+   "id": "T-u-stand",
+   "prompt": "Сделай подставку буквой П: ширина 6 см, высота 35 мм, из полоски 20 мм шириной и 2.5 мм толщиной.",
+   "start": null,
+   "reference": "u_bracket(60, 35, 20, 2.5)",
+   "volume": "(60*2.5 + 2*32.5*2.5)*20"
+  },
+  {
+   "id": "T-l-angle",
+   "prompt": "Сделай уголок буквой Г со сторонами 3 и 5 см из полоски шириной 15 мм, толщина 2 мм.",
+   "start": null,
+   "reference": "l_bracket(30, 50, 15, 2)",
+   "volume": "(30 + 50 - 2)*2*15"
+  },
+  {
+   "id": "T-slot-plate",
+   "prompt": "Сделай пластинку 7 на 4 см толщиной 5 мм, в центре продолговатое отверстие с круглыми концами длиной 25 мм и шириной 8 мм.",
+   "start": null,
+   "reference": "box(70, 40, 5, corner=(0, 0, 0))\nsk = new_sketch(plane='XY')\nslot(sk, 35, 20, 25, 8)\ncut(sk)",
+   "volume": "70*40*5 - (17*8 + math.pi*4*4)*5"
+  },
+  {
+   "id": "T-lid-rim",
+   "prompt": "Сделай крышечку: кружок диаметром 5 см толщиной 3 мм, по краю сверху бортик высотой 5 мм и толщиной 2 мм.",
+   "start": null,
+   "reference": "cylinder(50, 3, base=(0, 0, 0))\ntube(50, 46, 5, base=(0, 0, 3), operation='join')",
+   "volume": "math.pi*(25*25*3 + (25*25 - 23*23)*5)"
+  },
+  {
+   "id": "T-stand-long",
+   "prompt": "Сделай подставку: дощечка 10 на 4 см толщиной 5 мм, вдоль длинного края на ней стоит стенка толщиной 5 мм, общая высота 3 см.",
+   "start": null,
+   "reference": "box(100, 40, 5, corner=(0, 0, 0))\nwall_on_edge(5, 25, edge='long')",
+   "volume": "100*40*5 + 100*5*25"
+  },
+  {
+   "id": "T-stand-short",
+   "prompt": "Сделай подставку: пластинка 9 на 5 см толщиной 6 мм, у короткого края стоит стенка во всю ширину толщиной 6 мм, общая высота 4 см.",
+   "start": null,
+   "reference": "box(90, 50, 6, corner=(0, 0, 0))\nwall_on_edge(6, 34, edge='short')",
+   "volume": "90*50*6 + 6*50*34"
+  },
+  {
+   "id": "T-block-boss",
+   "prompt": "Сделай брусок 5 на 4 см высотой 1 см, а сверху на нём посередине кружок диаметром 2 см высотой 6 мм.",
+   "start": null,
+   "reference": "box(50, 40, 10, corner=(0, 0, 0))\ncylinder(20, 6, base=(25, 20, 10), operation='join')",
+   "volume": "50*40*10 + math.pi*10*10*6"
+  },
+  {
+   "id": "T-cube-cross-hole",
+   "prompt": "Сделай кубик 3 см и просверли его сбоку насквозь дыркой 8 мм через середину.",
+   "start": null,
+   "reference": "box(30, 30, 30, corner=(0, 0, 0))\ndrill(0, 15, 15, 8, axis='X')",
+   "volume": "30*30*30 - math.pi*4*4*30"
+  },
+  {
+   "id": "T-blind-center",
+   "prompt": "Сделай цилиндр диаметром 4 см высотой 25 мм и в нём сверху по центру дырку 12 мм глубиной 15 мм, не насквозь.",
+   "start": null,
+   "reference": "cylinder(40, 25, base=(0, 0, 0))\ndrill(0, 0, 25, 12, axis='Z', depth=15)",
+   "volume": "math.pi*(20*20*25 - 6*6*15)"
+  },
+  {
+   "id": "T-cube-round-vertical",
+   "prompt": "Сделай кубик 25 мм и закругли его четыре вертикальных ребра радиусом 3 мм.",
+   "start": null,
+   "reference": "box(25, 25, 25, corner=(0, 0, 0), corner_radius=3)",
+   "volume": "(25*25 - (4 - math.pi)*3*3)*25"
+  },
+  {
+   "id": "T-edit-wider",
+   "prompt": "Расширь пластину до 7 см.",
+   "start": "box(100, 50, 5, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(100, 70, 5, corner=(0, 0, 0))",
+   "volume": "100*70*5"
+  },
+  {
+   "id": "T-edit-thicker",
+   "prompt": "Сделай её потолще, 10 мм.",
+   "start": "box(60, 40, 5, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(60, 40, 10, corner=(0, 0, 0))",
+   "volume": "60*40*10"
+  },
+  {
+   "id": "T-edit-hole-12",
+   "prompt": "Дырку сделай 12 мм.",
+   "start": "box(50, 50, 8, corner=(0, 0, 0))\ndrill(25, 25, 0, 8, axis='Z')",
+   "reference": "clear()\nbox(50, 50, 8, corner=(0, 0, 0))\ndrill(25, 25, 0, 12, axis='Z')",
+   "volume": "50*50*8 - math.pi*6*6*8"
+  },
+  {
+   "id": "T-edit-chamfer-top",
+   "prompt": "Притупи верхние края пластины на 2 мм.",
+   "start": "box(60, 40, 10, corner=(0, 0, 0))",
+   "reference": "chamfer(find_edges(z=10), 2)",
+   "volume": "60*40*10 - (2*2*(60 + 40) - 4*2*2*2/3)"
+  },
+  {
+   "id": "T-ask-width",
+   "prompt": "Какая у неё ширина?",
+   "start": "box(70, 45, 5, corner=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "70*45*5",
+   "answer": [
+    [
+     45,
+     4.5
+    ]
+   ]
+  },
+  {
+   "id": "T-ask-holes-count",
+   "prompt": "Сколько тут дырок?",
+   "start": "box(60, 40, 5, corner=(0, 0, 0))\nholes([(15, 20), (45, 20)], 6)",
+   "reference": "pass",
+   "volume": "60*40*5 - 2*math.pi*3*3*5",
+   "answer": [
+    [
+     2,
+     "две",
+     "два"
+    ]
+   ]
+  },
+  {
+   "id": "T-ask-mass",
+   "prompt": "Сколько весит эта штука?",
+   "start": "cylinder(50, 10, base=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "math.pi*25*25*10",
+   "answer": [
+    [
+     154,
+     0.154
+    ]
+   ]
+  }
+ ]
+}

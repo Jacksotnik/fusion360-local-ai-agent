@@ -1,0 +1,33 @@
+{
+ "note": "Plain-language requests, tunable set 2 (2026-11-01): walls on an edge (wall_on_edge), bracket sides named after the strip, a slot's volume. The prompt may be tuned on it.",
+ "cases": [
+  {
+   "id": "E-wall-long",
+   "prompt": "Сделай подставку: дощечка 11 на 5 см толщиной 6 мм, вдоль одного длинного края на ней стоит стенка толщиной 6 мм, общая высота 35 мм.",
+   "start": null,
+   "reference": "box(110, 50, 6, corner=(0, 0, 0))\nwall_on_edge(6, 29, edge='long')",
+   "volume": "110*50*6 + 110*6*29"
+  },
+  {
+   "id": "E-wall-short",
+   "prompt": "Сделай подставку: пластинка 8 на 4 см толщиной 5 мм, у одного короткого края стоит стенка во всю ширину, толщиной 5 мм, общая высота 3 см.",
+   "start": null,
+   "reference": "box(80, 40, 5, corner=(0, 0, 0))\nwall_on_edge(5, 25, edge='short')",
+   "volume": "80*40*5 + 5*40*25"
+  },
+  {
+   "id": "E-l-sides-last",
+   "prompt": "Сделай уголок буквой Г: полоска 3 см шириной и 4 мм толщиной, стороны 6 и 4 см.",
+   "start": null,
+   "reference": "l_bracket(60, 40, 30, 4)",
+   "volume": "(60 + 40 - 4)*4*30"
+  },
+  {
+   "id": "E-slot-volume",
+   "prompt": "Сделай полоску 9 на 2 см толщиной 4 мм, по центру прорезь с круглыми концами длиной 3 см и шириной 8 мм.",
+   "start": null,
+   "reference": "box(90, 20, 4, corner=(0, 0, 0))\nsk = new_sketch(plane='XY')\nslot(sk, 45, 10, 30, 8)\ncut(sk)",
+   "volume": "90*20*4 - (22*8 + math.pi*4*4)*4"
+  }
+ ]
+}

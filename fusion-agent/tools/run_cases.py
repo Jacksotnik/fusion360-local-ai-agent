@@ -30,6 +30,7 @@ sys.path.insert(0, APP_ROOT)
 from fusion_agent import fusion_scripts  # noqa: E402
 from fusion_agent.agent import TUNED_MODEL, Agent, load_prompt, loggable, must, wrap_script  # noqa: E402
 from fusion_agent.cad_api import CAD_PRELUDE  # noqa: E402
+from fusion_agent import images  # noqa: E402
 from fusion_agent.fusion_mcp import FusionMcp  # noqa: E402
 from fusion_agent.models import model_info  # noqa: E402
 from fusion_agent.ollama import Ollama  # noqa: E402
@@ -157,8 +158,11 @@ def run_case(bench, case, cache, ollama, details, args, system_prompt, out_dir):
     try:
         agent = Agent(bench.fusion, ollama, bench.session.session_id, model=args.model, think=args.think,
                       has_vision=details["has_vision"], has_thinking=details["has_thinking"],
-                      system_prompt=system_prompt)
-        result = agent.turn(case["prompt"])
+                      system_prompt=system_prompt, temperature=args.temperature)
+        pictures = []
+        for image_name in case.get("images", []):
+            pictures.append(images.load_image(os.path.join(APP_ROOT, "cases", image_name)).base64)
+        result = agent.turn(case["prompt"], images=pictures or None)
         actual = bench.signature()
         record.update({"status": result["status"], "calls": result["calls"], "nudges": result["nudges"],
                        "turn_seconds": result["seconds"], "actual": actual, "answer": result["final_answer"],
@@ -186,8 +190,9 @@ def write_summary(records, out_dir, args):
     lines = [
         "# %s" % args.tag,
         "",
-        "fusion-agent loop, model `%s`, prompt `%s`, think=%s; tasks: %s." % (
-            args.model, args.prompt, args.think, ", ".join(os.path.basename(name) for name in args.files)),
+        "fusion-agent loop, model `%s`, prompt `%s`, think=%s, temperature=%s; tasks: %s." % (
+            args.model, args.prompt, args.think, "model's own" if args.temperature is None else args.temperature,
+            ", ".join(os.path.basename(name) for name in args.files)),
         "",
         "Passed %d/%d; time per task: median %.1f s, max %.1f s." % (
             passed, len(records), statistics.median(seconds) if seconds else 0, max(seconds) if seconds else 0),
@@ -215,6 +220,8 @@ def main():
     parser.add_argument("--model", default=TUNED_MODEL)
     parser.add_argument("--prompt", default="cad12", help="prompt name in fusion_agent/prompts/")
     parser.add_argument("--think", action="store_true")
+    parser.add_argument("--temperature", type=float, default=None,
+                        help="override the model's sampler temperature (default: the Modelfile's)")
     parser.add_argument("--cases", help="comma-separated task ids to run (default: all)")
     parser.add_argument("--check-references", action="store_true", help="only build and check the references")
     args = parser.parse_args()

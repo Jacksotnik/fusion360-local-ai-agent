@@ -165,23 +165,48 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   |---|---|---|---|
   | plain words, `plain_holdout` (25) | 20/25, 21/25 | 23/25, 22/25 | 25/25, 25/25, 24/25 |
   | plain words, `plain_holdout2` (20) | | 16/20, 19/20 | |
-  | plain words, `plain_holdout3` (18), final configuration | | 16/18, 15/18 | |
-  | your own models, `user_models_holdout` (11) | 9/11 | 11/11, 11/11, 11/11 | |
-  | plain words, `plain_dev` (25) | | | 25/25, 25/25 |
+  | plain words, `plain_holdout3` (18) | | 16/18, 15/18 | 18/18 |
+  | your own models, `user_models_holdout` (11) | 9/11 | 11/11, 11/11, 11/11 | 11/11 (dimensioned sketches) |
+  | plain words, `plain_dev` (25) | | | 25/25, 25/25, 25/25 |
   | your own models, `user_models_dev` (12) | | | 12/12 (four runs) |
+  | plain words, `plain_holdout4` (18), 2026-11-01 | | 16/18, 16/18 | 18/18 |
+  | plain words, `plain_holdout5` (22) | | 19/22, 20/22 | 22/22 |
+  | plain words, `plain_holdout6` (24) | | 22/24, 23/24 | 22/24 |
+  | plain words, `plain_holdout7` (25) | | 23/25, 23/25 | 24/25 (the same at temperature 0.3 and 0) |
+  | plain words, `plain_holdout8` (26), **final configuration** | | **26/26, 26/26, 26/26** | |
+  | machine parts, `parts_dev` (12) | | | 12/12 |
+  | the owner's exam, `exam_photo.json`: a photo of a hub flange plus sizes in words | | **PASS in 7 of 8 runs**; 142 s and 10 calls at first, **15 s and 2 calls** on the final code | |
 
-  Each tuning round fixed what the previous honest set showed (sizes in centimeters copied as mm, a
-  wall thickness counted once instead of on each side, a fillet of a round edge listed as a diameter);
-  the newest honest set, written before the final configuration ran, gives about 86 %. Its misses:
-  "make it shorter" on a plate the app built (the model changes the thickness dimension), the argument
-  order of a П-shaped strip, a rounded slot made rectangular. Questions are answered in 2-5 s.
-  Summaries: `results/plain-*/`, `results/user-*/`.
+  Each tuning round fixed what the previous honest set showed, in the tool rather than in the prompt
+  where words had failed: sizes in centimeters copied as mm; a wall thickness counted once; the length
+  of a plate changed through its thickness (sketches now carry dimensions named "length" and "width",
+  and an edit verb in the request gets that name next to it, as a disk gets `cylinder()` next to its
+  name: the copy sent to the model carries these marks, your text stays as typed); the П- and Г-brackets (`u_bracket`,
+  `l_bracket` with named arguments); a wall along an edge put along the wrong edge (`wall_on_edge`);
+  a groove's width given to the flanks (`groove`); a bead around a disk built from boxes; a part
+  rebuilt on top of the earlier attempt (check() now says so); a correct part re-run eight times
+  because the model's own check numbers were wrong (a STOP text after the third identical script,
+  check() accepts the size across rim cutouts and spline sizes with a note). The last honest set,
+  written after all of that, passes 26/26 twice. Questions are answered in 2-5 s.
+  Summaries: `results/plain-*/`, `results/user-*/`, `results/exam-*/`.
+- Machine parts of the exam's kind (`cases/parts_dev.json`, 12, tunable: a splined hub and shaft, rim
+  notches, a hub fillet, a face recess, a keyway, counterbores, a chamfered boss) drove the helpers
+  `spline_hole`, `spline_shaft`, `rim_cutouts`, `rim_cutout_area`, `groove`, `keyway`. The exam itself
+  (`cases/exam_photo.json`, the photo `cases/exam_flange.jpg` attached to the request) passed in 7 of
+  8 runs (the miss: two bolt holes placed into the rim cutouts); the time fell from 142 s and 10 model
+  calls to 15 s and 2 calls as the hints removed the wasted calls.
+- Temperature: `tools/run_cases.py --temperature` overrides the sampler for an experiment. On
+  `plain_holdout7` 1.0, 0.3 and 0 gave exactly the same 24/25 with the same miss and the same number
+  of model calls, so the app keeps the model's own sampler (1.0 / 0.95 / 64).
 - No regression against the bench: `tools/ladder_regression.py` runs fusion-ladder's graded tasks
   (`cases.json`, 11, and `cases_holdout2.json`, 12) through this package's loop and compares with the
   bench's reference geometry. With `gemma4-12b:q8_0`, fast mode, 2026-10-31: **23/23 and 22/23, median
   7.4 s per task** (the bench itself: 23/23, median 9-10 s). The one failure was the model reading "total
   length 20" of a flanged bushing as 20 + 3 mm. Summaries: `results/reg-r1/`, `results/reg-r2/`. With the
-  changes for plain words and your own models: **23/23, median 7.4 s** (`results/reg-r9/`).
+  changes for plain words and your own models: **23/23, median 7.4 s** (`results/reg-r9/`). With the
+  final code of 2026-11-01 (helpers for machine parts, hints, request marks): **23/23, median 7.7 s**
+  (`results/reg-r12/`); the two runs before the request marks gave 21/23 and 20/23, every miss a disk
+  built as a box, which is what the `cylinder()` mark fixed.
 - The REPL was driven in a Windows pseudo-console (ConPTY, the layer Windows Terminal uses): startup
   hints, a non-empty design, a switched or closed session design, pictures by path, paste and Alt+V,
   model switching, Ctrl+C during an answer.
@@ -194,10 +219,15 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   features go into the root component.
 - Your own model is changed through its parameters and dimensions. A size that no dimension holds (a
   sketch drawn without sizes, an imported body) is changed by adding or cutting material.
-- The weakest edit is the length or width of a plate the app built itself ("make it shorter, 7 cm"):
-  the model sometimes changes the thickness instead. `/undo` and "build it again 70 x 50 x 8 mm" fix it.
+- Edits of a plate the app built itself go through named dimensions ("length", "width", the extrude's
+  thickness); a verb the app does not know (not расширь / сузь / удлини / укороти / длиннее / короче /
+  шире / уже) leaves the choice to the model. `/undo` and "build it again 70 x 50 x 8 mm" fix a wrong pick.
 - The weak spot of the 12B model is spatial placement in parts of many operations (which end, which
-  flange, groove width versus depth). `/think on` helps, at 3-4 times the time.
+  flange). A part of five or six operations (the exam flange) takes 3-5 model calls and about a minute:
+  the first script usually has one wrong argument order or check() expectation, and the tool's hint
+  fixes it on the next call. `/think on` helps, at 3-4 times the time.
+- Rim cutouts, splines and keyways are straight-sided and along Z (`rim_cutouts`, `spline_hole`,
+  `spline_shaft`, `keyway`); involute splines, helical grooves and threads are not modelled.
 - `/undo` restores the timeline and changed dimensions; a change made outside them is reported, and
   Fusion's own Undo goes further.
 - **macOS is untested**: launchers, process check, memory check, clipboard and inline pictures were

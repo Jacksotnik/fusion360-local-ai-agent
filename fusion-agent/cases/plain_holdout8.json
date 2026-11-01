@@ -1,0 +1,205 @@
+{
+ "note": "Plain-language requests, eighth HONEST set: written 2026-11-01 after plain_holdout7.json had been looked at and the configuration tuned on it (width vs length rule, rim inside the disk, wall_on_edge refuses disks, rim_cutouts prints the new size, the repeat stop). Never tune the prompt on it; record the numbers before looking at the failures.",
+ "cases": [
+  {
+   "id": "U-token",
+   "prompt": "Сделай жетон: кружок 3 см, толщина 2.5 мм.",
+   "start": null,
+   "reference": "cylinder(30, 2.5, base=(0, 0, 0))",
+   "volume": "math.pi*15*15*2.5"
+  },
+  {
+   "id": "U-spacer",
+   "prompt": "Сделай проставку: трубочка снаружи 12 мм, внутри 8 мм, длиной 15 мм.",
+   "start": null,
+   "reference": "tube(12, 8, 15, base=(0, 0, 0))",
+   "volume": "math.pi*(6*6 - 4*4)*15"
+  },
+  {
+   "id": "U-vase",
+   "prompt": "Сделай вазочку: цилиндр диаметром 4 см высотой 7 см, открытый сверху, стенки и дно 2.5 мм.",
+   "start": null,
+   "reference": "cylinder(40, 70, base=(0, 0, 0))\nshell(2.5, 'top')",
+   "volume": "math.pi*(20*20*70 - 17.5*17.5*67.5)"
+  },
+  {
+   "id": "U-case",
+   "prompt": "Сделай коробочку без крышки 5 на 3 см высотой 2 см, стенки и дно по 1.5 мм.",
+   "start": null,
+   "reference": "box(50, 30, 20, corner=(0, 0, 0))\nshell(1.5, 'top')",
+   "volume": "50*30*20 - 47*27*18.5"
+  },
+  {
+   "id": "U-plate-corner-holes",
+   "prompt": "Сделай пластинку 6 на 4 см толщиной 3 мм, в четырёх углах дырки 4 мм, каждая в 6 мм от обоих краёв.",
+   "start": null,
+   "reference": "box(60, 40, 3, corner=(0, 0, 0))\nholes([(6, 6), (54, 6), (6, 34), (54, 34)], 4)",
+   "volume": "60*40*3 - 4*math.pi*2*2*3"
+  },
+  {
+   "id": "U-thumbtack",
+   "prompt": "Сделай кнопку: иголка диаметром 2 мм длиной 10 мм, сверху на ней шляпка диаметром 10 мм толщиной 2 мм.",
+   "start": null,
+   "reference": "shaft([(2, 10), (10, 2)])",
+   "volume": "math.pi*(1*1*10 + 5*5*2)"
+  },
+  {
+   "id": "U-three-step",
+   "prompt": "Сделай ступенчатый валик: ступеньки подряд диаметром 24 мм длиной 12, диаметром 18 длиной 18 и диаметром 12 длиной 10 мм.",
+   "start": null,
+   "reference": "shaft([(24, 12), (18, 18), (12, 10)])",
+   "volume": "math.pi*(12*12*12 + 9*9*18 + 6*6*10)"
+  },
+  {
+   "id": "U-spool",
+   "prompt": "Сделай катушку: цилиндр диаметром 4 см длиной 6 см, посередине по кругу канавка шириной 3 см и глубиной 1 см.",
+   "start": null,
+   "reference": "cylinder(40, 60, base=(0, 0, 0))\ngroove(40, 30, 10, center=(0, 0, 30))",
+   "volume": "math.pi*(20*20*60 - (20*20 - 10*10)*30)"
+  },
+  {
+   "id": "U-u-bracket",
+   "prompt": "Сделай скобу буквой П: ширина 4 см, высота 25 мм, полоска 12 мм шириной, толщина 2 мм.",
+   "start": null,
+   "reference": "u_bracket(40, 25, 12, 2)",
+   "volume": "(40*2 + 2*23*2)*12"
+  },
+  {
+   "id": "U-l-bracket",
+   "prompt": "Сделай уголок буквой Г из полоски шириной 25 мм и толщиной 3 мм, стороны 4 и 3 см.",
+   "start": null,
+   "reference": "l_bracket(40, 30, 25, 3)",
+   "volume": "(40 + 30 - 3)*3*25"
+  },
+  {
+   "id": "U-slot-bar",
+   "prompt": "Сделай планочку 6 на 2 см толщиной 3 мм с продолговатой дырочкой посередине: длина 2 см, ширина 5 мм, концы круглые.",
+   "start": null,
+   "reference": "box(60, 20, 3, corner=(0, 0, 0))\nsk = new_sketch(plane='XY')\nslot(sk, 30, 10, 20, 5)\ncut(sk)",
+   "volume": "60*20*3 - (15*5 + math.pi*2.5*2.5)*3"
+  },
+  {
+   "id": "U-coaster-rim",
+   "prompt": "Сделай подставку под стакан: кружок диаметром 9 см толщиной 4 мм, по краю сверху бортик высотой 3 мм и толщиной 3 мм.",
+   "start": null,
+   "reference": "cylinder(90, 4, base=(0, 0, 0))\ntube(90, 84, 3, base=(0, 0, 4), operation='join')",
+   "volume": "math.pi*(45*45*4 + (45*45 - 42*42)*3)"
+  },
+  {
+   "id": "U-stand-wall-long",
+   "prompt": "Сделай подставку: дощечка 8 на 5 см толщиной 6 мм, вдоль длинного края на ней стоит стенка толщиной 6 мм, общая высота 36 мм.",
+   "start": null,
+   "reference": "box(80, 50, 6, corner=(0, 0, 0))\nwall_on_edge(6, 30, edge='long')",
+   "volume": "80*50*6 + 80*6*30"
+  },
+  {
+   "id": "U-stand-wall-short",
+   "prompt": "Сделай подставку: пластинка 12 на 5 см толщиной 5 мм, у короткого края стоит стенка во всю ширину толщиной 5 мм, общая высота 25 мм.",
+   "start": null,
+   "reference": "box(120, 50, 5, corner=(0, 0, 0))\nwall_on_edge(5, 20, edge='short')",
+   "volume": "120*50*5 + 5*50*20"
+  },
+  {
+   "id": "U-block-boss",
+   "prompt": "Сделай брусок 6 на 3 см высотой 12 мм, сверху посередине на нём круглая бобышка диаметром 16 мм высотой 8 мм.",
+   "start": null,
+   "reference": "box(60, 30, 12, corner=(0, 0, 0))\ncylinder(16, 8, base=(30, 15, 12), operation='join')",
+   "volume": "60*30*12 + math.pi*8*8*8"
+  },
+  {
+   "id": "U-cube-side-hole",
+   "prompt": "Сделай кубик 2 см и просверли через его середину сбоку сквозную дырку 5 мм.",
+   "start": null,
+   "reference": "box(20, 20, 20, corner=(0, 0, 0))\ndrill(0, 10, 10, 5, axis='X')",
+   "volume": "20*20*20 - math.pi*2.5*2.5*20"
+  },
+  {
+   "id": "U-blind-disk",
+   "prompt": "Сделай кружок диаметром 5 см толщиной 15 мм, сверху в центре дырка 8 мм глубиной 10 мм, не насквозь.",
+   "start": null,
+   "reference": "cylinder(50, 15, base=(0, 0, 0))\ndrill(0, 0, 15, 8, axis='Z', depth=10)",
+   "volume": "math.pi*(25*25*15 - 4*4*10)"
+  },
+  {
+   "id": "U-cube-chamfer-vertical",
+   "prompt": "Сделай кубик 3 см и сними 3 мм с четырёх вертикальных углов.",
+   "start": null,
+   "reference": "box(30, 30, 30, corner=(0, 0, 0))\nchamfer(find_edges(parallel_to='Z'), 3)",
+   "volume": "(30*30 - 4*4.5)*30"
+  },
+  {
+   "id": "U-edit-longer",
+   "prompt": "Сделай пластину длиннее, 15 см.",
+   "start": "box(100, 50, 5, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(150, 50, 5, corner=(0, 0, 0))",
+   "volume": "150*50*5"
+  },
+  {
+   "id": "U-edit-narrower",
+   "prompt": "Сузь пластину до 3 см.",
+   "start": "box(80, 50, 6, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(80, 30, 6, corner=(0, 0, 0))",
+   "volume": "80*30*6"
+  },
+  {
+   "id": "U-edit-thinner",
+   "prompt": "Сделай её тоньше, 4 мм.",
+   "start": "box(60, 60, 8, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(60, 60, 4, corner=(0, 0, 0))",
+   "volume": "60*60*4"
+  },
+  {
+   "id": "U-edit-hole-smaller",
+   "prompt": "Дырку сделай поменьше, 5 мм.",
+   "start": "box(40, 40, 6, corner=(0, 0, 0))\ndrill(20, 20, 0, 10, axis='Z')",
+   "reference": "clear()\nbox(40, 40, 6, corner=(0, 0, 0))\ndrill(20, 20, 0, 5, axis='Z')",
+   "volume": "40*40*6 - math.pi*2.5*2.5*6"
+  },
+  {
+   "id": "U-edit-fillet-vertical",
+   "prompt": "Закругли вертикальные углы бруска радиусом 5 мм.",
+   "start": "box(50, 30, 20, corner=(0, 0, 0))",
+   "reference": "fillet(find_edges(parallel_to='Z'), 5)",
+   "volume": "(50*30 - (4 - math.pi)*5*5)*20"
+  },
+  {
+   "id": "U-ask-height",
+   "prompt": "Какая у неё высота?",
+   "start": "box(40, 40, 25, corner=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "40*40*25",
+   "answer": [
+    [
+     25,
+     2.5
+    ]
+   ]
+  },
+  {
+   "id": "U-ask-outer",
+   "prompt": "Какой у втулки наружный диаметр?",
+   "start": "tube(30, 20, 15, base=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "math.pi*(15*15 - 10*10)*15",
+   "answer": [
+    [
+     30,
+     3
+    ]
+   ]
+  },
+  {
+   "id": "U-ask-mass",
+   "prompt": "Сколько весит?",
+   "start": "box(100, 50, 10, corner=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "100*50*10",
+   "answer": [
+    [
+     392.5,
+     0.3925
+    ]
+   ]
+  }
+ ]
+}

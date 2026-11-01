@@ -34,6 +34,11 @@ TOO_LONG_TEXT = ("Твой ответ оборвался: он слишком д
 REPEAT_TEXT = ("Note: this is exactly the script you already ran, with the same result. Repeating it will not "
                "help. Read the message again, find which number or which part is wrong, and change the approach.")
 
+REPEAT_STOP_TEXT = ("STOP: you have run this exact script %d times and got this exact result every time. The part "
+                    "is most likely right and the numbers in your check() are wrong. Use the Measured line: run "
+                    "check() only with the numbers you are sure of (or without size= and volume=), and when it says "
+                    "CHECK OK, answer the user.")
+
 NUDGE_TEXT = ("Модель в Fusion не изменилась: геометрия та же, что была до задачи. "
               "Сделай это через fusion_script и проверь результат.")
 
@@ -136,7 +141,19 @@ def short_error(traceback_text, model_script):
         model_lines = model_script.splitlines()
         if 1 <= model_line <= len(model_lines):
             location = "line %d of your script: %s\n" % (model_line, model_lines[model_line - 1].strip())
-    return "Script failed.\n" + location + message
+    return "Script failed.\n" + location + message + helper_signature_hint(message)
+
+
+def helper_signature_hint(message):
+    """For a TypeError about a helper's arguments, the helper's real signature from the prelude."""
+    match = re.search(r"TypeError: (\w+)\(\) (?:missing|takes|got)", message)
+    if not match:
+        return ""
+    name = match.group(1)
+    signature = re.search(r"^def %s\((.*?)\):" % re.escape(name), CAD_PRELUDE, re.MULTILINE)
+    if not signature:
+        return ""
+    return "\nThe helper is %s(%s): give every argument in this order." % (name, signature.group(1))
 
 
 def truncate(text):
@@ -230,6 +247,38 @@ def with_millimeters(request):
     return text
 
 
+# An edit verb and the dimension it means, in the words describe() uses for the dimensions it lists.
+# The model picked the first dimension for "расширь" through four prompt rules; the name next to the
+# verb is what it copies.
+# A round part named in everyday words gets the helper that makes it: the model built a диск as a box
+# in three bench tasks of one run although the prompt says what a disk is.
+SHAPE_HINTS = [
+    (re.compile(r"(?<!\w)(диск\w*|кружо\w*|кружк\w*|круг(?!у)\w*|колёсик\w*|колесик\w*|ролик\w*|монет\w*|жетон\w*)(?!\w)", re.IGNORECASE), "cylinder()"),
+]
+
+
+def with_shape_hints(request):
+    """The request with the helper's name after a round part's everyday name: "диск [cylinder()] диаметром 60"."""
+    text = request
+    for pattern, name in SHAPE_HINTS:
+        text = pattern.sub(lambda match: "%s [%s]" % (match.group(0), name), text, count=1)
+    return text
+
+
+DIMENSION_HINTS = [
+    (re.compile(r"(?<!\w)(расшир\w*|шире|пошире|поуже|уже|суз\w*|сузь|ширин\w*)(?!\w)", re.IGNORECASE), "width"),
+    (re.compile(r"(?<!\w)(удлин\w*|длинне\w*|подлинне\w*|короч\w*|укорот\w*|длин\w*)(?!\w)", re.IGNORECASE), "length"),
+]
+
+
+def with_dimension_hints(request):
+    """The request with the dimension name after an edit verb: "Расширь [width] пластину до 7 см"."""
+    text = request
+    for pattern, name in DIMENSION_HINTS:
+        text = pattern.sub(lambda match: "%s [%s]" % (match.group(0), name), text, count=1)
+    return text
+
+
 def state_prefix(state):
     """The text put before the request: the describe() output, or a note that the design is empty."""
     lines = [line.strip() for line in state.splitlines() if line.strip()]
@@ -239,18 +288,24 @@ def state_prefix(state):
 
 
 class RepeatDetector:
-    """Flags a tool call that is exactly the previous one and got exactly the same output."""
+    """Flags a tool call that is exactly the previous one and got exactly the same output.
+    check() returns how many times in a row the call has been repeated: 0 for a new call."""
 
     def __init__(self):
         self.previous_key = None
         self.previous_output = None
+        self.repeats = 0
 
     def check(self, call, output):
         call_key = json.dumps(call.get("function", {}), sort_keys=True, ensure_ascii=False)
         is_repeat = call_key == self.previous_key and output == self.previous_output
+        if is_repeat:
+            self.repeats += 1
+        else:
+            self.repeats = 0
         self.previous_key = call_key
         self.previous_output = output
-        return is_repeat
+        return self.repeats
 
 
 class TurnCancelled(Exception):
@@ -295,12 +350,14 @@ class Agent:
     """One conversation with the model about the session design."""
 
     def __init__(self, fusion, ollama, session_id, model=TUNED_MODEL, think=False, has_vision=True,
-                 has_thinking=True, system_prompt=None, listener=None):
+                 has_thinking=True, system_prompt=None, listener=None, temperature=None):
         self.fusion = fusion
         self.ollama = ollama
         self.session_id = session_id
         self.model = model
         self.think = think
+        # None keeps the model's own sampler (the Modelfile); a number overrides the temperature per request.
+        self.temperature = temperature
         self.has_vision = has_vision
         self.has_thinking = has_thinking
         self.system_prompt = system_prompt if system_prompt is not None else load_prompt()
@@ -347,7 +404,11 @@ class Agent:
     def user_message(self, request):
         """The request, with the current design state attached (saves a describe() call) and sizes in
         centimeters also given in mm."""
-        return state_prefix(self.describe()) + with_millimeters(request)
+        state = self.describe()
+        text = with_shape_hints(with_millimeters(request))
+        if "\"width, along" in state or "\"length, along" in state:
+            text = with_dimension_hints(text)
+        return state_prefix(state) + text
 
     # --- The loop -------------------------------------------------------------------------------
 
@@ -361,6 +422,8 @@ class Agent:
             "keep_alive": KEEP_ALIVE,
             "options": {"num_ctx": NUM_CTX, "num_predict": reply_cap},
         }
+        if self.temperature is not None:
+            body["options"]["temperature"] = self.temperature
         # A model without the thinking capability rejects the field, so it is sent only when it means something.
         if self.has_thinking:
             body["think"] = self.think
@@ -432,7 +495,10 @@ class Agent:
                     tool_name = call.get("function", {}).get("name", "")
                     self.listener.status(tool_name)
                     output = self.run_tool(call, screenshots)
-                    if repeats.check(call, output):
+                    repeat_count = repeats.check(call, output)
+                    if repeat_count >= 2 and "CHECK FAILED" in output:
+                        output += "\n" + REPEAT_STOP_TEXT % (repeat_count + 1)
+                    elif repeat_count >= 1:
                         output += "\n" + REPEAT_TEXT
                     self.listener.tool_result(tool_name, call.get("function", {}).get("arguments"), output)
                     tool_message = {"role": "tool", "tool_name": tool_name, "content": output}

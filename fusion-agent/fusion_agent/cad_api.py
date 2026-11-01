@@ -22,6 +22,11 @@ def _report_model_error(error, first_line):
 app = adsk.core.Application.get()
 design = adsk.fusion.Design.cast(app.activeProduct)
 root = design.rootComponent
+_BODIES_BEFORE_SCRIPT = root.bRepBodies.count + sum(o.bRepBodies.count for o in root.allOccurrences)
+_SCRIPT_CLEARED = False
+_NEW_BASE_BODIES = 0
+_SPLINE_SIZES = set()
+_RIM_SIZES = {}
 
 _AXES = {"X": 0, "Y": 1, "Z": 2}
 _OPERATIONS = {
@@ -111,9 +116,75 @@ def new_sketch(plane="XY", offset=0):
     return root.sketches.add(base)
 
 
+def _sketch_argument(sketch, name):
+    if getattr(sketch, "sketchCurves", None) is None:
+        raise ValueError('%s() takes the sketch first: sk = new_sketch("XY"); %s(sk, ...)' % (name, name))
+
+
+def _world_axis(line):
+    """"X", "Y" or "Z" when the sketch line runs along that world axis, else None."""
+    start = line.worldGeometry.startPoint
+    end = line.worldGeometry.endPoint
+    deltas = {"X": end.x - start.x, "Y": end.y - start.y, "Z": end.z - start.z}
+    length = math.sqrt(sum(value * value for value in deltas.values()))
+    if length == 0:
+        return None
+    for name, value in deltas.items():
+        if abs(abs(value) - length) < 1e-6 * length:
+            return name
+    return None
+
+
+def _dimension(sketch, line, comment):
+    """An aligned dimension on the line; the comment tells the model what the dimension is."""
+    start = line.startSketchPoint.geometry
+    end = line.endSketchPoint.geometry
+    text = adsk.core.Point3D.create((start.x + end.x) / 2 + 0.3, (start.y + end.y) / 2 + 0.3, 0)
+    dimension = sketch.sketchDimensions.addDistanceDimension(
+        line.startSketchPoint, line.endSketchPoint,
+        adsk.fusion.DimensionOrientations.AlignedDimensionOrientation, text)
+    dimension.parameter.comment = comment
+    return dimension
+
+
+def _hold_rectangle(sketch, lines, fixed_corner):
+    """Fix the corner nearest to fixed_corner and dimension one line along each axis, so that
+    set_parameter() on a size grows the rectangle away from that corner."""
+    nearest = None
+    for line in lines:
+        for point in (line.startSketchPoint, line.endSketchPoint):
+            if nearest is None or point.geometry.distanceTo(fixed_corner) < nearest.geometry.distanceTo(fixed_corner):
+                nearest = point
+    nearest.isFixed = True
+    sizes = {}
+    for line in lines:
+        axis = _world_axis(line)
+        if axis is not None and axis not in sizes:
+            sizes[axis] = line.length * 10
+    longest = max(sizes.values()) if sizes else 0
+    shortest = min(sizes.values()) if sizes else 0
+    held = set()
+    for line in lines:
+        axis = _world_axis(line)
+        if axis is None or axis in held:
+            continue
+        held.add(axis)
+        if abs(longest - shortest) < 1e-6:
+            name = "side"
+        elif abs(sizes[axis] - longest) < 1e-6:
+            name = "length"
+        else:
+            name = "width"
+        _dimension(sketch, line, "%s, along %s" % (name, axis))
+
+
 def rect(sketch, x1, y1, x2, y2):
-    """Rectangle by two opposite corners (mm, plane coordinates)."""
-    sketch.sketchCurves.sketchLines.addTwoPointRectangle(_point(sketch, x1, y1), _point(sketch, x2, y2))
+    """Rectangle by two opposite corners (mm, plane coordinates). Two dimensions hold its sizes
+    (describe() lists them as "along X" / "along Y"; set_parameter() changes them); its minimum corner
+    is fixed, so a changed size grows away from that corner."""
+    _sketch_argument(sketch, "rect")
+    lines = sketch.sketchCurves.sketchLines.addTwoPointRectangle(_point(sketch, x1, y1), _point(sketch, x2, y2))
+    _hold_rectangle(sketch, lines, _point(sketch, min(x1, x2), min(y1, y2)))
 
 
 def rect_center(sketch, cx, cy, width, height):
@@ -122,12 +193,37 @@ def rect_center(sketch, cx, cy, width, height):
 
 
 def circle(sketch, cx, cy, diameter):
-    """Circle by center and DIAMETER (mm)."""
-    return sketch.sketchCurves.sketchCircles.addByCenterRadius(_point(sketch, cx, cy), diameter / 2 * MM)
+    """Circle by center and DIAMETER (mm). A diameter dimension holds it (describe() lists it as
+    "diameter"; set_parameter() or set_diameter() changes it); the center is fixed, move_circle() moves it."""
+    _sketch_argument(sketch, "circle")
+    sketch_circle = sketch.sketchCurves.sketchCircles.addByCenterRadius(_point(sketch, cx, cy), diameter / 2 * MM)
+    sketch_circle.centerSketchPoint.isFixed = True
+    text = _point(sketch, cx + diameter * 0.6, cy + diameter * 0.6)
+    dimension = sketch.sketchDimensions.addDiameterDimension(sketch_circle, text)
+    dimension.parameter.comment = "diameter"
+    return sketch_circle
 
 
-def slot(sketch, cx, cy, length, width, angle=0):
+def _diameter_dimension(sketch_circle):
+    """The diameter dimension that holds the circle, or None (compared by geometry: proxies differ)."""
+    center = sketch_circle.centerSketchPoint.geometry
+    for dimension in sketch_circle.parentSketch.sketchDimensions:
+        diameter = adsk.fusion.SketchDiameterDimension.cast(dimension)
+        if diameter is None:
+            continue
+        held = adsk.fusion.SketchCircle.cast(diameter.entity)
+        if held is None:
+            continue
+        if held.centerSketchPoint.geometry.isEqualTo(center) and abs(held.radius - sketch_circle.radius) < 1e-9:
+            return diameter
+    return None
+
+
+def slot(sketch, cx, cy, length, width=None, angle=0):
     """Slot with rounded ends: center, overall length end to end, width (mm); angle in degrees from +u."""
+    _sketch_argument(sketch, "slot")
+    if width is None:
+        raise ValueError("slot() needs the width: slot(sk, cx, cy, length, width)")
     direction = (math.cos(math.radians(angle)), math.sin(math.radians(angle)))
     normal = (-direction[1], direction[0])
     half_straight = (length - width) / 2
@@ -147,6 +243,7 @@ def slot(sketch, cx, cy, length, width, angle=0):
 
 def polygon(sketch, points):
     """Closed polygon through a list of (u, v) points in mm."""
+    _sketch_argument(sketch, "polygon")
     lines = sketch.sketchCurves.sketchLines
     first = lines.addByTwoPoints(_point(sketch, *points[0]), _point(sketch, *points[1]))
     previous = first
@@ -204,6 +301,9 @@ def extrude(sketch, distance, operation="new", symmetric=False):
     """Extrude the solid regions of the sketch by distance mm. Positive goes toward +Z for an XY
     sketch (+Y for XZ, +X for YZ), negative the other way. symmetric=True: distance is the total
     length, centered on the sketch plane. operation: 'new', 'join', 'cut' or 'intersect'."""
+    global _NEW_BASE_BODIES
+    if operation == "new":
+        _NEW_BASE_BODIES += 1
     extrudes = root.features.extrudeFeatures
     extrude_input = extrudes.createInput(solid_profiles(sketch), _OPERATIONS[operation])
     if symmetric:
@@ -211,8 +311,10 @@ def extrude(sketch, distance, operation="new", symmetric=False):
     else:
         extent = adsk.fusion.DistanceExtentDefinition.create(_length(abs(distance)))
         extrude_input.setOneSideExtent(extent, _direction_sign(sketch, distance))
+    where = _extents_text() if operation != "new" else ""
     return _add(lambda: extrudes.add(extrude_input), "extrude (%s)" % operation,
-                "For join/cut/intersect the sketch shapes must overlap the body; check positions with describe().")
+                "For join/cut/intersect the sketch shapes must overlap the body; check positions with describe()."
+                + (" Now " + where + "." if where else ""))
 
 
 def cut(sketch, depth=None):
@@ -229,9 +331,11 @@ def cut(sketch, depth=None):
                                         adsk.fusion.ThroughAllExtentDefinition.create())
     else:
         extrude_input.setAllExtent(direction)
+    where = _extents_text()
     return _add(lambda: extrudes.add(extrude_input), "cut",
                 "There is no material under the sketch shapes. If this cut was already made by an earlier "
-                "script, it is done: look at the current state. Otherwise check the positions.")
+                "script, it is done: look at the current state. Otherwise check the positions"
+                + (": " + where + "." if where else "."))
 
 
 def _through_all_direction(sketch):
@@ -285,6 +389,28 @@ def _no_center(center, function):
         raise ValueError("%s() has no center=; use base=(x, y, z): the center of the BOTTOM circle or face" % function)
 
 
+def _extents_text():
+    """Where the part is: "the part spans x -60..60, y -60..60, z 0..28 (its center is (0, 0))", or ""."""
+    if not _all_bodies():
+        return ""
+    low, high = _extents_mm()
+    return "the part spans x %s..%s, y %s..%s, z %s..%s (its center is (%s, %s))" % (
+        _fmt(low[0]), _fmt(high[0]), _fmt(low[1]), _fmt(high[1]), _fmt(low[2]), _fmt(high[2]),
+        _fmt((low[0] + high[0]) / 2), _fmt((low[1] + high[1]) / 2))
+
+
+def _check_join_overlap(what, min_x, max_x, min_y, max_y):
+    """A joined piece whose footprint misses the part entirely is a wrong position, not a part."""
+    if not _all_bodies():
+        return
+    low, high = _extents_mm()
+    if max_x < low[0] - 1e-6 or min_x > high[0] + 1e-6 or max_y < low[1] - 1e-6 or min_y > high[1] + 1e-6:
+        raise ValueError("%s with operation=\"join\" lies entirely outside the part: it covers x %s..%s, "
+                         "y %s..%s, while %s. A box built from corner=(0, 0, 0) has its center at half its "
+                         "sizes; a cylinder's base=(x, y, z) IS its center. Put the new piece on the part." % (
+                             what, _fmt(min_x), _fmt(max_x), _fmt(min_y), _fmt(max_y), _extents_text()))
+
+
 def box(size_x, size_y, size_z, corner=None, base=None, operation="new", center=None, corner_radius=None):
     """Box with sizes along X, Y, Z (mm). Give corner=(x, y, z), its minimum corner, or base=(x, y, z),
     the center of its BOTTOM face. corner_radius rounds its four vertical corner edges (a plate with
@@ -298,6 +424,8 @@ def box(size_x, size_y, size_z, corner=None, base=None, operation="new", center=
         cx, cy, z = _xyz_argument(base, "base", "box")
         x = cx - size_x / 2
         y = cy - size_y / 2
+    if operation == "join":
+        _check_join_overlap("box(%s, %s, %s)" % (_fmt(size_x), _fmt(size_y), _fmt(size_z)), x, x + size_x, y, y + size_y)
     sketch = new_sketch("XY", offset=z)
     rect(sketch, x, y, x + size_x, y + size_y)
     feature = extrude(sketch, size_z, operation=operation)
@@ -315,6 +443,11 @@ def cylinder(diameter, length, base=None, axis="Z", operation="new", center=None
     _no_center(center, "cylinder")
     base = _xyz_argument(base, "base", "cylinder")
     plane, (u_index, v_index, n_index) = _axis_plane(axis)
+    if operation == "join" and axis.upper() == "Z":
+        radius = diameter / 2.0
+        _check_join_overlap("cylinder(%s, %s) at base (%s, %s, %s)" % (
+            _fmt(diameter), _fmt(length), _fmt(base[0]), _fmt(base[1]), _fmt(base[2])),
+            base[0] - radius, base[0] + radius, base[1] - radius, base[1] + radius)
     sketch = new_sketch(plane, offset=base[n_index])
     circle(sketch, base[u_index], base[v_index], diameter)
     return extrude(sketch, length, operation=operation)
@@ -331,6 +464,52 @@ def tube(outer_diameter, inner_diameter, length, base=None, axis="Z", operation=
     circle(sketch, base[u_index], base[v_index], outer_diameter)
     circle(sketch, base[u_index], base[v_index], inner_diameter)
     return extrude(sketch, length, operation=operation)
+
+
+def groove(diameter, width, depth, center=None, axis="Z"):
+    """Канавка по кругу: a ring of this width and depth cut around a cylinder of this diameter
+    (the part's diameter there), centered at the point center=(x, y, z) on the cylinder's axis.
+    Material removed = pi * ((D/2)**2 - (D/2 - depth)**2) * width."""
+    center = _xyz_argument(center, "center", "groove")
+    if depth <= 0 or depth * 2 >= diameter:
+        raise ValueError("groove() needs a depth between 0 and half the diameter")
+    if width <= 0:
+        raise ValueError("groove() needs a width above 0")
+    _, (u_index, v_index, n_index) = _axis_plane(axis)
+    base = list(center)
+    base[n_index] = center[n_index] - width / 2
+    return tube(diameter + 2, diameter - 2 * depth, width, base=tuple(base), axis=axis, operation="cut")
+
+
+def keyway(bore_diameter, width, depth, length, center=(0, 0, 0), angle=90):
+    """Шпоночный паз in a bore along Z: a rectangular groove of this width, going depth beyond the bore
+    wall, over length from the bottom of the bore at center=(x, y, z); angle (degrees from +X) says on
+    which side of the bore it lies. Prints the material removed (the box minus the circle segment)."""
+    center = _xyz_argument(center, "center", "keyway")
+    radius = bore_diameter / 2.0
+    if width <= 0 or width >= bore_diameter:
+        raise ValueError("keyway() needs a width between 0 and the bore diameter")
+    if depth <= 0:
+        raise ValueError("keyway() needs a depth above 0")
+    sketch = new_sketch("XY", offset=center[2])
+    # The box in the bore's own frame: across the width, from 2 mm inside the hole (air) to depth beyond the wall.
+    inner = radius - 2
+    outer = radius + depth
+    corners = [(-width / 2.0, inner), (width / 2.0, inner), (width / 2.0, outer), (-width / 2.0, outer)]
+    cos_a = math.cos(math.radians(angle - 90))
+    sin_a = math.sin(math.radians(angle - 90))
+    points = []
+    for u, v in corners:
+        points.append((center[0] + u * cos_a - v * sin_a, center[1] + u * sin_a + v * cos_a))
+    polygon(sketch, points)
+    feature = extrude(sketch, length, operation="cut")
+    half = width / 2.0
+    segment = half * math.sqrt(radius * radius - half * half) + radius * radius * math.asin(half / radius)
+    removed = (width * outer - segment) * length
+    print("keyway: %s wide, %s deep beyond the bore wall, %s long; material removed %s mm3 (use it in "
+          "check(volume=...)); the bore stays a round face of %s" % (
+              _fmt(width), _fmt(depth), _fmt(length), _fmt(removed), _fmt(bore_diameter)))
+    return feature
 
 
 def shaft(sections, base=(0, 0, 0), axis="Z", bore=None, operation="new"):
@@ -411,6 +590,73 @@ def channel(height, flange_width, thickness, length, base=(0, 0, 0)):
     return _profile([(0, 0), (b, 0), (b, t), (t, t), (t, h - t), (b, h - t), (b, h), (0, h)], length, base)
 
 
+def _extents_mm():
+    """(low, high) corners in mm of the box around every body."""
+    low = [None, None, None]
+    high = [None, None, None]
+    for body in _all_bodies():
+        box_min = body.boundingBox.minPoint.asArray()
+        box_max = body.boundingBox.maxPoint.asArray()
+        for i in range(3):
+            if low[i] is None or box_min[i] * 10 < low[i]:
+                low[i] = box_min[i] * 10
+            if high[i] is None or box_max[i] * 10 > high[i]:
+                high[i] = box_max[i] * 10
+    return low, high
+
+
+def _is_round_footprint(size_x, size_y):
+    """True when the part is a disk seen from above: a square footprint spanned by one cylindrical face."""
+    if abs(size_x - size_y) > 1e-6:
+        return False
+    for body in _all_bodies():
+        for face in body.faces:
+            if face.geometry.surfaceType == adsk.core.SurfaceTypes.CylinderSurfaceType:
+                if abs(face.geometry.radius * 20 - size_x) < 1e-6:
+                    return True
+    return False
+
+
+def wall_on_edge(thickness, height, edge="long"):
+    """Стенка, бортик, перегородка standing on the part along one of its edges: a thin box as long as
+    that edge, thickness across it, height above the part's top face, flush with the edge, joined.
+    edge="long": along the longer side of the part's footprint; "short": along the shorter side.
+    Volume added = edge length * thickness * height."""
+    if edge not in ("long", "short"):
+        raise ValueError('wall_on_edge() needs edge="long" (along the longer side) or edge="short"')
+    if not _all_bodies():
+        raise ValueError("wall_on_edge() needs a part to stand on: build the plate first")
+    low, high = _extents_mm()
+    size_x = high[0] - low[0]
+    size_y = high[1] - low[1]
+    if _is_round_footprint(size_x, size_y):
+        raise ValueError("wall_on_edge() is for a rectangular plate; this part is a disk. A бортик around a disk "
+                         "of diameter D is a ring: tube(D, D - 2*thickness, height, base=(x, y, top), "
+                         "operation=\"join\")")
+    if edge == "long":
+        along_x = size_x >= size_y
+    else:
+        along_x = size_x < size_y
+    top = high[2]
+    if along_x:
+        return box(size_x, thickness, height, corner=(low[0], high[1] - thickness, top), operation="join")
+    return box(thickness, size_y, height, corner=(high[0] - thickness, low[1], top), operation="join")
+
+
+def u_bracket(width, height, strip_width, thickness, base=(0, 0, 0)):
+    """Скоба, стойка, держатель буквой П bent from a strip: the back lies flat at the bottom along +X
+    (width), the two legs go up to height at x = 0 and x = width; the strip's width runs along +Y.
+    The arguments follow the words: ширина, высота, полоска шириной, толщиной."""
+    w, h, t = width, height, thickness
+    return _profile([(0, 0), (w, 0), (w, h), (w - t, h), (w - t, t), (t, t), (t, h), (0, h)], strip_width, base)
+
+
+def l_bracket(side_x, side_z, strip_width, thickness, base=(0, 0, 0)):
+    """Уголок буквой Г bent from a strip: side_x lies flat along +X, side_z goes up along +Z; the
+    strip's width runs along +Y."""
+    return angle_profile(side_x, side_z, thickness, strip_width, base=base)
+
+
 def tee(flange_width, height, flange_thickness, web_thickness, length, base=(0, 0, 0)):
     """Тавр (T): a flange of flange_width on top, full height, web centered on x = base x; along +Y."""
     b, h, tf, tw = flange_width, height, flange_thickness, web_thickness
@@ -426,6 +672,19 @@ def ibeam(height, flange_width, flange_thickness, web_thickness, length, base=(0
                     length, base)
 
 
+def _check_hole_inside(what, u, v, diameter, u_index=0, v_index=1):
+    """A hole whose circle sticks out of the part's extents in its own plane is a wrong position."""
+    if not _all_bodies():
+        return
+    low, high = _extents_mm()
+    radius = diameter / 2.0
+    if (u - radius < low[u_index] - 1e-6 or u + radius > high[u_index] + 1e-6
+            or v - radius < low[v_index] - 1e-6 or v + radius > high[v_index] + 1e-6):
+        raise ValueError("%s sticks out of the part: %s. Measure hole positions from the part's own corner or "
+                         "center (a cylinder's base is its center; a box from corner=(0, 0, 0) has its center at "
+                         "half its sizes)." % (what, _extents_text()))
+
+
 def drill(x, y, z, diameter, axis=None, depth=None):
     """Round hole whose axis passes through the point (x, y, z) along axis 'X', 'Y' or 'Z' (required:
     a default made the model drill side holes from the top).
@@ -435,8 +694,16 @@ def drill(x, y, z, diameter, axis=None, depth=None):
         raise ValueError('drill() needs axis="Z" (hole from the top or bottom) or axis="X" / "Y" (hole from a side)')
     plane, (u_index, v_index, n_index) = _axis_plane(axis)
     point = (x, y, z)
+    _check_hole_inside("drill() at (%s, %s, %s) along %s of diameter %s" % (
+        _fmt(x), _fmt(y), _fmt(z), axis.upper(), _fmt(diameter)),
+        point[u_index], point[v_index], diameter, u_index, v_index)
     sketch = new_sketch(plane, offset=point[n_index])
     circle(sketch, point[u_index], point[v_index], diameter)
+    return _cut_into_body(sketch, depth)
+
+
+def _cut_into_body(sketch, depth):
+    """Through everything (depth=None) or a blind cut of depth from the sketch plane into the body."""
     if depth is None:
         return cut(sketch)
     direction = _through_all_direction(sketch)
@@ -445,8 +712,100 @@ def drill(x, y, z, diameter, axis=None, depth=None):
     return extrude(sketch, depth if goes_positive else -depth, operation="cut")
 
 
+def spline_points(cx, cy, teeth, inner_diameter, outer_diameter, start_angle=0):
+    """Outline of a straight-sided spline (a star) that alternates between the circle of inner_diameter
+    and the circle of outer_diameter, each segment half a pitch wide. (u, v) points for polygon().
+    Area inside = teeth * (inner_diameter**2 + outer_diameter**2) / 8 * sin(180 / teeth degrees)."""
+    if teeth < 3:
+        raise ValueError("spline_points() needs at least 3 teeth")
+    if outer_diameter == inner_diameter:
+        raise ValueError("a spline needs two different diameters (tooth tips and gap bottoms)")
+    if outer_diameter < inner_diameter:
+        print("spline: the sizes %s and %s were taken as inner %s, outer %s (the star is the same)" % (
+            _fmt(inner_diameter), _fmt(outer_diameter), _fmt(outer_diameter), _fmt(inner_diameter)))
+        inner_diameter, outer_diameter = outer_diameter, inner_diameter
+    inner = inner_diameter / 2
+    outer = outer_diameter / 2
+    pitch = 360.0 / teeth
+    points = []
+    for index in range(teeth):
+        tooth_start = start_angle + index * pitch
+        gap_start = tooth_start + pitch / 2
+        gap_end = tooth_start + pitch
+        for radius, angle in ((inner, tooth_start), (inner, gap_start), (outer, gap_start), (outer, gap_end)):
+            points.append((cx + radius * math.cos(math.radians(angle)), cy + radius * math.sin(math.radians(angle))))
+    return points
+
+
+def spline_hole(teeth, inner_diameter, outer_diameter, axis="Z", center=(0, 0, 0), depth=None):
+    """Шлицевое отверстие: a hole with teeth inside (a straight-sided star) whose axis passes through
+    center=(x, y, z) along axis 'X', 'Y' or 'Z'. inner_diameter is across the tooth tips (the smaller
+    size), outer_diameter across the bottoms of the gaps. depth=None: through everything; with a depth
+    center is the entry point on the surface. Material removed per mm of length:
+    teeth * (inner_diameter**2 + outer_diameter**2) / 8 * sin(180 / teeth degrees)."""
+    if isinstance(axis, (int, float)):
+        raise ValueError('spline_hole(teeth, inner_diameter, outer_diameter, axis="Z", center=(x, y, z)): '
+                         'the fourth argument is the axis letter')
+    plane, (u_index, v_index, n_index) = _axis_plane(axis)
+    point = _xyz_argument(center, "center", "spline_hole")
+    sketch = new_sketch(plane, offset=point[n_index])
+    polygon(sketch, spline_points(point[u_index], point[v_index], teeth, inner_diameter, outer_diameter))
+    _SPLINE_SIZES.update((inner_diameter, outer_diameter))
+    return _cut_into_body(sketch, depth)
+
+
+def spline_shaft(teeth, inner_diameter, outer_diameter, length, base=(0, 0, 0), axis="Z", operation="new"):
+    """Шлицевой вал: a solid straight-sided star (teeth on the outside) whose bottom is centered at
+    base=(x, y, z); it grows by length along +axis. inner_diameter is across the bottoms of the gaps
+    (впадины), outer_diameter across the tooth tips (вершины).
+    Volume = teeth * (inner_diameter**2 + outer_diameter**2) / 8 * sin(180 / teeth degrees) * length."""
+    base = _xyz_argument(base, "base", "spline_shaft")
+    plane, (u_index, v_index, n_index) = _axis_plane(axis)
+    sketch = new_sketch(plane, offset=base[n_index])
+    polygon(sketch, spline_points(base[u_index], base[v_index], teeth, inner_diameter, outer_diameter))
+    _SPLINE_SIZES.update((inner_diameter, outer_diameter))
+    return extrude(sketch, length, operation=operation)
+
+
+def rim_cutout_area(disk_diameter, cutout_diameter):
+    """Area (mm2) that one rim cutout removes from a disk: the lens where a circle of cutout_diameter
+    centered ON the rim overlaps the disk. Volume removed = rim_cutout_area(D, d) * thickness."""
+    big = disk_diameter / 2
+    small = cutout_diameter / 2
+    if small <= 0 or small >= 2 * big:
+        raise ValueError("rim_cutout_area() needs a cutout smaller than twice the disk")
+    return (small * small * math.acos(small / (2 * big)) + big * big * math.acos(1 - small * small / (2 * big * big))
+            - 0.5 * math.sqrt(small * small * (2 * big + small) * (2 * big - small)))
+
+
+def rim_cutouts(disk_diameter, cutout_diameter, count, center=None, start_angle=0, axis="Z"):
+    """Полукруглые вырезы по краю: count round notches cut THROUGH a disk (or any part) of
+    disk_diameter whose axis passes through center=(x, y, z); each cutter circle of cutout_diameter is
+    centered on the rim, the first at start_angle (degrees from +X for axis Z), the rest evenly around.
+    The part's size across the cutouts becomes D - d*d/(2*D). Volume removed = count *
+    rim_cutout_area(D, d) * thickness."""
+    center = _xyz_argument(center, "center", "rim_cutouts")
+    if count < 1:
+        raise ValueError("rim_cutouts() needs count of at least 1")
+    plane, (u_index, v_index, n_index) = _axis_plane(axis)
+    sketch = new_sketch(plane, offset=center[n_index])
+    for u, v in points_on_circle(center[u_index], center[v_index], disk_diameter, count, start_angle=start_angle):
+        circle(sketch, u, v, cutout_diameter)
+    feature = cut(sketch)
+    across = disk_diameter - cutout_diameter * cutout_diameter / (2.0 * disk_diameter)
+    _RIM_SIZES[round(disk_diameter, 6)] = across
+    print("rim_cutouts: %d notches of %s cut; the size across them is now %s (was %s): use %s in check(size=...); "
+          "each notch removed rim_cutout_area(%s, %s) = %s mm2 per mm of thickness" % (
+              count, _fmt(cutout_diameter), _fmt(across), _fmt(disk_diameter), _fmt(across),
+              _fmt(disk_diameter), _fmt(cutout_diameter), _fmt(rim_cutout_area(disk_diameter, cutout_diameter))))
+    return feature
+
+
 def holes(points, diameter, plane="XY", offset=0, depth=None):
     """Round holes of the given DIAMETER at (u, v) points of a plane; depth=None means through all."""
+    if plane.upper() == "XY":
+        for u, v in points:
+            _check_hole_inside("the hole at (%s, %s) of diameter %s" % (_fmt(u), _fmt(v), _fmt(diameter)), u, v, diameter)
     sketch = new_sketch(plane, offset)
     for u, v in points:
         circle(sketch, u, v, diameter)
@@ -675,7 +1034,11 @@ def _circle_list(circles):
 def set_diameter(circles, diameter):
     """Change the diameter (mm) of one sketch circle or of a list of them; the features built on them update."""
     for sketch_circle in _circle_list(circles):
-        sketch_circle.radius = diameter / 2 * MM
+        dimension = _diameter_dimension(sketch_circle)
+        if dimension is not None:
+            dimension.parameter.expression = "%s mm" % diameter
+        else:
+            sketch_circle.radius = diameter / 2 * MM
     design.computeAll()
 
 
@@ -687,8 +1050,12 @@ def move_circle(sketch_circle, cx, cy):
         sketch_circle = sketch_circle[0]
     sketch = sketch_circle.parentSketch
     target = _point(sketch, cx, cy)
-    current = sketch_circle.centerSketchPoint.geometry
-    sketch_circle.centerSketchPoint.move(adsk.core.Vector3D.create(target.x - current.x, target.y - current.y, 0))
+    center = sketch_circle.centerSketchPoint
+    current = center.geometry
+    was_fixed = center.isFixed
+    center.isFixed = False
+    center.move(adsk.core.Vector3D.create(target.x - current.x, target.y - current.y, 0))
+    center.isFixed = was_fixed
     design.computeAll()
 
 
@@ -706,6 +1073,9 @@ def set_parameter(name, value):
     else:
         parameter.expression = str(value)
     design.computeAll()
+    comment = (' "%s"' % parameter.comment) if parameter.comment else ""
+    print("set_parameter: %s%s = %s" % (name, comment, parameter.expression))
+    state_summary()
 
 
 _OPERATION_PREFIXES = {
@@ -728,6 +1098,7 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
         names = [design.timeline.item(i).name for i in range(design.timeline.count)]
         if not any(name.startswith(prefix) for name in names):
             problems.append("the timeline has no %s" % operation)
+    duplicate = False
     if len(found) != bodies:
         problems.append("there are %d bodies, expected %d" % (len(found), bodies))
         seen = set()
@@ -736,8 +1107,19 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
             key = (round(body.volume, 6),) + tuple(round(v, 4) for v in box.minPoint.asArray() + box.maxPoint.asArray())
             if key in seen:
                 problems.append("two bodies are identical: the part was built twice; start the script with clear()")
+                duplicate = True
                 break
             seen.add(key)
+    if (bodies == 1 and _BODIES_BEFORE_SCRIPT > 0 and _user_steps() == 0 and not _SCRIPT_CLEARED
+            and _NEW_BASE_BODIES > 0):
+        problems.append("the design already had %d bodies before this script and this script made a new base "
+                        "body without clear(): the earlier attempt is still inside the part; start the script "
+                        "with clear() and build the whole part again" % _BODIES_BEFORE_SCRIPT)
+    if len(found) != bodies:
+        if not duplicate and len(found) > bodies and _BODIES_BEFORE_SCRIPT > 0 and _user_steps() == 0:
+            problems.append("%d of them were already in the design before this script: if that is your earlier "
+                            "attempt, start the script with clear() and build the whole part again; if the new "
+                            "piece belongs to that body, build it with operation=\"join\"" % _BODIES_BEFORE_SCRIPT)
     low = [None, None, None]
     high = [None, None, None]
     all_diameters = set()
@@ -754,26 +1136,51 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
                 all_diameters.add(round(face.geometry.radius * 20, 3))
         total_volume += body.volume * 1000
     actual_size = sorted(high[i] - low[i] for i in range(3)) if found else []
+    notes = []
     if size is not None and found:
         wanted_size = sorted(size)
+        if any(abs(a - b) > 0.01 for a, b in zip(actual_size, wanted_size)):
+            # A size given as the disk diameter is accepted when the rim cutouts explain the difference.
+            for disk_diameter, across in _RIM_SIZES.items():
+                for index, value in enumerate(wanted_size):
+                    if abs(value - disk_diameter) > 0.01:
+                        continue
+                    candidate = sorted(wanted_size[:index] + [across] + wanted_size[index + 1:])
+                    if all(abs(a - b) <= 0.01 for a, b in zip(actual_size, candidate)):
+                        notes.append("size %s is %s across the rim cutouts: accepted" % (_fmt(value), _fmt(across)))
+                        wanted_size = candidate
+                        break
         if any(abs(a - b) > 0.01 for a, b in zip(actual_size, wanted_size)):
             problems.append("size is %s mm, expected %s" % (
                 " x ".join(_fmt(v) for v in actual_size), " x ".join(_fmt(v) for v in wanted_size)))
     if diameters is not None:
+        footprint = sorted(high[i] - low[i] for i in range(2)) if found else []
         for wanted in diameters:
             if not any(abs(wanted - d) <= 0.01 for d in all_diameters):
-                problems.append("no cylindrical face of diameter %s (found %s)" % (_fmt(wanted), sorted(all_diameters)))
+                if any(abs(wanted - size) < 1e-6 for size in _SPLINE_SIZES):
+                    notes.append("%s is a spline size, not a round face: accepted" % _fmt(wanted))
+                elif len(footprint) == 2 and all(abs(wanted - f) <= 0.01 for f in footprint):
+                    problems.append("no cylindrical face of diameter %s: the part is a square %s x %s block, "
+                                    "not a disk; a диск / круг of diameter D is cylinder(D, thickness), not "
+                                    "box(D, D, thickness)" % (_fmt(wanted), _fmt(footprint[0]), _fmt(footprint[1])))
+                else:
+                    problems.append("no cylindrical face of diameter %s (found %s)" % (_fmt(wanted), sorted(all_diameters)))
     if volume is not None and abs(total_volume - volume) > 0.005 * volume:
         problems.append("volume is %s mm3, expected %s" % (_fmt(total_volume), _fmt(volume)))
         if len(problems) == 1:
             problems.append("only the volume differs: first recheck your volume formula (box a*b*c, "
                             "cylinder pi*r*r*h, hole pi*r*r*L where L is the length of material the hole "
-                            "goes through, r = diameter / 2); if the formula is right, the part is wrong, "
+                            "goes through, r = diameter / 2, a groove or ring of width w between the outer "
+                            "radius R and the inner radius r is pi*(R*R - r*r)*w, a slot with round ends of "
+                            "length L and width w through thickness t is ((L - w)*w + pi*(w/2)**2)*t); "
+                            "if the formula is right, the part is wrong, "
                             "most often a hole or a cut is in the wrong place, partly outside the part "
                             "(compare its position with the box from ... to ... of the body); if you are not "
                             "sure about the formula, run check() again without volume")
     summary = "bodies %d, size %s mm, cylinder diameters %s, volume %s mm3" % (
         len(found), " x ".join(_fmt(v) for v in actual_size), sorted(all_diameters), _fmt(total_volume))
+    if notes:
+        summary = summary + ". Notes: " + "; ".join(notes)
     if problems:
         print("CHECK FAILED: " + "; ".join(problems) + ". Measured: " + summary)
     else:
@@ -825,8 +1232,11 @@ def undo(steps=1):
     if steps < 1 or steps > own_steps:
         raise ValueError("steps must be from 1 to %d: the first %d steps are the user's own part" % (
             own_steps, _user_steps()))
+    removed = [timeline.item(i).name for i in range(timeline.count - steps, timeline.count)]
     timeline.markerPosition = timeline.count - steps
     timeline.deleteAllAfterMarker()
+    print("undo: removed %s." % ", ".join(removed))
+    state_summary()
 
 
 def clear():
@@ -835,6 +1245,8 @@ def clear():
         raise ValueError("clear() would delete the user's own part: this design was opened by the user. "
                          "Change it with set_parameter() (describe() lists the parameters) or add features; "
                          "undo() removes only the steps you added")
+    global _SCRIPT_CLEARED
+    _SCRIPT_CLEARED = True
     timeline = design.timeline
     timeline.moveToBeginning()
     timeline.deleteAllAfterMarker()

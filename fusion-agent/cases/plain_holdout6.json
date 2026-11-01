@@ -1,0 +1,191 @@
+{
+ "note": "Plain-language requests, sixth HONEST set: written 2026-11-01 after plain_holdout5.json had been looked at and the configuration tuned on it (thin walls at an edge, groove(), rim = tube). Never tune the prompt on it; record the numbers before looking at the failures.",
+ "cases": [
+  {
+   "id": "Q-button",
+   "prompt": "Сделай пуговку: кружок 15 мм толщиной 2 мм с двумя дырочками 1.5 мм, по 2 мм от центра в стороны.",
+   "start": null,
+   "reference": "cylinder(15, 2, base=(0, 0, 0))\ndrill(2, 0, 0, 1.5, axis='Z')\ndrill(-2, 0, 0, 1.5, axis='Z')",
+   "volume": "math.pi*7.5*7.5*2 - 2*math.pi*0.75*0.75*2"
+  },
+  {
+   "id": "Q-washer",
+   "prompt": "Сделай шайбочку: снаружи 16 мм, дырка 8 мм, толщина 1.5 мм.",
+   "start": null,
+   "reference": "tube(16, 8, 1.5, base=(0, 0, 0))",
+   "volume": "math.pi*(8*8 - 4*4)*1.5"
+  },
+  {
+   "id": "Q-mug",
+   "prompt": "Сделай кружку без ручки: диаметр 7 см, высота 8 см, стенки и дно 3 мм.",
+   "start": null,
+   "reference": "cylinder(70, 80, base=(0, 0, 0))\nshell(3, 'top')",
+   "volume": "math.pi*(35*35*80 - 32*32*77)"
+  },
+  {
+   "id": "Q-open-box",
+   "prompt": "Сделай коробочку без крышки 6 на 6 см, высота 3 см, стенки 2 мм и дно 2 мм.",
+   "start": null,
+   "reference": "box(60, 60, 30, corner=(0, 0, 0))\nshell(2, 'top')",
+   "volume": "60*60*30 - 56*56*28"
+  },
+  {
+   "id": "Q-plate-corner-holes",
+   "prompt": "Сделай пластинку 5 на 5 см толщиной 4 мм с четырьмя дырками 5 мм по углам, каждая в 8 мм от обоих краёв.",
+   "start": null,
+   "reference": "box(50, 50, 4, corner=(0, 0, 0))\nholes([(8, 8), (42, 8), (8, 42), (42, 42)], 5)",
+   "volume": "50*50*4 - 4*math.pi*2.5*2.5*4"
+  },
+  {
+   "id": "Q-mushroom",
+   "prompt": "Сделай грибок: ножка диаметром 8 мм высотой 2 см, сверху на ней шляпка диаметром 2 см высотой 4 мм.",
+   "start": null,
+   "reference": "shaft([(8, 20), (20, 4)])",
+   "volume": "math.pi*(4*4*20 + 10*10*4)"
+  },
+  {
+   "id": "Q-three-steps",
+   "prompt": "Сделай ступенчатый валик из трёх ступенек подряд: диаметр 30 длиной 10, диаметр 20 длиной 25, диаметр 10 длиной 15 мм.",
+   "start": null,
+   "reference": "shaft([(30, 10), (20, 25), (10, 15)])",
+   "volume": "math.pi*(15*15*10 + 10*10*25 + 5*5*15)"
+  },
+  {
+   "id": "Q-wheel-groove",
+   "prompt": "Сделай колёсико диаметром 36 мм шириной 10 мм, по кругу посередине канавка 3 мм шириной и 2 мм глубиной.",
+   "start": null,
+   "reference": "cylinder(36, 10, base=(0, 0, 0))\ngroove(36, 3, 2, center=(0, 0, 5))",
+   "volume": "math.pi*(18*18*10 - (18*18 - 16*16)*3)"
+  },
+  {
+   "id": "Q-u-clamp",
+   "prompt": "Сделай скобу буквой П из полоски шириной 1 см и толщиной 2 мм: ширина скобы 3 см, высота 2 см.",
+   "start": null,
+   "reference": "u_bracket(30, 20, 10, 2)",
+   "volume": "(30*2 + 2*18*2)*10"
+  },
+  {
+   "id": "Q-l-shelf",
+   "prompt": "Сделай уголок буквой Г: полоска 4 см шириной и 5 мм толщиной, стороны 5 и 4 см.",
+   "start": null,
+   "reference": "l_bracket(50, 40, 40, 5)",
+   "volume": "(50 + 40 - 5)*5*40"
+  },
+  {
+   "id": "Q-slot-strip",
+   "prompt": "Сделай полоску 10 на 2.5 см толщиной 3 мм, по центру прорезь с круглыми концами длиной 4 см и шириной 1 см.",
+   "start": null,
+   "reference": "box(100, 25, 3, corner=(0, 0, 0))\nsk = new_sketch(plane='XY')\nslot(sk, 50, 12.5, 40, 10)\ncut(sk)",
+   "volume": "100*25*3 - (30*10 + math.pi*5*5)*3"
+  },
+  {
+   "id": "Q-saucer-rim",
+   "prompt": "Сделай блюдце: кружок диаметром 8 см толщиной 4 мм, сверху по краю бортик высотой 6 мм, толщина бортика 3 мм.",
+   "start": null,
+   "reference": "cylinder(80, 4, base=(0, 0, 0))\ntube(80, 74, 6, base=(0, 0, 4), operation='join')",
+   "volume": "math.pi*(40*40*4 + (40*40 - 37*37)*6)"
+  },
+  {
+   "id": "Q-stand-long-wall",
+   "prompt": "Сделай подставку: дощечка 12 на 6 см толщиной 8 мм, вдоль одного длинного края на ней стоит стенка длиной 12 см и толщиной 8 мм, общая высота 4 см.",
+   "start": null,
+   "reference": "box(120, 60, 8, corner=(0, 0, 0))\nbox(120, 8, 32, corner=(0, 52, 8), operation='join')",
+   "volume": "120*60*8 + 120*8*32"
+  },
+  {
+   "id": "Q-block-pin",
+   "prompt": "Сделай брусок 4 на 3 см высотой 15 мм, а сверху на нём посередине торчит штырёк диаметром 6 мм высотой 2 см.",
+   "start": null,
+   "reference": "box(40, 30, 15, corner=(0, 0, 0))\ncylinder(6, 20, base=(20, 15, 15), operation='join')",
+   "volume": "40*30*15 + math.pi*3*3*20"
+  },
+  {
+   "id": "Q-cube-side-hole",
+   "prompt": "Сделай кубик 25 мм и просверли сбоку насквозь дырку 6 мм через середину.",
+   "start": null,
+   "reference": "box(25, 25, 25, corner=(0, 0, 0))\ndrill(0, 12.5, 12.5, 6, axis='X')",
+   "volume": "25*25*25 - math.pi*3*3*25"
+  },
+  {
+   "id": "Q-blind-hole-cylinder",
+   "prompt": "Сделай цилиндр диаметром 3 см высотой 2 см и сверху посередине дырку 1 см глубиной 12 мм, не насквозь.",
+   "start": null,
+   "reference": "cylinder(30, 20, base=(0, 0, 0))\ndrill(0, 0, 20, 10, axis='Z', depth=12)",
+   "volume": "math.pi*(15*15*20 - 5*5*12)"
+  },
+  {
+   "id": "Q-cube-chamfer-vertical",
+   "prompt": "Сделай кубик 2 см и срежь у него четыре вертикальных угла на 2 мм.",
+   "start": null,
+   "reference": "box(20, 20, 20, corner=(0, 0, 0))\nchamfer(find_edges(parallel_to='Z'), 2)",
+   "volume": "(20*20 - 4*2)*20"
+  },
+  {
+   "id": "Q-edit-longer",
+   "prompt": "Удлини пластину до 12 см.",
+   "start": "box(80, 40, 5, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(120, 40, 5, corner=(0, 0, 0))",
+   "volume": "120*40*5"
+  },
+  {
+   "id": "Q-edit-thinner",
+   "prompt": "Сделай её потоньше, 3 мм.",
+   "start": "box(50, 50, 8, corner=(0, 0, 0))",
+   "reference": "clear()\nbox(50, 50, 3, corner=(0, 0, 0))",
+   "volume": "50*50*3"
+  },
+  {
+   "id": "Q-edit-both-holes",
+   "prompt": "Обе дырки сделай по 8 мм.",
+   "start": "box(60, 30, 5, corner=(0, 0, 0))\ndrill(15, 15, 0, 5, axis='Z')\ndrill(45, 15, 0, 5, axis='Z')",
+   "reference": "clear()\nbox(60, 30, 5, corner=(0, 0, 0))\ndrill(15, 15, 0, 8, axis='Z')\ndrill(45, 15, 0, 8, axis='Z')",
+   "volume": "60*30*5 - 2*math.pi*4*4*5"
+  },
+  {
+   "id": "Q-edit-round-vertical",
+   "prompt": "Закругли у бруска четыре вертикальных ребра радиусом 4 мм.",
+   "start": "box(40, 30, 20, corner=(0, 0, 0))",
+   "reference": "fillet(find_edges(parallel_to='Z'), 4)",
+   "volume": "(40*30 - (4 - math.pi)*4*4)*20"
+  },
+  {
+   "id": "Q-ask-length",
+   "prompt": "Какой она длины?",
+   "start": "box(85, 30, 6, corner=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "85*30*6",
+   "answer": [
+    [
+     85,
+     8.5
+    ]
+   ]
+  },
+  {
+   "id": "Q-ask-diameter",
+   "prompt": "Какой диаметр у кружка?",
+   "start": "cylinder(44, 6, base=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "math.pi*22*22*6",
+   "answer": [
+    [
+     44,
+     4.4
+    ]
+   ]
+  },
+  {
+   "id": "Q-ask-mass",
+   "prompt": "Сколько она весит?",
+   "start": "box(50, 40, 10, corner=(0, 0, 0))",
+   "reference": "pass",
+   "volume": "50*40*10",
+   "answer": [
+    [
+     157,
+     0.157
+    ]
+   ]
+  }
+ ]
+}
