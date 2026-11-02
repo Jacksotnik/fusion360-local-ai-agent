@@ -2234,7 +2234,7 @@ def fillet(edges, radius):
     fillets = root.features.filletFeatures
     fillet_input = fillets.createInput()
     fillet_input.addConstantRadiusEdgeSet(_edge_collection(edges), _length(radius), True)
-    about = "r%s on %s" % (_fmt(radius), _edges_about(edges))
+    about = _edges_about(edges)
     feature = _add(lambda: fillets.add(fillet_input), "fillet",
                    _edges_summary(edges) + " Select only the edges the request names, e.g. find_edges(parallel_to='Z')"
                    " for the vertical corners of a plate; the radius must fit the faces next to the edges."
@@ -2282,11 +2282,29 @@ def _about_of(entity):
 
 
 def _step_label(item):
-    """A timeline step's name with what it did when that is known: 'Fillet2 (r1 on 8 circles d6)'."""
+    """A timeline step's name with what it did when that is known: 'Fillet2 (r1 on 8 circles d6)'.
+    The radius or distance is read from the feature now (set_parameter() may have changed it)."""
     about = _about_of(item.entity)
-    if about:
-        return "%s (%s)" % (item.name, about)
-    return item.name
+    if not about:
+        return item.name
+    if item.name.startswith(("Fillet", "Chamfer")):
+        # A feature made before 2026-11-02 17:20 kept its size in the text ("r2 on 12 lines"): drop it.
+        about = about.split(" on ", 1)[-1]
+    if item.name.startswith("Fillet"):
+        about = "r%s on %s" % (_fillet_size(item.entity), about)
+    elif item.name.startswith("Chamfer"):
+        about = "%s mm on %s" % (_fillet_size(item.entity), about)
+    return "%s (%s)" % (item.name, about)
+
+
+def _fillet_size(feature):
+    """The current radius of a fillet or distance of a chamfer (mm), '?' when Fusion does not say."""
+    try:
+        if feature.objectType.endswith("FilletFeature"):
+            return _fmt(feature.edgeSets.item(0).radius.value * 10)
+        return _fmt(feature.chamferEdgeSets.item(0).distance.value * 10)
+    except (RuntimeError, AttributeError):
+        return "?"
 
 
 def _already_done_text(prefix, what):
@@ -2304,7 +2322,7 @@ def chamfer(edges, distance):
     chamfers = root.features.chamferFeatures
     chamfer_input = chamfers.createInput2()
     chamfer_input.chamferEdgeSets.addEqualDistanceChamferEdgeSet(_edge_collection(edges), _length(distance), True)
-    about = "%s mm on %s" % (_fmt(distance), _edges_about(edges))
+    about = _edges_about(edges)
     feature = _add(lambda: chamfers.add(chamfer_input), "chamfer",
                    _edges_summary(edges) + " Select only the edges the request names; the distance must fit the faces."
                    + _already_done_text("Chamfer", "chamfer"))
