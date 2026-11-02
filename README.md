@@ -140,9 +140,9 @@ on a laptop with a 16 GB GPU. The model is random (temperature 1.0): a run may d
 |---|---|---|
 | Plain-language requests, 26 tasks | everyday words, cm sizes, plates, disks, bushings, edits, questions | **26/26** |
 | Your own models, 11 tasks | parts made in Fusion by hand: edits through parameters, questions about mass and sizes | **11/11** |
-| Real parts from a picture plus build steps, 51 | a photo and the steps in words with every size | **50/51** |
-| Real parts from a picture plus build steps, 62 (second set) | same kind, written after the arc fix | **61/62** |
-| The exam: a photo of a hub flange plus sizes in words | spline bore, 4 bolt holes, 2 rim cutouts, filleted hub | **PASS** |
+| Real parts from a picture plus build steps, 51 | a photo and the steps in words with every size; built on demand by `tools/gallery_cases.py` from the Fusion 360 Gallery data, not stored in the repository | **50/51** |
+| Real parts from a picture plus build steps, 62 (second set) | same kind, written after the arc fix; not stored in the repository | **61/62** |
+| The exam: a photo of a hub flange plus sizes in words | spline bore, 4 bolt holes, 2 rim cutouts, filleted hub; the photo is not in the repository | **PASS** |
 | Bench regression, 23 tasks | the original graded tasks of the project | **23/23** (last run on the morning code of 2026-11-02, before the three helpers of that evening) |
 
 Across the untuned sets in the final run: **149 of 151 tasks, 98.7 %**. The two misses are one Gallery part in each set, with a volume 2-3 % under the reference.
@@ -154,7 +154,6 @@ Across the untuned sets in the final run: **149 of 151 tasks, 98.7 %**. The two 
 | Machine parts, 12 | splined hub and shaft, rim notches, hub fillet, face recess, keyway, counterbores | 12/12 |
 | Bodies of revolution, 5 | a two-cone vase, a sphere, a dome, a barrel, a knob with a rounded top | 5/5 |
 | Gears, threads, hexagons, 8 | gears with bore and hub, nut, bolt, threaded shaft and hole, socket-head screw | 8/8 |
-| Bracket from the owner's photo, 1 (`cases/bracket_photo.json`, a dev task) | a lobed base with a concave front edge, two bosses, a wall tapering up to an eye, two ribs that meet under the eye | 0/1: the base with its arcs and the bosses come out right, the wall is built as a separate post instead of the plate with the eye |
 | Basics, 15 | bent tube, L-rod, spring, square-to-round loft, frustum, gusset, angled hole, subtracted sphere, copied cube with a bridge, engraved plate, square tube along an arc, bracket with an eye, lobed plate, plate tapering to an eye, leaning gussets | 9/15 (one of the misses is a 0.03 mm arc artifact of the task's own reference) |
 
 Honest reading of the misses: the model sometimes adds what was not asked (a rounded corner instead

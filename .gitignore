@@ -7,3 +7,11 @@ dist/
 # Local run output (session data itself lives in the user data folder, see README).
 results/
 sessions/
+# Pictures and dataset-derived task sets stay out of the repository (owner's rule, 2026-11-02):
+# tools/gallery_cases.py rebuilds the Gallery sets here on demand.
+cases/gallery/
+cases/gallery_holdout*.json
+cases/*.png
+cases/*.jpg
+cases/*.jpeg
+cases/*.avif
