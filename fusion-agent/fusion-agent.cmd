@@ -15,7 +15,15 @@ set "HERE=%~dp0"
 set "VENV=%HERE%.venv"
 set "VENV_PY=%VENV%\Scripts\python.exe"
 
+rem "fusion-agent help" and "fusion-agent /?" mean --help.
+if /i "%~1"=="help" set "ARGS=--help" & goto :args_done
+if "%~1"=="/?" set "ARGS=--help" & goto :args_done
+set "ARGS=%*"
+:args_done
+
 if exist "%VENV_PY%" goto :have_venv
+echo fusion-agent: first start. Needs Python 3.10+, Autodesk Fusion with its MCP server on, and Ollama with a model.
+echo The first start creates a Python environment and installs two packages (about a minute, needs the internet).
 
 call :find_python
 if not defined BASE_PY (
@@ -52,7 +60,7 @@ if errorlevel 1 (
 )
 
 set "PYTHONPATH=%HERE%;%PYTHONPATH%"
-"%VENV_PY%" -X utf8 -m fusion_agent %*
+"%VENV_PY%" -X utf8 -m fusion_agent %ARGS%
 set "CODE=%ERRORLEVEL%"
 if not "%CODE%"=="0" if not "%CODE%"=="130" if defined PAUSE_ON_ERROR pause
 exit /b %CODE%

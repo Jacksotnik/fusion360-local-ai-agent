@@ -40,7 +40,14 @@ python_hint() {
     echo "  2. Open a new terminal window and run fusion-agent again."
 }
 
+# "fusion-agent help" means --help.
+if [ "$1" = "help" ]; then
+    set -- --help
+fi
+
 if [ ! -x "$VENV_PY" ]; then
+    echo "fusion-agent: first start. Needs Python 3.10+, Autodesk Fusion with its MCP server on, and Ollama with a model."
+    echo "The first start creates a Python environment and installs two packages (about a minute, needs the internet)."
     BASE_PY="$(find_python)"
     if [ -z "$BASE_PY" ]; then
         python_hint

@@ -398,6 +398,10 @@ class App:
         print("Model %s%s. Session files: %s" % (self.settings["model"], mode, session_folder))
         print(term.paint("Type a request in any language. /help lists the commands. "
                          "Ctrl+C stops an answer, Ctrl+D quits.", term.GREY))
+        print(term.paint("Examples: \"Сделай пластину 80 на 50 мм толщиной 6 мм с четырьмя отверстиями 6 мм\", "
+                         "\"Сделай шестерню: модуль 2, 20 зубьев, ширина 10 мм\", "
+                         "\"Сделай пластину толще, 10 мм\", \"Какая масса детали?\"; "
+                         "drag a picture into the window to build a part from a photo.", term.GREY))
 
     # --- Input ----------------------------------------------------------------------------------
 

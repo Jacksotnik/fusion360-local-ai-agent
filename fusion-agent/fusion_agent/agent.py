@@ -178,6 +178,19 @@ def truncate(text):
     return text[:TOOL_OUTPUT_CHARS] + "\n... [truncated, %d chars total]" % len(text)
 
 
+CODE_BLOCK = re.compile(r"```(?:python|py)?[ \t]*\n(.*?)```", re.DOTALL)
+
+
+def script_in_text(content):
+    """The Python of the last fenced code block in a reply, or None. Some models (the 26B MoE build)
+    write the script into the answer instead of calling the tool; the loop then runs it as a call."""
+    blocks = CODE_BLOCK.findall(content or "")
+    if not blocks:
+        return None
+    code = blocks[-1].strip()
+    return code or None
+
+
 def strip_thinking(messages):
     """Thinking of finished turns is dropped (Google's guidance for Gemma 4)."""
     for message in messages:
@@ -504,6 +517,11 @@ class Agent:
             seconds = time.time() - started
             message = response.get("message", {})
             tool_calls = message.get("tool_calls") or []
+            if not tool_calls and response.get("done_reason") != "length":
+                code = script_in_text(message.get("content", ""))
+                if code:
+                    tool_calls = [{"function": {"name": "fusion_script", "arguments": {"script": code}}}]
+                    self.listener.status("script in text")
 
             stats = call_stats(response, seconds, tool_calls)
             calls.append(stats)

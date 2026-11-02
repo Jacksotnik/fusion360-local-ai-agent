@@ -227,5 +227,18 @@ class ShortNameTest(unittest.TestCase):
         self.assertEqual(short_name("llama3.2"), "llama3.2")
 
 
+class ScriptInTextTest(unittest.TestCase):
+    def test_last_python_block_is_taken(self):
+        from fusion_agent.agent import script_in_text
+        text = "Вот скрипт:\n```python\nbox(10, 10, 10, corner=(0, 0, 0))\ncheck(size=(10, 10, 10))\n```\nГотово."
+        self.assertEqual(script_in_text(text), "box(10, 10, 10, corner=(0, 0, 0))\ncheck(size=(10, 10, 10))")
+
+    def test_plain_answer_has_no_script(self):
+        from fusion_agent.agent import script_in_text
+        self.assertIsNone(script_in_text("Толщина пластины 5 мм."))
+        self.assertIsNone(script_in_text(""))
+        self.assertIsNone(script_in_text(None))
+
+
 if __name__ == "__main__":
     unittest.main()

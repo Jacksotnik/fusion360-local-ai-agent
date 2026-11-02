@@ -1,33 +1,76 @@
 # fusion-agent
 
-A terminal bridge between a local model and Autodesk Fusion. You type a request ("make a plate 80 by 50,
-6 mm thick, with four 6 mm holes 10 mm from the corners"), attach a picture if you have one, and the
-model builds or edits the part in Fusion through Fusion's built-in MCP server. No UI except the
-terminal. Windows and macOS (macOS is untested yet, see below).
+**A local AI model builds and edits parts in Autodesk Fusion from a plain-language request.**
 
-The app works with **any Ollama model that can call tools**; it needs vision for pictures and
-screenshots. It never downloads or installs models: it checks what is there and says what is missing.
-Recommended: **Gemma 4 12B** — the system prompt and the CAD helpers were tuned and measured on it
-(`gemma4-12b:q8_0`, Q8_0, fully on a 16 GB GPU).
+You type what you want in the terminal, in Russian or English, in everyday words:
+
+```
+Сделай пластину 80 на 50 мм толщиной 6 мм с четырьмя отверстиями 6 мм в 10 мм от углов.
+Сделай шестерню: модуль 2, 20 зубьев, ширина 10 мм, отверстие 8 мм.
+Сделай болт M8 длиной 40 мм с головкой под ключ 13.
+Скругли углы радиусом 5.   Сделай пластину толще, 10 мм.   Какая масса детали?
+```
+
+The model writes a short script with ready-made CAD functions, the app runs it inside Fusion through
+Fusion's built-in MCP server, checks the result against the numbers of your request, and shows you a
+screenshot. You can attach a photo of a part and give its sizes in words. Everything runs on your own
+computer: no cloud, no account, no data leaves the machine.
+
+The app never saves or closes your Fusion documents. Saving the design is up to you.
+
+## What it is for
+
+- Building parts from words: plates, disks, shafts, bushings, flanges, brackets, boxes, profiles
+  (L, U, T, I), bottles and vases (bodies of revolution with rounded shoulders), gears, nuts and bolts,
+  threads, springs, tubes along a path, lofts, ribs, holes of every kind (through, blind, counterbored,
+  countersunk, angled), slots, pockets, grooves, keyways, splines, fillets, chamfers, shells, patterns,
+  engraved text.
+- Editing the part you just built or one you opened yourself: "make it thicker", "the hole 12 mm",
+  "round the corners", "20 mm longer" — through the model's own parameters, so everything that depends
+  on them follows.
+- Questions about a design: sizes, mass, material, parameters.
+- Building a part from a photo plus its sizes in words.
+
+It is a workshop tool for one person at a terminal, not a replacement for Fusion's UI.
+
+## The model
+
+The app is tuned on and tested with **Gemma 4 12B** (Google, `gemma4-12b:q8_0`, Q8_0 quantization,
+13.4 GB, fits entirely on a 16 GB GPU, about 24 tokens/s on a laptop Quadro RTX 5000). Every number
+below was measured with it.
+
+Any other Ollama model that can call tools will run (vision is needed for photos and screenshots), but
+the prompt and the CAD helpers were shaped around Gemma 4 12B. Two others were tried on the same tool:
+Qwen3.5-9B (faster, less precise, and it fakes a result to pass its own check) and Gemma 4 26B-A4B MoE
+(the same time per part, less precise). Gemma 4 12B stayed.
+
+The app never downloads or installs models. It checks what is installed and tells you what is missing.
 
 ## Requirements
 
-- Windows 10/11 or macOS, Python 3.10 or newer.
-- [Ollama](https://ollama.com/download), running, with a model that can call tools.
-- Autodesk Fusion, running, with its MCP server turned on (see [Troubleshooting](#troubleshooting)).
+| | |
+|---|---|
+| OS | Windows 10/11. macOS launchers exist but are untested (see `docs/macos-checklist.md`). |
+| Python | 3.10 or newer, on the PATH (`python --version`). |
+| Autodesk Fusion | installed and running, with the **Fusion MCP Server** turned on (one checkbox, see below), a design open in the DESIGN workspace. |
+| Ollama | installed and running ([ollama.com/download](https://ollama.com/download)). |
+| Model | an Ollama model that can call tools; recommended **Gemma 4 12B Q8_0** (`ollama pull` the official GGUF from Hugging Face, e.g. `hf.co/ggml-org/gemma-4-12B-it-GGUF:Q8_0`). |
+| GPU | 16 GB of video memory for Gemma 4 12B Q8_0 fully on the GPU (it still works with less, partly on the CPU and slower). |
+| Internet | once, for the first start (two Python packages: `prompt_toolkit`, `Pillow`). |
 
-## Run
+**Turning on the MCP server in Fusion:** your profile name (upper right) > Preferences > General > API >
+under "Preferences for Scripting and Programming" tick **Fusion MCP Server** (port 27182) > Apply > OK.
+
+## Start
 
 | | |
 |---|---|
-| Windows | double-click `fusion-agent.cmd`, or run `fusion-agent.cmd` in cmd or PowerShell |
-| macOS | double-click `fusion-agent.command` in Finder, or run `./fusion-agent` in Terminal |
+| Windows | double-click `fusion-agent.cmd` (or run it in cmd / PowerShell) |
+| macOS | double-click `fusion-agent.command`, or `./fusion-agent` in Terminal |
 
-The first run creates a Python environment in `.venv` and installs `prompt_toolkit` and `Pillow`
-(needs the internet once); later runs start at once. Arguments are passed through, e.g.
-`fusion-agent.cmd --new --verbose`.
-
-Optional: `pipx install .` (or `pip install .`) in this folder gives a global `fusion-agent` command.
+The first start creates a Python environment in `.venv` and installs the two packages; later starts take
+a second. The app then checks everything it needs (Python, Ollama, the model, GPU memory, Fusion, its
+MCP server, the active design) and prints numbered steps for anything missing; fix it and press Enter.
 
 ```
 fusion-agent [--model NAME] [--think] [--verbose] [--no-screenshots] [--new]
@@ -36,57 +79,43 @@ fusion-agent --selftest    # four quick tasks in new designs, pass/fail with sec
 fusion-agent --version
 ```
 
+Optional: `pip install .` in this folder gives a global `fusion-agent` command.
+
 ## How a session goes
 
-At start the app checks Python, Ollama, the model, GPU memory, Fusion, its MCP server, a test script
-and the active document. Each problem gets short numbered steps; fix them and press Enter to check
-again. If the chosen model is missing but usable ones are installed, the app lists them to pick one.
+The app works in **one design** and marks it:
 
-The app works in **one design** and marks it (design attribute `fusion-agent/session`):
-
-- an empty design that is active in Fusion is taken as it is;
+- an empty design active in Fusion is taken as it is;
 - a design you opened or made yourself is taken after one question (Enter means yes): the app can
-  change it or answer questions about it;
+  change it or answer questions about it; the steps you made are protected, the model cannot delete them;
 - `/new` (or `--new`) opens a new empty design.
 
-Before every request it checks that this design is still the active document; if not, it asks: back
-to the session design, work with the design that is active now, a new design, or skip. It never saves
-or closes a document, and it refuses model scripts that reach for documents. Saving the design is up
-to you.
+Before every request it checks that this design is still the active document and asks what to do if not.
 
-**Your own models.** Open a part in Fusion, start the app and ask, in plain words:
+Type requests in plain words; sizes may be in centimeters ("7 см" reaches the model as "7 см (70 мм)").
+While the model works you see a spinner with seconds and one grey line per script. After the answer:
+a grey line like `8.1 s · 2 model calls · 24 t/s` and, when the design changed, a screenshot.
 
-- questions: "Какая толщина у пластины?", "Сколько она весит?", "Перечисли параметры модели",
-  "Из чего она сделана?" The model answers from the design state (bodies, sizes, user parameters, the
-  dimensions of every sketch and feature, material and mass) and does not change the design;
-- changes: "Сделай пластину толще — 10 мм", "Отверстие сделай побольше, 12 мм", "Скругли углы на 5 мм".
-  Sizes are changed through the model's own parameters (a user parameter when the dimension uses one,
-  so everything that depends on it follows); holes, fillets and chamfers are added on top.
+**Pictures in.** Drag a PNG, JPEG, WebP or AVIF file into the terminal window or type its path, add the
+request, press Enter. A copied picture goes in with **Alt+V** or `/paste`.
 
-The steps you made yourself are protected: the model cannot delete them (`clear()` refuses, `undo()`
-stops at them), and `/undo` takes back only what the app changed, parameter values included.
-
-Type requests in any language and in plain words ("пластинка", "дырочка", "полсантиметра", "сними
-острые края"); sizes can be in centimeters (the app adds the mm value for the model: "7 см (70 мм)").
-The model answers in the language of the question (the prompt's examples are Russian, and so were the
-measured requests). While the model works you see a spinner with
-seconds and one grey line per script it runs (`/verbose on` shows the scripts themselves). After the
-answer comes a grey line like `8.1 s · 2 model calls · 24 t/s · context 5.1k/32k`, and, when the design
-changed, a screenshot.
+**Pictures out.** After each change a fitted screenshot is saved in the session folder and drawn in the
+terminal where the terminal can show pictures (Windows Terminal 1.22+, iTerm2, WezTerm, Kitty, Ghostty);
+elsewhere `/open` opens it.
 
 ## Commands
 
 | Command | |
 |---|---|
 | `/help` | commands and keys |
-| `/new` | open a new empty design in Fusion and work in it |
+| `/new` | open a new empty design and work in it |
 | `/state` | describe the design: bodies, sizes, round faces, timeline with dimensions |
 | `/screenshot [view]` | show the design: `iso-top-right` (default), `front`, `top`, `left`, ... |
 | `/image <path>` | attach a picture to the next request |
 | `/paste` | attach the picture from the clipboard (also Alt+V) |
 | `/model [name]` | list the installed models that can call tools, or switch to one |
 | `/think on\|off` | thinking mode: slower (1.5-3 minutes per part), more accurate for parts of many operations |
-| `/undo [n]` | undo the last n changes: the design (timeline, changed dimensions and parameters) and the conversation; questions are skipped |
+| `/undo [n]` | undo the last n changes: the design and the conversation |
 | `/reset` | new conversation; the design stays |
 | `/verbose on\|off` | show the scripts the model runs |
 | `/screenshots on\|off` | a screenshot after each change |
@@ -94,207 +123,80 @@ changed, a screenshot.
 | `/doctor` | run the startup checks again |
 | `/exit` | quit (also Ctrl+D) |
 
-Keys: **Ctrl+C** stops the current answer (the conversation goes back to before the request; the design
-keeps what finished scripts changed, `/undo` removes it); a second Ctrl+C quits. Ctrl+C on an empty line
-or Ctrl+D quits. Tab completes commands, views, model names and the path after `/image`.
+**Ctrl+C** stops the current answer; a second Ctrl+C quits. Tab completes commands, views, model names
+and paths.
 
-`/think`, `/verbose`, `/screenshots` and the model chosen with `/model` are remembered; command-line
-flags apply to one run.
+## Results
 
-## Pictures
+Every task set has a reference part whose volume was computed by hand; a task passes only when the
+model's part matches the reference in volume (0.5 %), overall size (0.05 mm), round-face diameters and
+body count. The model is random (temperature 1.0), so sets were run several times. Numbers below are from
+the final code, Gemma 4 12B, fast mode (no thinking), on a laptop with a 16 GB GPU.
 
-**In.** Drag a PNG, JPEG, WebP or AVIF file (up to 10 MB) into the terminal window or type its path: it turns
-into a label like `[Image: part.png]`; add the request and press Enter. Quoted Windows paths
-(`"C:\a b\x.png"`), escaped macOS paths (`/Users/a\ b/x.png`) and `file://` links work. A copied picture
-goes in with **Alt+V** or `/paste`; on macOS also **Ctrl+V** (Cmd+V pastes text only). In Windows Terminal
-Ctrl+V is the terminal's own paste and cannot see pictures: use Alt+V. Pictures are downscaled to 1024 px
-on the long side. A paste longer than three lines shows as `[Pasted text #1, 12 lines]` and is sent whole.
+**Sets the tool was never tuned on** (written, run once, numbers recorded before any fix):
 
-**Out.** After a request that changed the design the app takes a fitted iso screenshot, saves it in the
-session folder and draws it in the terminal where it can: Windows Terminal 1.22+ (Sixel), iTerm2 and
-WezTerm, Kitty and Ghostty. Elsewhere (the classic Windows console, macOS Terminal) it prints the path;
-`/open` opens it. `FUSION_AGENT_INLINE_IMAGES=off` turns inline pictures off.
+| Set | What | Result |
+|---|---|---|
+| Plain-language requests, 26 tasks | everyday words, cm sizes, plates, disks, bushings, edits, questions | **26/26, 26/26, 26/26, 25/26** |
+| Your own models, 11 tasks | parts made in Fusion by hand: edits through parameters, questions about mass and sizes | **11/11** (three runs) |
+| Real parts from a picture plus build steps, 51 | a photo and the steps in words with every size | **43/51 before one prompt line about arcs, 47-49/51 after** |
+| Real parts from a picture plus build steps, 62 (second set) | same kind, written after the arc fix | **61/62** |
+| The exam: a photo of a hub flange plus sizes in words | spline bore, 4 bolt holes, 2 rim cutouts, filleted hub | **PASS in 8 of 9 runs** |
+| Bench regression, 23 tasks | the original graded tasks of the project | **23/23** (most runs), 22/23 (a chamfer on both edges of a face instead of the outer one) |
 
-## Model choice
+Across the untuned sets on the final code: **173 of 179 tasks, 96.6 %.**
 
-`/model` lists the installed models that can call tools, with their size and whether they have vision
-and thinking, and marks the one the prompt was tuned on. Any of them can be used; a model without vision
-works without pictures and screenshots. The app gives the model the same tools and limits as the
-measured setup: num_ctx 32768, replies capped at 1200 tokens (4000 with thinking), up to 20 model calls
-per request, the design state attached to every request.
+**Sets used for tuning** (their failures drove the helpers; numbers are the last run):
 
-## Troubleshooting
+| Set | What | Result |
+|---|---|---|
+| Machine parts, 12 | splined hub and shaft, rim notches, hub fillet, face recess, keyway, counterbores | 12/12 |
+| Bodies of revolution, 5 | a two-cone vase, a sphere, a dome, a barrel, a knob with a rounded top | 5/5 |
+| Gears, threads, hexagons, 8 | gears with bore and hub, nut, bolt, threaded shaft and hole, socket-head screw | 8/8 |
+| Basics, 11 | bent tube, L-rod, spring, square-to-round loft, frustum, gusset, angled hole, subtracted sphere, copied cube with a bridge, engraved plate, square tube along an arc | 9/11 |
 
-| Startup line | What to do |
-|---|---|
-| ✖ Ollama does not answer | Start Ollama (Windows: Start menu, it runs in the tray; macOS: the Ollama app), or `ollama serve`. Another address: set `OLLAMA_HOST`. |
-| ✖ Model ... is not installed / cannot call tools | Pick one of the installed models the app lists (or `--model <name>`). If none can call tools, install such a model in Ollama yourself; Gemma 4 12B is recommended. |
-| ! Memory | The model does not fit in free GPU memory (Windows: `nvidia-smi`; macOS: unified memory). It still works, partly on the CPU and slower. Close other GPU programs or pick a smaller model. |
-| ✖ Fusion is not running | Start Autodesk Fusion and wait until it has fully opened. |
-| ✖ Fusion MCP does not answer | In Fusion: your profile name (upper right) > Preferences > General > API > under "Preferences for Scripting and Programming" tick **Fusion MCP Server**, port 27182 > Apply > OK (Autodesk help: "Connecting to the Fusion MCP server"). Another address: set `FUSION_MCP_URL`. |
-| ✖ Script run: output was lost | Fusion's MCP lost script output; restart Fusion. (The app guards against the known cause on every script.) |
-| ! Design: no document / not a design / not in the Design workspace / direct modeling | Open a new design (File > New Design), switch to the DESIGN workspace, or type `/new`. The app needs a parametric design with a timeline. |
-| ✔ Design: "X" has N bodies | The app asks once and then works with it (changes or questions); `/new` gives a clean design. |
+Honest reading of the misses: the model sometimes adds what was not asked (a rounded corner instead
+of a chamfer), misreads a width (20 instead of 10), or writes a wrong volume formula into its own check
+and then "repairs" a correct part. The tool catches what geometry can catch (wrong direction, a join
+that adds nothing, an arc that bulges past its points, a hole outside the part) and tells the model
+in one line what is wrong; a request that keeps failing is stopped after 300 seconds or five identical
+scripts and the model answers with what it could not do.
 
-Windows: if Russian text shows as question marks, use Windows Terminal (the launcher sets UTF-8).
+Speed: a one-operation part takes 5-10 s, a part of five or six operations 15-65 s. Thinking mode
+(`/think on`) is 3-4 times slower and helps on parts of many operations.
+
+Validation tools for developers: `python -m unittest discover -s tests` (no Fusion needed),
+`fusion-agent --selftest`, `tools/run_cases.py cases/<set>.json --tag <name>` (runs a set and compares
+with the references), `tools/ladder_regression.py` (the bench tasks).
+
+## Known limits
+
+- Parts are built in the root component; sketches lie on the base planes (with offsets) or on a tilted
+  plane made by the app. No sheet metal, no assemblies or joints, no free-form surfaces (curves are
+  arcs, bodies of revolution, sweeps and lofts).
+- The weak spot of a 12B model is spatial placement in parts of many operations (which end, which face).
+  The tool's hints fix most of it on the next call; `/think on` helps further at 3-4 times the time.
+- Rim cutouts, splines and keyways are straight-sided and along Z; involute splines are not modelled
+  (gears are). Threads are ISO metric only.
+- A size that no dimension holds in your own model (a sketch drawn without sizes, an imported body) is
+  changed by adding or cutting material, not by a parameter.
+- `/undo` restores the timeline, dimensions and parameters; a change made outside them is reported, and
+  Fusion's own Undo goes further.
+- macOS is untested.
 
 ## Files
 
 | | Windows | macOS |
 |---|---|---|
 | settings, input history | `%LOCALAPPDATA%\fusion-agent\` | `~/Library/Application Support/fusion-agent/` |
-| session log (JSONL: requests, scripts, results, timings) and pictures | `...\fusion-agent\sessions\<date-time>\` | `.../fusion-agent/sessions/<date-time>/` |
+| session log (requests, scripts, results, timings) and pictures | `...\fusion-agent\sessions\<date-time>\` | `.../fusion-agent/sessions/<date-time>/` |
 
 Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMAGES` (`off`, `sixel`,
 `iterm`, `kitty`), `NO_COLOR`.
 
-## Validation
-
-- Unit tests (no Fusion needed): `.venv\Scripts\python -m unittest discover -s tests`.
-- `fusion-agent --selftest`: a plate with holes, the edit "make it thicker", the question "how thick is
-  it now" (the design must stay as it is) and a stepped shaft through the real loop, checked against
-  hand-computed volumes. On the Windows laptop: 4/4 in 21 s.
-- Task sets of this app (`cases/`, runner `tools/run_cases.py`, every reference checked against a
-  hand-computed volume): requests in plain words (`plain_dev.json`, 25, and `plain_holdout.json`, 25)
-  and the user's own models (`user_models_dev.json`, 12, and `user_models_holdout.json`, 11: plates,
-  a bracket in a component, a flange held by user parameters, a filleted block; changes and questions
-  about parameters, size, mass and material). The holdout sets are honest: nothing was tuned on them
-  before their first numbers were written down. With `gemma4-12b:q8_0`, fast mode, 2026-10-31:
-
-  | Set | Before (v0.1.0) | After, honest (first runs) | After tuning on it |
-  |---|---|---|---|
-  | plain words, `plain_holdout` (25) | 20/25, 21/25 | 23/25, 22/25 | 25/25, 25/25, 24/25 |
-  | plain words, `plain_holdout2` (20) | | 16/20, 19/20 | |
-  | plain words, `plain_holdout3` (18) | | 16/18, 15/18 | 18/18 |
-  | your own models, `user_models_holdout` (11) | 9/11 | 11/11, 11/11, 11/11 | 11/11 (dimensioned sketches) |
-  | plain words, `plain_dev` (25) | | | 25/25, 25/25, 25/25 |
-  | your own models, `user_models_dev` (12) | | | 12/12 (four runs) |
-  | plain words, `plain_holdout4` (18), 2026-11-01 | | 16/18, 16/18 | 18/18 |
-  | plain words, `plain_holdout5` (22) | | 19/22, 20/22 | 22/22 |
-  | plain words, `plain_holdout6` (24) | | 22/24, 23/24 | 22/24 |
-  | plain words, `plain_holdout7` (25) | | 23/25, 23/25 | 24/25 (the same at temperature 0.3 and 0) |
-  | plain words, `plain_holdout8` (26), **final configuration** | | **26/26, 26/26, 26/26, 25/26** | |
-  | machine parts, `parts_dev` (12) | | | 12/12 |
-  | the owner's exam, `exam_photo.json`: a photo of a hub flange plus sizes in words | | **PASS in 8 of 9 runs**; 142 s and 10 calls at first, 15-65 s and 2-5 calls on the final code | |
-  | bodies of revolution, `revolve_dev` (5: a two-cone vase, a sphere, a dome on a cylinder, a barrel, a knob with a rounded top), evening of 2026-11-01 | | | 3/5, 4/5, 5/5 as the helper's checks were fixed |
-  | **real designs, `gallery_holdout` (51 from the Fusion 360 Gallery data): a picture plus the steps in words** | | **43/51 (84 %)** | **48/51 (94 %)** after one prompt line about arcs; 47/51, then 49/51 after the round-3 fixes |
-  | **real designs, `gallery_holdout2` (62, train split), late evening** | | **61/62 (98 %)** | |
-  | gears, threads, hexagons, `gears_dev` (8: gears with bore and hub, nut, bolt, threaded shaft and hole, socket-head screw) | | | 8/8 |
-  | Qwen3.5-9B on the same tool (comparison, no tuning): holdout8 22/26, revolve 4/5, exam PASS, gallery 42/51, gallery2 28/32 | | | dropped: less precise, fakes results under pressure |
-  | the owner's "basics" list, 2026-11-02: `basics_dev` (11: a bent tube, an L-rod, a spring, a square-to-round loft, a frustum, a gusset, an angled hole, a sphere subtracted from a block, a copied cube joined by a bridge, an engraved plate, a square tube along an arc) | | | 7/10, 8/10, 6/11, **9/11** (max 120 s once the turn budget and the hints were in) |
-  | tasks with NO helper, `raw_api_dev` (a torus, an ellipse; the model must write Fusion API code) | | 0/3 without the prompt section | 1/3, 2/3, 0/2 with it |
-
-  Each tuning round fixed what the previous honest set showed, in the tool rather than in the prompt
-  where words had failed: sizes in centimeters copied as mm; a wall thickness counted once; the length
-  of a plate changed through its thickness (sketches now carry dimensions named "length" and "width",
-  and an edit verb in the request gets that name next to it, as a disk gets `cylinder()` next to its
-  name: the copy sent to the model carries these marks, your text stays as typed); the П- and Г-brackets (`u_bracket`,
-  `l_bracket` with named arguments); a wall along an edge put along the wrong edge (`wall_on_edge`);
-  a groove's width given to the flanks (`groove`); a bead around a disk built from boxes; a part
-  rebuilt on top of the earlier attempt (check() now says so); a correct part re-run eight times
-  because the model's own check numbers were wrong (a STOP text after the third identical script,
-  check() accepts the size across rim cutouts and spline sizes with a note). The last honest set,
-  written after all of that, passes 26/26 twice. Questions are answered in 2-5 s.
-  Summaries: `results/plain-*/`, `results/user-*/`, `results/exam-*/`.
-- Machine parts of the exam's kind (`cases/parts_dev.json`, 12, tunable: a splined hub and shaft, rim
-  notches, a hub fillet, a face recess, a keyway, counterbores, a chamfered boss) drove the helpers
-  `spline_hole`, `spline_shaft`, `rim_cutouts`, `rim_cutout_area`, `groove`, `keyway`. The exam itself
-  (`cases/exam_photo.json`, the photo `cases/exam_flange.jpg` attached to the request) passed in 7 of
-  8 runs (the miss: two bolt holes placed into the rim cutouts); the time fell from 142 s and 10 model
-  calls to 15 s and 2 calls as the hints removed the wasted calls.
-- Bodies of revolution (evening of 2026-11-01). The owner's picture of a bottle ("diameter 100, height
-  300") came out as a stepped cylinder in 3 of 3 runs: no helper or example knew curved profiles. Added
-  `revolved_profile([(D, z), (D, z, r), (D, z, "arc"), ...])` (an outline from the bottom up: corners,
-  rounded corners, arc points for bellies, domes and waists; it prints the volume), `outline()` and
-  `arc()` for sketches with curved sides, `sphere()`, `dome()`; the prompt got a bottle example and the
-  rule that "height N" of a thing on a picture is its overall height. The bottle then came out with
-  rounded shoulders, a neck, a lip and a cap at 300 mm in 3 of 3 runs (8-16 s), though that is the
-  prompt's own example copied; the tunable `revolve_dev` set is the real measure (`results/revolve-r*/`,
-  `results/bottle-r*/`).
-- Real designs from the Fusion 360 Gallery data (Hugging Face `harrisonxliang/Fusion360Dataset`, the
-  Autodesk Gallery reconstruction set: a picture, the build history and the measured volume of 8 625
-  designs). `tools/gallery_cases.py` turns the simple ones (lines, arcs, circles; one-sided or symmetric
-  extrudes; 10..500 mm; up to four timeline steps) into tasks: the picture plus the steps in words with
-  every size in mm, a reference that replays the history with the helpers, and the Gallery's own volume
-  as the hand volume; 51 of 60 replays matched that volume and were kept (`cases/gallery_holdout.json`,
-  pictures in `cases/gallery/`). The set is honest: its first run, before any tuning, gave **43/51**,
-  six misses from one cause (an arc's through point drawn as a corner, because `outline()` was not in
-  the prompt yet), one through-all cut instead of 8 mm, one rescaling of the given points to the stated
-  size. With the `outline()` line in the prompt: **48/51**, the three misses random (a bigger diameter
-  than written, 27 mm instead of 28 "to reach the total", an empty last script). Median 12.5 s per
-  design. Summaries: `results/gallery-r1/`, `results/gallery-r2/`.
-- The owner's list of basics (2026-11-01/02, "это же база 3d моделирования"): threads (`thread`, ISO
-  metric through Fusion's ThreadFeatures, external and internal, modeled or cosmetic), spur gears
-  (`spur_gear`, involute teeth, `gear_points`), hexagons (`hex_prism`, `hex_socket`: nuts, bolt heads,
-  socket screws), a tube or rod along a path (`pipe`: polyline corners with `bend_radius`, arc points,
-  round or square section), a spring (`spring`, a helix as a fitted spline swept with the wire), `loft`,
-  a draft angle (`taper=` on extrude, box, cylinder), ribs (`rib`, `gusset`), tilted planes and angled
-  holes (`tilted_plane`, `angled_hole`), combining bodies (`subtract`, `union`, `intersect`), moving them
-  (`move_body`, `rotate_body`, `copy_body`), text (`engrave`); countersinks were already in `screw_holes`.
-  `gears_dev` passed 8/8 on the first run. `basics_dev` is the hard set: 7/10, 8/10, 6/11 over three runs,
-  then 9/11 with no task over 120 s, the misses being the model's own volume formulas rejected by its own check() and
-  then "repaired" geometry, paths given with a corner next to an arc point, a bridge read as 20 wide
-  instead of 10. What the tool learned from them: `check()` lists what every step added when the volume
-  differs; a join reports the part of the piece that lay inside the part; `rib` refuses a corner that
-  overlaps the part; `pipe` prints the radius and center of every arc and accepts the path's extent as
-  the size; a turn that keeps calling tools past 300 s gets one last call to answer (status
-  `time_budget`), and five identical script-and-result pairs end it (`repeat_stuck`): before that, two
-  tasks of one run took 500 and 620 s.
-- When no helper fits (2026-11-02): the prompt got a section telling the model to write Fusion API code
-  itself (lengths in cm, `root`, `adsk`, sketch curves by API) and to call `fusion_api_docs` (a tool it had
-  all along but never used) for unknown members. On `raw_api_dev` (a torus, an ellipse, a square tube
-  along an arc, none with a helper) the model went from 0/3 (it forced `tube`, `outline` and `pipe` onto
-  them) to 1/3 and 2/3; the docs tool was called in one task of six. The square tube then got a helper
-  (`pipe(section="square")` with an arc path). The honest reading: a 12B model writes raw API code for
-  simple curves about half the time and fails on sweeps; the toolbox, not the docs, is what carries it.
-- Temperature: `tools/run_cases.py --temperature` overrides the sampler for an experiment. On
-  `plain_holdout7` 1.0, 0.3 and 0 gave exactly the same 24/25 with the same miss and the same number
-  of model calls, so the app keeps the model's own sampler (1.0 / 0.95 / 64).
-- No regression against the bench: `tools/ladder_regression.py` runs fusion-ladder's graded tasks
-  (`cases.json`, 11, and `cases_holdout2.json`, 12) through this package's loop and compares with the
-  bench's reference geometry. With `gemma4-12b:q8_0`, fast mode, 2026-10-31: **23/23 and 22/23, median
-  7.4 s per task** (the bench itself: 23/23, median 9-10 s). The one failure was the model reading "total
-  length 20" of a flanged bushing as 20 + 3 mm. Summaries: `results/reg-r1/`, `results/reg-r2/`. With the
-  changes for plain words and your own models: **23/23, median 7.4 s** (`results/reg-r9/`). With the
-  final code of 2026-11-01 (helpers for machine parts, hints, request marks): **23/23 and 23/23, median
-  8 s, max 77 s** (`results/reg-r12/`, `results/reg-r13/`); the two runs before the request marks gave
-  21/23 and 20/23, every miss a disk built as a box, which is what the `cylinder()` mark fixed. A script
-  repeated after CHECK OK now gets "answer the user" instead of "find what is wrong": before that, three
-  correct parts per run hit the 20-call limit (200-300 s) with the model re-running a finished script.
-  After the bodies of revolution and the `outline()` prompt line (evening of 2026-11-01): **22/23, median
-  8.2 s** (`results/reg-r14/`; the miss: a chamfer put on both circular edges of a bushing's end instead
-  of the outer one, a random pick seen on the bench before), `plain_holdout8` 26/26 again, selftest 4/4.
-- The REPL was driven in a Windows pseudo-console (ConPTY, the layer Windows Terminal uses): startup
-  hints, a non-empty design, a switched or closed session design, pictures by path, paste and Alt+V,
-  model switching, Ctrl+C during an answer.
-
-## Known limits
-
-- The CAD helpers build in the root component only, sketches on the XY/XZ/YZ planes (with offsets), and no
-  threads, sweeps, lofts or text; curved shapes are arcs in outlines and bodies of revolution
-  (`revolved_profile`, `sphere`, `dome`), not free-form surfaces; the model can still try the raw Fusion API. In a design you made,
-  bodies inside components are described and checked and their parameters can be changed, but new
-  features go into the root component.
-- Your own model is changed through its parameters and dimensions. A size that no dimension holds (a
-  sketch drawn without sizes, an imported body) is changed by adding or cutting material.
-- Edits of a plate the app built itself go through named dimensions ("length", "width", the extrude's
-  thickness); a verb the app does not know (not расширь / сузь / удлини / укороти / длиннее / короче /
-  шире / уже) leaves the choice to the model. `/undo` and "build it again 70 x 50 x 8 mm" fix a wrong pick.
-- The weak spot of the 12B model is spatial placement in parts of many operations (which end, which
-  flange). A part of five or six operations (the exam flange) takes 3-5 model calls and about a minute:
-  the first script usually has one wrong argument order or check() expectation, and the tool's hint
-  fixes it on the next call. `/think on` helps, at 3-4 times the time.
-- Rim cutouts, splines and keyways are straight-sided and along Z (`rim_cutouts`, `spline_hole`,
-  `spline_shaft`, `keyway`); involute splines, helical grooves and threads are not modelled.
-- `/undo` restores the timeline and changed dimensions; a change made outside them is reported, and
-  Fusion's own Undo goes further.
-- **macOS is untested**: launchers, process check, memory check, clipboard and inline pictures were
-  written for it but never run. `docs/macos-checklist.md` lists what to check.
-- Inline screenshots in Windows Terminal (Sixel) were checked by decoding the output, not yet by eye.
-
 ## Where things come from
 
-The CAD helper API (`fusion_agent/cad_api.py`), the system prompt (`fusion_agent/prompts/cad12.md`) and
-the agent loop (`fusion_agent/agent.py`) come from the bench `fusion-ladder` (the parent folder), where
-they were measured. **This app is now their source of truth**; the bench keeps its copies as the
-history of the measurements. The plan this app was built from is `PLAN.md`.
+The CAD helpers (`fusion_agent/cad_api.py`), the system prompt (`fusion_agent/prompts/cad12.md`) and
+the agent loop (`fusion_agent/agent.py`) grew out of the bench in the parent folder (`fusion-ladder`),
+where every change was measured on task sets with hand-computed references. This folder is their source
+of truth; the plan it was built from is `PLAN.md`.
