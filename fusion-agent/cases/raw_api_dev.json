@@ -1,0 +1,19 @@
+{
+ "note": "Tasks with NO helper (2026-11-02): can the model find the Fusion API in the docs and write raw adsk code? Tunable; measure before and after the prompt rule about fusion_api_docs. A-square-tube-arc moved to basics_dev once pipe() learned arcs and square sections; the torus and the ellipse stay without a helper.",
+ "cases": [
+  {
+   "id": "A-torus",
+   "prompt": "Сделай бублик (тор): наружный диаметр 60 мм, толщина кольца 12 мм, ось вертикальная, центр в начале координат.",
+   "start": null,
+   "reference": "sk = new_sketch('XZ')\ncircle(sk, 24, 0, 12)\nrevolve(sk, 'Z')",
+   "volume": "2*math.pi**2*24*6*6"
+  },
+  {
+   "id": "A-ellipse-disk",
+   "prompt": "Сделай эллиптическую пластину: эллипс с осями 60 и 40 мм, толщина 5 мм, центр в начале координат.",
+   "start": null,
+   "reference": "sk = new_sketch('XY')\nsk.sketchCurves.sketchEllipses.add(adsk.core.Point3D.create(0, 0, 0), adsk.core.Point3D.create(3, 0, 0), adsk.core.Point3D.create(0, 2, 0))\nextrude(sk, 5)",
+   "volume": "math.pi*30*20*5"
+  }
+ ]
+}

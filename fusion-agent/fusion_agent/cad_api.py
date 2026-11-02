@@ -28,6 +28,7 @@ _NEW_BASE_BODIES = 0
 _SPLINE_SIZES = set()
 _RIM_SIZES = {}
 _NOMINAL_SIZES = {}  # a size the request names -> (what the part measures, why): gear tips, threads
+_STEP_VOLUMES = []  # (feature name, change of the part's volume in mm3) for every extrude, revolve, cut
 
 _AXES = {"X": 0, "Y": 1, "Z": 2}
 _OPERATIONS = {
@@ -326,12 +327,23 @@ def extrude(sketch, distance, operation="new", symmetric=False, taper=0):
         else:
             extrude_input.setOneSideExtent(extent, _direction_sign(sketch, distance))
     where = _extents_text() if operation != "new" else ""
-    volume_before = sum(body.volume for body in _all_bodies()) if operation == "join" else 0
+    volume_before = sum(body.volume for body in _all_bodies())
     feature = _add(lambda: extrudes.add(extrude_input), "extrude (%s)" % operation,
                    "For join/cut/intersect the sketch shapes must overlap the body; check positions with describe()."
                    + (" Now " + where + "." if where else ""))
+    _STEP_VOLUMES.append((feature.name, (sum(body.volume for body in _all_bodies()) - volume_before) * 1000))
     if operation == "join":
         added = (sum(body.volume for body in _all_bodies()) - volume_before) * 1000
+        own = 0.0
+        try:
+            for profile in solid_profiles(sketch):
+                own += profile.areaProperties().area * 100 * abs(distance)
+        except Exception:
+            own = 0.0
+        if own and 1e-6 <= added < own * 0.995:
+            print("extrude (join) of %s mm: the piece is %s mm3 but only %s mm3 is new material, %s lay inside the "
+                  "part (count only %s in a volume formula)" % (
+                      _fmt(distance), _fmt(own), _fmt(added), _fmt(own - added), _fmt(added)))
         if added < 1e-6:
             _, _, normal_axis = _sketch_frame_axis(sketch)
             raise ValueError("extrude (join) of %s mm added nothing: the new piece lies entirely inside the part "
@@ -1041,15 +1053,17 @@ def _round_face_diameters():
     return result
 
 
-def body(name_or_index=0):
-    """A body of the design by its name from describe() ("Body1") or by index (0 = the first)."""
+def body(name_or_index=1):
+    """A body of the design by its name from describe() ("Body1") or by its number counted from 1."""
     bodies = _all_bodies()
     if not bodies:
         raise ValueError("there is no body yet")
     if isinstance(name_or_index, int):
-        if name_or_index >= len(bodies):
-            raise ValueError("there are only %d bodies: %s" % (len(bodies), [b.name for b in bodies]))
-        return bodies[name_or_index]
+        # counted from 1, like Fusion's names: body(1) is Body1
+        if name_or_index < 1 or name_or_index > len(bodies):
+            raise ValueError("body(%d): there are %d bodies, counted from 1: %s" % (
+                name_or_index, len(bodies), [b.name for b in bodies]))
+        return bodies[name_or_index - 1]
     if getattr(name_or_index, "objectType", "").endswith("BRepBody"):
         return name_or_index
     for candidate in bodies:
@@ -1181,9 +1195,20 @@ def _path_sketch(points, plane, offset, bend_radius):
     lines = sketch.sketchCurves.sketchLines
     segments = []
     previous = None
+    pending_arc = None
     for point in points:
-        current = _point(sketch, *point)
+        if len(point) == 3 and point[2] == "arc":
+            if previous is None:
+                raise ValueError('a path cannot start with an "arc" point')
+            pending_arc = (point[0], point[1])
+            continue
+        current = _point(sketch, *point[:2])
         if previous is not None:
+            if pending_arc is not None:
+                arc_curve = sketch.sketchCurves.sketchArcs.addByThreePoints(previous, _point(sketch, *pending_arc), current)
+                previous = arc_curve.endSketchPoint
+                pending_arc = None
+                continue
             segments.append(lines.addByTwoPoints(previous, current))
             previous = segments[-1].endSketchPoint
         else:
@@ -1227,11 +1252,29 @@ def _plane_at_path_start(path_sketch):
     return root.constructionPlanes.add(plane_input)
 
 
-def pipe(points, diameter, inner_diameter=None, plane="XY", offset=0, bend_radius=None, operation="new"):
-    """ТРУБА, ПРУТОК ПО ТРАЕКТОРИИ (sweep): a round section of this diameter (hollow when inner_diameter is
-    given) swept along the polyline through points (u, v) on the plane (XY: (x, y) at z=offset; XZ: (x, z)
-    at y=offset; YZ: (y, z) at x=offset); bend_radius rounds the corners (a bent tube, an elbow). Volume
-    = section area * path length (straight parts plus the arcs); it prints the path length."""
+def _path_points(points, plane, offset):
+    """(u, v) points on the given plane; (x, y, z) points are accepted when they all lie in one base plane,
+    which then becomes the plane and its offset. (u, v, "arc") marks an arc's through point."""
+    if all(len(point) == 3 and point[2] != "arc" for point in points):
+        for axis_index, name in ((2, "XY"), (1, "XZ"), (0, "YZ")):
+            values = set(round(point[axis_index], 6) for point in points)
+            if len(values) == 1:
+                u_index, v_index = {"XY": (0, 1), "XZ": (0, 2), "YZ": (1, 2)}[name]
+                return [(p[u_index], p[v_index]) for p in points], name, values.pop()
+        raise ValueError("the path points (x, y, z) must lie in one plane parallel to XY, XZ or YZ")
+    return [p if (len(p) == 3 and p[2] == "arc") else (p[0], p[1]) for p in points], plane.upper(), offset
+
+
+def pipe(points, diameter, inner_diameter=None, plane="XY", offset=0, bend_radius=None, operation="new",
+         section="round"):
+    """ТРУБА, ПРУТОК ПО ТРАЕКТОРИИ (sweep): a section of this size (round of this diameter, or
+    section="square" of this side; hollow when inner_diameter / inner side is given) swept along the path
+    through points: (u, v) on the plane (XY: (x, y) at z=offset; XZ: (x, z) at y=offset; YZ: (y, z) at
+    x=offset) or (x, y, z) points lying in one such plane; a point (u, v, "arc") is passed through by an
+    arc (a quarter-circle path); bend_radius rounds the corners between straight parts (a bent tube, an
+    elbow). Volume = section area * path length; it prints the length. The part's size is the path's
+    extent plus the section's half size at each end (check() accepts the path's extent as the size)."""
+    points, plane, offset = _path_points(points, plane, offset)
     path_sketch = _path_sketch(points, plane, offset, bend_radius)
     start_plane = _plane_at_path_start(path_sketch)
     profile_sketch = root.sketches.add(start_plane)
@@ -1241,20 +1284,37 @@ def pipe(points, diameter, inner_diameter=None, plane="XY", offset=0, bend_radiu
     start[v_index] = points[0][1]
     start[3 - u_index - v_index] = offset
     center = profile_sketch.modelToSketchSpace(adsk.core.Point3D.create(start[0] * MM, start[1] * MM, start[2] * MM))
-    profile_sketch.sketchCurves.sketchCircles.addByCenterRadius(center, diameter / 2 * MM)
-    if inner_diameter:
-        if inner_diameter >= diameter:
-            raise ValueError("inner_diameter must be smaller than diameter")
-        profile_sketch.sketchCurves.sketchCircles.addByCenterRadius(center, inner_diameter / 2 * MM)
+    if inner_diameter and inner_diameter >= diameter:
+        raise ValueError("the inner size must be smaller than the outer size")
+    if section == "square":
+        lines = profile_sketch.sketchCurves.sketchLines
+        lines.addCenterPointRectangle(center, adsk.core.Point3D.create(center.x + diameter / 2 * MM, center.y + diameter / 2 * MM, 0))
+        if inner_diameter:
+            lines.addCenterPointRectangle(center, adsk.core.Point3D.create(center.x + inner_diameter / 2 * MM, center.y + inner_diameter / 2 * MM, 0))
+        area = diameter ** 2 - (inner_diameter or 0) ** 2
+    elif section == "round":
+        profile_sketch.sketchCurves.sketchCircles.addByCenterRadius(center, diameter / 2 * MM)
+        if inner_diameter:
+            profile_sketch.sketchCurves.sketchCircles.addByCenterRadius(center, inner_diameter / 2 * MM)
+        area = math.pi * (diameter ** 2 - (inner_diameter or 0) ** 2) / 4
+    else:
+        raise ValueError('section must be "round" or "square"')
     feature = _sweep(profile_sketch, path_sketch, operation, "pipe (sweep)")
     length = 0.0
     for curve in path_sketch.sketchCurves:
         if not curve.isConstruction:
             length += curve.length / MM
-    area = math.pi * (diameter ** 2 - (inner_diameter or 0) ** 2) / 4
-    print("pipe: diameter %s%s along a path of length %s mm; volume = area %s * length = %s mm3" % (
-        _fmt(diameter), (", bore %s" % _fmt(inner_diameter)) if inner_diameter else "", _fmt(length), _fmt(area),
-        _fmt(area * length)))
+    low, high = _extents_mm()
+    corners = [(p[0], p[1]) for p in points if len(p) == 2]
+    for axis_index, values in ((u_index, [p[0] for p in corners]), (v_index, [p[1] for p in corners])):
+        extent = max(values) - min(values)
+        if extent > 0:
+            _NOMINAL_SIZES.setdefault(round(extent, 6), []).append(
+                (high[axis_index] - low[axis_index], "the path's extent; the section sticks out %s past each end" % _fmt(diameter / 2)))
+    print("pipe: %s section %s%s along a path of length %s mm; volume = area %s * length = %s mm3; overall size "
+          "%s x %s x %s" % (
+              section, _fmt(diameter), (", inner %s" % _fmt(inner_diameter)) if inner_diameter else "", _fmt(length),
+              _fmt(area), _fmt(area * length), _fmt(high[0] - low[0]), _fmt(high[1] - low[1]), _fmt(high[2] - low[2])))
     return feature
 
 
@@ -1312,15 +1372,23 @@ def rib(points, thickness, plane="XZ", offset=0, operation="join"):
     = outline area * thickness (a right triangle: L * H / 2 * thickness)."""
     sketch = new_sketch(plane, offset=offset)
     outline(sketch, points)
+    before = sum(b.volume for b in _all_bodies()) * 1000
     feature = extrude(sketch, thickness, operation=operation, symmetric=True)
+    added = sum(b.volume for b in _all_bodies()) * 1000 - before
     area = 0.0
     corners = [(p[0], p[1]) for p in points if len(p) == 2]
     for index in range(len(corners)):
         u1, v1 = corners[index]
         u2, v2 = corners[(index + 1) % len(corners)]
         area += u1 * v2 - u2 * v1
+    expected = abs(area) / 2 * thickness
+    if operation == "join" and added < expected * 0.99:
+        raise ValueError("rib: only %s of the rib's %s mm3 is new material, the rest overlaps the part: the rib's "
+                         "corner must sit ON the faces it joins (the floor's TOP face and the wall's side face: "
+                         "x = wall thickness, z = plate thickness), not at the origin; %s" % (
+                             _fmt(added), _fmt(expected), _extents_text()))
     print("rib: outline area %s mm2 (straight sides) x thickness %s = %s mm3 added" % (
-        _fmt(abs(area) / 2), _fmt(thickness), _fmt(abs(area) / 2 * thickness)))
+        _fmt(abs(area) / 2), _fmt(thickness), _fmt(expected)))
     return feature
 
 
@@ -2065,6 +2133,10 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
                     problems.append("no cylindrical face of diameter %s (found %s)" % (_fmt(wanted), sorted(all_diameters)))
     if volume is not None and abs(total_volume - volume) > 0.005 * volume:
         problems.append("volume is %s mm3, expected %s" % (_fmt(total_volume), _fmt(volume)))
+        if _STEP_VOLUMES:
+            steps = ", ".join("%s %s%s" % (name, "+" if delta >= 0 else "", _fmt(delta)) for name, delta in _STEP_VOLUMES[-8:])
+            problems.append("the part was built as: %s = %s; compare your formula with these numbers term by term "
+                            "(each extrude's own size times its area, minus what overlapped)" % (steps, _fmt(total_volume)))
         if len(problems) == 1:
             problems.append("only the volume differs: first recheck your volume formula (box a*b*c, "
                             "cylinder pi*r*r*h, hole pi*r*r*L where L is the length of material the hole "
