@@ -2368,6 +2368,19 @@ _OPERATION_PREFIXES = {
 }
 
 
+def _thread_nominal_sizes():
+    """Nominal diameters of the threads in the design (M6 -> 6): a cut thread leaves no face of that size,
+    whichever script made it, so check(diameters=[6]) still accepts the 6 of a threaded hole or shaft."""
+    sizes = set()
+    for component in design.allComponents:
+        for feature in component.features.threadFeatures:
+            try:
+                sizes.add(float(feature.threadInfo.threadSize))
+            except (RuntimeError, ValueError, TypeError):
+                continue
+    return sizes
+
+
 def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
     """Compare the design with the numbers of the request and print CHECK OK or CHECK FAILED with reasons.
     size: the three overall dimensions in any order; diameters: every diameter the request names (of the
@@ -2460,7 +2473,7 @@ def check(size=None, diameters=None, volume=None, bodies=1, operations=None):
         footprint = sorted(high[i] - low[i] for i in range(2)) if found else []
         for wanted in diameters:
             if not any(abs(wanted - d) <= 0.01 for d in all_diameters):
-                if any(abs(wanted - size) < 1e-6 for size in _SPLINE_SIZES):
+                if any(abs(wanted - size) < 1e-6 for size in _SPLINE_SIZES | _thread_nominal_sizes()):
                     notes.append("%s is a spline, gear, hexagon or thread size, not a plain round face: accepted" % _fmt(wanted))
                 elif any(abs(2 * wanted - d) <= 0.01 for d in all_diameters) and any(
                         design.timeline.item(i).name.startswith("Fillet") for i in range(design.timeline.count)):
