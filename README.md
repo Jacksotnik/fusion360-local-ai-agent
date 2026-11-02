@@ -5,10 +5,10 @@
 You type what you want in the terminal, in Russian or English, in everyday words:
 
 ```
-Сделай пластину 80 на 50 мм толщиной 6 мм с четырьмя отверстиями 6 мм в 10 мм от углов.
-Сделай шестерню: модуль 2, 20 зубьев, ширина 10 мм, отверстие 8 мм.
-Сделай болт M8 длиной 40 мм с головкой под ключ 13.
-Скругли углы радиусом 5.   Сделай пластину толще, 10 мм.   Какая масса детали?
+Make a plate 80 by 50 mm, 6 mm thick, with four 6 mm holes 10 mm from the corners.
+Make a gear: module 2, 20 teeth, 10 mm wide, with an 8 mm bore.
+Make an M8 bolt 40 mm long with a 13 mm hex head.
+Round the corners with radius 5.   Make the plate thicker, 10 mm.   What is the mass of the part?
 ```
 
 The model writes a short script with ready-made CAD functions, the app runs it inside Fusion through
@@ -93,7 +93,7 @@ The app works in **one design** and marks it:
 
 Before every request it checks that this design is still the active document and asks what to do if not.
 
-Type requests in plain words; sizes may be in centimeters ("7 см" reaches the model as "7 см (70 мм)").
+Type requests in plain words; sizes may be in centimeters ("7 cm" reaches the model with the millimeters added, "7 cm (70 mm)").
 While the model works you see a spinner with seconds and one grey line per script. After the answer:
 a grey line like `8.1 s · 2 model calls · 24 t/s` and, when the design changed, a screenshot.
 
