@@ -1,0 +1,90 @@
+{
+ "note": "Sweep, loft, taper, rib, angled hole, combine, move, text (tunable set, 2026-11-02). Volumes by hand where a formula exists; null = held by size.",
+ "cases": [
+  {
+   "id": "B-bent-pipe",
+   "prompt": "Сделай трубку наружным диаметром 10 мм с отверстием 6 мм по пути: от точки (0, 0) до (60, 0), потом до (60, 40), в плоскости XY, радиус гиба 15 мм.",
+   "start": null,
+   "reference": "pipe([(0, 0), (60, 0), (60, 40)], 10, inner_diameter=6, plane='XY', bend_radius=15)",
+   "volume": "math.pi*(10*10 - 6*6)/4*(45 + 25 + math.pi/2*15)"
+  },
+  {
+   "id": "B-rod-path",
+   "prompt": "Сделай пруток диаметром 8 мм, изогнутый буквой Г: 50 мм вдоль X, потом 30 мм вверх по Z, из точки (0, 0, 0), радиус гиба 10 мм.",
+   "start": null,
+   "reference": "pipe([(0, 0), (50, 0), (50, 30)], 8, plane='XZ', bend_radius=10)",
+   "volume": "math.pi*16*(40 + 20 + math.pi/2*10)"
+  },
+  {
+   "id": "B-spring",
+   "prompt": "Сделай пружину: проволока 2 мм, средний диаметр 20 мм, шаг 6 мм, 5 витков.",
+   "start": null,
+   "reference": "spring(2, 20, 6, 5)",
+   "volume": null,
+   "size": [
+    22,
+    22,
+    32
+   ]
+  },
+  {
+   "id": "B-loft-square-round",
+   "prompt": "Сделай переходник: внизу круг диаметром 40 мм на высоте 0, вверху квадрат 30 на 30 мм на высоте 50 мм, сплошной.",
+   "start": null,
+   "reference": "sk1 = new_sketch('XY', offset=0)\ncircle(sk1, 0, 0, 40)\nsk2 = new_sketch('XY', offset=50)\nrect_center(sk2, 0, 0, 30, 30)\nloft([sk1, sk2])",
+   "volume": null,
+   "size": [
+    40,
+    40,
+    50
+   ]
+  },
+  {
+   "id": "B-frustum",
+   "prompt": "Сделай усечённый конус: диаметр основания 40 мм, диаметр верха 20 мм, высота 30 мм.",
+   "start": null,
+   "reference": "cylinder(40, 30, base=(0, 0, 0), taper=-math.degrees(math.atan(10/30)))",
+   "volume": "math.pi*30/3*(20*20 + 20*10 + 10*10)"
+  },
+  {
+   "id": "B-gusset",
+   "prompt": "Сделай пластину 60 на 40 мм толщиной 5 мм, на ней вдоль короткого края стенка толщиной 5 мм высотой 30 мм, и между пластиной и стенкой посередине косынка: 20 мм по пластине, 20 мм по стенке, толщина 4 мм.",
+   "start": null,
+   "reference": "box(60, 40, 5, corner=(0, 0, 0))\nbox(5, 40, 30, corner=(0, 0, 5), operation='join')\ngusset(20, 20, 4, corner=(5, 20, 5), along='X')",
+   "volume": "60*40*5 + 5*40*30 + 20*20/2*4"
+  },
+  {
+   "id": "B-angled-hole",
+   "prompt": "Сделай брусок 60 на 40 мм высотой 20 мм и просверли в нём сквозное отверстие диаметром 6 мм, наклонённое на 30 градусов от вертикали, вход в центре верхней грани.",
+   "start": null,
+   "reference": "box(60, 40, 20, corner=(0, 0, 0))\nangled_hole(30, 20, 20, 6, 30, tilt_axis='X')",
+   "volume": "60*40*20 - math.pi*9*20/math.cos(math.radians(30))"
+  },
+  {
+   "id": "B-subtract-bodies",
+   "prompt": "Сделай блок 50 на 50 мм высотой 30 мм и отдельный шар диаметром 20 мм с центром на 30 мм от низа блока по оси, потом вычти шар из блока.",
+   "start": null,
+   "reference": "box(50, 50, 30, corner=(-25, -25, 0))\nsphere(20, center=(0, 0, 30))\nsubtract('Body1', 'Body2')",
+   "volume": "50*50*30 - 2.0/3*math.pi*10**3"
+  },
+  {
+   "id": "B-move-copy",
+   "prompt": "Сделай кубик 20 мм в начале координат, сделай его копию, сдвинутую на 40 мм по X, и объедини оба в одно тело перемычкой 40 на 10 мм толщиной 5 мм между ними снизу.",
+   "start": null,
+   "reference": "box(20, 20, 20, corner=(0, 0, 0))\ncopy_body('Body1', dx=40)\nbox(40, 10, 5, corner=(10, 5, 0), operation='join')",
+   "volume": "2*8000 + 20*10*5"
+  },
+  {
+   "id": "B-engrave",
+   "prompt": "Сделай табличку 80 на 30 мм толщиной 3 мм и вырежи на ней сверху надпись «AB» высотой букв 15 мм на глубину 1 мм, начиная от точки (10, 8).",
+   "start": null,
+   "reference": "box(80, 30, 3, corner=(0, 0, 0))\nengrave('AB', 15, 1, corner=(10, 8, 3))",
+   "volume": null,
+   "size": [
+    80,
+    30,
+    3
+   ]
+  }
+ ]
+}

@@ -106,7 +106,10 @@ def _point(sketch, u, v):
 
 def new_sketch(plane="XY", offset=0):
     """Sketch on a base plane. offset (mm) moves the plane along its normal axis:
-    XY at z=offset, XZ at y=offset, YZ at x=offset."""
+    XY at z=offset, XZ at y=offset, YZ at x=offset. plane may also be a construction plane from
+    tilted_plane()."""
+    if not isinstance(plane, str):
+        return root.sketches.add(plane)
     base, normal_axis_name = _base_plane(plane)
     if offset:
         normal = base.geometry.normal.asArray()[_AXES[normal_axis_name]]
@@ -298,20 +301,30 @@ def _direction_sign(sketch, distance):
     return adsk.fusion.ExtentDirections.NegativeExtentDirection
 
 
-def extrude(sketch, distance, operation="new", symmetric=False):
+def extrude(sketch, distance, operation="new", symmetric=False, taper=0):
     """Extrude the solid regions of the sketch by distance mm. Positive goes toward +Z for an XY
     sketch (+Y for XZ, +X for YZ), negative the other way. symmetric=True: distance is the total
-    length, centered on the sketch plane. operation: 'new', 'join', 'cut' or 'intersect'."""
+    length, centered on the sketch plane. operation: 'new', 'join', 'cut' or 'intersect'.
+    taper: draft angle in degrees (уклон, конусность): negative narrows the shape as it goes
+    (a frustum from a circle, a pyramid stump from a square), positive widens it."""
     global _NEW_BASE_BODIES
     if operation == "new":
         _NEW_BASE_BODIES += 1
     extrudes = root.features.extrudeFeatures
     extrude_input = extrudes.createInput(solid_profiles(sketch), _OPERATIONS[operation])
     if symmetric:
-        extrude_input.setSymmetricExtent(_length(abs(distance)), True)
+        if taper:
+            extrude_input.setSymmetricExtent(_length(abs(distance)), True,
+                                             adsk.core.ValueInput.createByString("%s deg" % taper))
+        else:
+            extrude_input.setSymmetricExtent(_length(abs(distance)), True)
     else:
         extent = adsk.fusion.DistanceExtentDefinition.create(_length(abs(distance)))
-        extrude_input.setOneSideExtent(extent, _direction_sign(sketch, distance))
+        if taper:
+            extrude_input.setOneSideExtent(extent, _direction_sign(sketch, distance),
+                                           adsk.core.ValueInput.createByString("%s deg" % taper))
+        else:
+            extrude_input.setOneSideExtent(extent, _direction_sign(sketch, distance))
     where = _extents_text() if operation != "new" else ""
     volume_before = sum(body.volume for body in _all_bodies()) if operation == "join" else 0
     feature = _add(lambda: extrudes.add(extrude_input), "extrude (%s)" % operation,
@@ -428,7 +441,7 @@ def _check_join_overlap(what, min_x, max_x, min_y, max_y):
                              what, _fmt(min_x), _fmt(max_x), _fmt(min_y), _fmt(max_y), _extents_text()))
 
 
-def box(size_x, size_y, size_z, corner=None, base=None, operation="new", center=None, corner_radius=None):
+def box(size_x, size_y, size_z, corner=None, base=None, operation="new", center=None, corner_radius=None, taper=0):
     """Box with sizes along X, Y, Z (mm). Give corner=(x, y, z), its minimum corner, or base=(x, y, z),
     the center of its BOTTOM face. corner_radius rounds its four vertical corner edges (a plate with
     rounded corners)."""
@@ -445,7 +458,7 @@ def box(size_x, size_y, size_z, corner=None, base=None, operation="new", center=
         _check_join_overlap("box(%s, %s, %s)" % (_fmt(size_x), _fmt(size_y), _fmt(size_z)), x, x + size_x, y, y + size_y)
     sketch = new_sketch("XY", offset=z)
     rect(sketch, x, y, x + size_x, y + size_y)
-    feature = extrude(sketch, size_z, operation=operation)
+    feature = extrude(sketch, size_z, operation=operation, taper=taper)
     if corner_radius:
         corners = []
         for corner_x in (x, x + size_x):
@@ -455,7 +468,7 @@ def box(size_x, size_y, size_z, corner=None, base=None, operation="new", center=
     return feature
 
 
-def cylinder(diameter, length, base=None, axis="Z", operation="new", center=None):
+def cylinder(diameter, length, base=None, axis="Z", operation="new", center=None, taper=0):
     """Cylinder whose bottom circle is centered at base=(x, y, z); it grows by length along +axis."""
     _no_center(center, "cylinder")
     base = _xyz_argument(base, "base", "cylinder")
@@ -467,7 +480,11 @@ def cylinder(diameter, length, base=None, axis="Z", operation="new", center=None
             base[0] - radius, base[0] + radius, base[1] - radius, base[1] + radius)
     sketch = new_sketch(plane, offset=base[n_index])
     circle(sketch, base[u_index], base[v_index], diameter)
-    return extrude(sketch, length, operation=operation)
+    if taper:
+        top = diameter + 2 * length * math.tan(math.radians(taper))
+        print("cylinder with taper %s deg: diameter %s at the base, %s at the top; volume = pi*h/3*(R*R + R*r + r*r) = %s mm3" % (
+            _fmt(taper), _fmt(diameter), _fmt(top), _fmt(math.pi * length / 3 * (diameter ** 2 + diameter * top + top ** 2) / 4)))
+    return extrude(sketch, length, operation=operation, taper=taper)
 
 
 def tube(outer_diameter, inner_diameter, length, base=None, axis="Z", operation="new", center=None):
@@ -1022,6 +1039,380 @@ def _round_face_diameters():
             if face.geometry.surfaceType == adsk.core.SurfaceTypes.CylinderSurfaceType:
                 result.append(round(face.geometry.radius * 20, 3))
     return result
+
+
+def body(name_or_index=0):
+    """A body of the design by its name from describe() ("Body1") or by index (0 = the first)."""
+    bodies = _all_bodies()
+    if not bodies:
+        raise ValueError("there is no body yet")
+    if isinstance(name_or_index, int):
+        if name_or_index >= len(bodies):
+            raise ValueError("there are only %d bodies: %s" % (len(bodies), [b.name for b in bodies]))
+        return bodies[name_or_index]
+    if getattr(name_or_index, "objectType", "").endswith("BRepBody"):
+        return name_or_index
+    for candidate in bodies:
+        if candidate.name == name_or_index:
+            return candidate
+    raise ValueError("no body named %r; the bodies are %s" % (name_or_index, [b.name for b in bodies]))
+
+
+def _combine(target, tools, operation, keep_tools):
+    target = body(target)
+    collection = adsk.core.ObjectCollection.create()
+    for tool in (tools if isinstance(tools, (list, tuple)) else [tools]):
+        tool_body = body(tool)
+        if tool_body == target:
+            raise ValueError("the tool body is the target itself")
+        collection.add(tool_body)
+    combines = root.features.combineFeatures
+    combine_input = combines.createInput(target, collection)
+    combine_input.operation = _OPERATIONS[operation]
+    combine_input.isKeepToolBodies = keep_tools
+    combine_input.isNewComponent = False
+    before = sum(b.volume for b in _all_bodies())
+    feature = _add(lambda: combines.add(combine_input), "combine (%s)" % operation,
+                   "The bodies must overlap for cut and intersect; see their positions with describe().")
+    after = sum(b.volume for b in _all_bodies())
+    print("combine (%s): %s -> the part now has %d bodies, volume %s mm3 (%s%s mm3)" % (
+        operation, target.name, len(_all_bodies()), _fmt(after * 1000), "+" if after >= before else "",
+        _fmt((after - before) * 1000)))
+    return feature
+
+
+def subtract(target, tool, keep_tool=False):
+    """ВЫЧЕСТЬ одно тело из другого (Combine - Cut): the tool body's shape is removed from the target body;
+    keep_tool=True leaves the tool body in place (a mould, a cavity for a part). Bodies by name or index."""
+    return _combine(target, tool, "cut", keep_tool)
+
+
+def union(target, tools):
+    """ОБЪЕДИНИТЬ тела в одно (Combine - Join): tools is one body or a list, merged into the target."""
+    if len(_all_bodies()) == 1:
+        print("union: the design already has one body (%s); a joined piece touching two bodies merges them" % _all_bodies()[0].name)
+        return None
+    return _combine(target, tools, "join", False)
+
+
+def intersect(target, tool, keep_tool=False):
+    """ПЕРЕСЕЧЕНИЕ тел (Combine - Intersect): only the common volume of the two bodies stays."""
+    return _combine(target, tool, "intersect", keep_tool)
+
+
+def _move_bodies(target, transform, what):
+    target = body(target)
+    collection = adsk.core.ObjectCollection.create()
+    collection.add(target)
+    moves = root.features.moveFeatures
+    move_input = moves.createInput(collection, transform)
+    feature = _add(lambda: moves.add(move_input), what, "")
+    low, high = _extents_mm()
+    print("%s: %s now spans x %s..%s, y %s..%s, z %s..%s" % (
+        what, target.name, _fmt(low[0]), _fmt(high[0]), _fmt(low[1]), _fmt(high[1]), _fmt(low[2]), _fmt(high[2])))
+    return feature
+
+
+def move_body(target, dx=0, dy=0, dz=0):
+    """СДВИНУТЬ тело by dx, dy, dz mm (by name from describe() or index)."""
+    transform = adsk.core.Matrix3D.create()
+    transform.translation = adsk.core.Vector3D.create(dx * MM, dy * MM, dz * MM)
+    return _move_bodies(target, transform, "move_body")
+
+
+def rotate_body(target, angle, axis="Z", center=(0, 0, 0)):
+    """ПОВЕРНУТЬ тело by angle degrees around the line through center=(x, y, z) parallel to the axis."""
+    center = _xyz_argument(center, "center", "rotate_body")
+    direction = [0, 0, 0]
+    direction[_AXES[axis.upper()]] = 1
+    transform = adsk.core.Matrix3D.create()
+    transform.setToRotation(math.radians(angle), adsk.core.Vector3D.create(*direction),
+                            adsk.core.Point3D.create(center[0] * MM, center[1] * MM, center[2] * MM))
+    return _move_bodies(target, transform, "rotate_body")
+
+
+def copy_body(target, dx=0, dy=0, dz=0):
+    """КОПИЯ тела, moved by dx, dy, dz mm; returns the new body (the design then has one body more)."""
+    source = body(target)
+    copy = source.copyToComponent(root)
+    if dx or dy or dz:
+        _move_bodies(copy, _translation(dx, dy, dz), "copy_body")
+    else:
+        print("copy_body: %s copied as %s (it lies on the original until moved)" % (source.name, copy.name))
+    return copy
+
+
+def _translation(dx, dy, dz):
+    transform = adsk.core.Matrix3D.create()
+    transform.translation = adsk.core.Vector3D.create(dx * MM, dy * MM, dz * MM)
+    return transform
+
+
+def loft(sketches, operation="new"):
+    """ПЕРЕХОД между сечениями (loft): a solid through the closed shapes of two or more sketches on
+    parallel offset planes, e.g. a circle at z=0 and a square at z=50 (квадрат-круг переходник). Draw each
+    section in its own sketch (new_sketch("XY", offset=z)), then loft([sk1, sk2]). The volume has no simple
+    formula: read it from the printed line."""
+    if len(sketches) < 2:
+        raise ValueError("loft() needs at least two sketches, one section each")
+    lofts = root.features.loftFeatures
+    loft_input = lofts.createInput(_OPERATIONS[operation])
+    for sketch in sketches:
+        profiles = solid_profiles(sketch)
+        if len(profiles) != 1:
+            raise ValueError("every loft section must be ONE closed shape; a sketch has %d" % len(profiles))
+        loft_input.loftSections.add(profiles[0])
+    loft_input.isSolid = True
+    feature = _add(lambda: lofts.add(loft_input), "loft",
+                   "The sections must lie on different parallel planes and not cross each other.")
+    low, high = _extents_mm()
+    print("loft: %d sections, overall size %s x %s x %s mm, volume %s mm3 (use it in check(volume=...))" % (
+        len(sketches), _fmt(high[0] - low[0]), _fmt(high[1] - low[1]), _fmt(high[2] - low[2]),
+        _fmt(sum(b.volume for b in feature.bodies) * 1000)))
+    return feature
+
+
+def _path_sketch(points, plane, offset, bend_radius):
+    """Open polyline through (u, v) points on a base plane, corners rounded with bend_radius; the sketch
+    and its curves."""
+    if len(points) < 2:
+        raise ValueError("a path needs at least two points")
+    sketch = new_sketch(plane, offset=offset)
+    lines = sketch.sketchCurves.sketchLines
+    segments = []
+    previous = None
+    for point in points:
+        current = _point(sketch, *point)
+        if previous is not None:
+            segments.append(lines.addByTwoPoints(previous, current))
+            previous = segments[-1].endSketchPoint
+        else:
+            previous = current
+    # the first line starts from a free point; chain the rest from the previous line's end
+    if bend_radius and len(segments) > 1:
+        arcs = sketch.sketchCurves.sketchArcs
+        for first, second in zip(segments, segments[1:]):
+            corner = first.endSketchPoint.geometry
+            try:
+                arcs.addFillet(first, first.startSketchPoint.geometry, second, second.endSketchPoint.geometry,
+                               bend_radius * MM)
+            except RuntimeError:
+                raise ValueError("the bend radius %s does not fit at the corner (%s, %s): segments are too short" % (
+                    _fmt(bend_radius), _fmt(corner.x / MM), _fmt(corner.y / MM)))
+    return sketch
+
+
+def _sweep(profile_sketch, path_sketch, operation, what):
+    curves = adsk.core.ObjectCollection.create()
+    for curve in path_sketch.sketchCurves:
+        if not curve.isConstruction:
+            curves.add(curve)
+    path = root.features.createPath(curves.item(0), True)
+    sweeps = root.features.sweepFeatures
+    sweep_input = sweeps.createInput(solid_profiles(profile_sketch)[0], path, _OPERATIONS[operation])
+    sweep_input.orientation = adsk.fusion.SweepOrientationTypes.PerpendicularOrientationType
+    return _add(lambda: sweeps.add(sweep_input), what,
+                "The profile must sit at the start of the path, perpendicular to it, and the bends must be "
+                "wider than the profile.")
+
+
+def _plane_at_path_start(path_sketch):
+    curves = adsk.core.ObjectCollection.create()
+    for curve in path_sketch.sketchCurves:
+        if not curve.isConstruction:
+            curves.add(curve)
+    path = root.features.createPath(curves.item(0), True)
+    plane_input = root.constructionPlanes.createInput()
+    plane_input.setByDistanceOnPath(path, adsk.core.ValueInput.createByReal(0))
+    return root.constructionPlanes.add(plane_input)
+
+
+def pipe(points, diameter, inner_diameter=None, plane="XY", offset=0, bend_radius=None, operation="new"):
+    """ТРУБА, ПРУТОК ПО ТРАЕКТОРИИ (sweep): a round section of this diameter (hollow when inner_diameter is
+    given) swept along the polyline through points (u, v) on the plane (XY: (x, y) at z=offset; XZ: (x, z)
+    at y=offset; YZ: (y, z) at x=offset); bend_radius rounds the corners (a bent tube, an elbow). Volume
+    = section area * path length (straight parts plus the arcs); it prints the path length."""
+    path_sketch = _path_sketch(points, plane, offset, bend_radius)
+    start_plane = _plane_at_path_start(path_sketch)
+    profile_sketch = root.sketches.add(start_plane)
+    u_index, v_index = {"XY": (0, 1), "XZ": (0, 2), "YZ": (1, 2)}[plane.upper()]
+    start = [0.0, 0.0, 0.0]
+    start[u_index] = points[0][0]
+    start[v_index] = points[0][1]
+    start[3 - u_index - v_index] = offset
+    center = profile_sketch.modelToSketchSpace(adsk.core.Point3D.create(start[0] * MM, start[1] * MM, start[2] * MM))
+    profile_sketch.sketchCurves.sketchCircles.addByCenterRadius(center, diameter / 2 * MM)
+    if inner_diameter:
+        if inner_diameter >= diameter:
+            raise ValueError("inner_diameter must be smaller than diameter")
+        profile_sketch.sketchCurves.sketchCircles.addByCenterRadius(center, inner_diameter / 2 * MM)
+    feature = _sweep(profile_sketch, path_sketch, operation, "pipe (sweep)")
+    length = 0.0
+    for curve in path_sketch.sketchCurves:
+        if not curve.isConstruction:
+            length += curve.length / MM
+    area = math.pi * (diameter ** 2 - (inner_diameter or 0) ** 2) / 4
+    print("pipe: diameter %s%s along a path of length %s mm; volume = area %s * length = %s mm3" % (
+        _fmt(diameter), (", bore %s" % _fmt(inner_diameter)) if inner_diameter else "", _fmt(length), _fmt(area),
+        _fmt(area * length)))
+    return feature
+
+
+def spring(wire_diameter, mean_diameter, pitch, turns, base=(0, 0, 0), axis="Z", operation="new"):
+    """ПРУЖИНА (a helical coil): wire of wire_diameter wound on a helix of mean_diameter (center to
+    center of the wire), this pitch (mm per turn) and number of turns, starting at base=(x, y, z) and
+    rising along the axis. Height = pitch * turns + wire_diameter. Volume ~ pi * (wire/2)**2 * helix
+    length, helix length = turns * sqrt((pi * mean_diameter)**2 + pitch**2); it prints both."""
+    base = _xyz_argument(base, "base", "spring")
+    if wire_diameter >= pitch:
+        raise ValueError("the pitch %s must be bigger than the wire diameter %s, or the coils overlap" % (
+            _fmt(pitch), _fmt(wire_diameter)))
+    axis_index = _AXES[axis.upper()]
+    u_index, v_index = [i for i in range(3) if i != axis_index]
+    radius = mean_diameter / 2.0
+    steps_per_turn = 24
+    count = int(round(turns * steps_per_turn))
+    path_sketch = root.sketches.add(root.xYConstructionPlane)
+    points = adsk.core.ObjectCollection.create()
+    for step in range(count + 1):
+        angle = 2 * math.pi * step / steps_per_turn
+        point = list(base)
+        point[u_index] += radius * math.cos(angle)
+        point[v_index] += radius * math.sin(angle)
+        point[axis_index] += pitch * step / steps_per_turn
+        points.add(path_sketch.modelToSketchSpace(adsk.core.Point3D.create(point[0] * MM, point[1] * MM, point[2] * MM)))
+    helix = path_sketch.sketchCurves.sketchFittedSplines.add(points)
+    path = root.features.createPath(helix, False)
+    plane_input = root.constructionPlanes.createInput()
+    plane_input.setByDistanceOnPath(path, adsk.core.ValueInput.createByReal(0))
+    start_plane = root.constructionPlanes.add(plane_input)
+    profile_sketch = root.sketches.add(start_plane)
+    start = list(base)
+    start[u_index] += radius
+    center = profile_sketch.modelToSketchSpace(adsk.core.Point3D.create(start[0] * MM, start[1] * MM, start[2] * MM))
+    profile_sketch.sketchCurves.sketchCircles.addByCenterRadius(center, wire_diameter / 2 * MM)
+    sweeps = root.features.sweepFeatures
+    sweep_input = sweeps.createInput(solid_profiles(profile_sketch)[0], path, _OPERATIONS[operation])
+    sweep_input.orientation = adsk.fusion.SweepOrientationTypes.PerpendicularOrientationType
+    feature = _add(lambda: sweeps.add(sweep_input), "spring (sweep)",
+                   "The wire must be thinner than the pitch and much thinner than the mean diameter.")
+    helix_length = turns * math.sqrt((math.pi * mean_diameter) ** 2 + pitch ** 2)
+    print("spring: wire %s on mean diameter %s, pitch %s, %s turns; height %s, outer diameter %s; helix length "
+          "%s mm, volume ~ %s mm3 (measured %s)" % (
+              _fmt(wire_diameter), _fmt(mean_diameter), _fmt(pitch), _fmt(turns), _fmt(pitch * turns + wire_diameter),
+              _fmt(mean_diameter + wire_diameter), _fmt(helix_length),
+              _fmt(math.pi * (wire_diameter / 2) ** 2 * helix_length), _fmt(sum(b.volume for b in feature.bodies) * 1000)))
+    return feature
+
+
+def rib(points, thickness, plane="XZ", offset=0, operation="join"):
+    """РЕБРО ЖЁСТКОСТИ, косынка: a closed outline (u, v) drawn on the plane (XZ: (x, z) at y=offset) and
+    extruded symmetrically by thickness, joined to the part. A triangular gusset between a plate (z=0..t)
+    and a wall (x=0..w): rib([(w, t), (w + L, t), (w, t + H)], thickness, "XZ", offset=y). Volume added
+    = outline area * thickness (a right triangle: L * H / 2 * thickness)."""
+    sketch = new_sketch(plane, offset=offset)
+    outline(sketch, points)
+    feature = extrude(sketch, thickness, operation=operation, symmetric=True)
+    area = 0.0
+    corners = [(p[0], p[1]) for p in points if len(p) == 2]
+    for index in range(len(corners)):
+        u1, v1 = corners[index]
+        u2, v2 = corners[(index + 1) % len(corners)]
+        area += u1 * v2 - u2 * v1
+    print("rib: outline area %s mm2 (straight sides) x thickness %s = %s mm3 added" % (
+        _fmt(abs(area) / 2), _fmt(thickness), _fmt(abs(area) / 2 * thickness)))
+    return feature
+
+
+def gusset(length, height, thickness, corner=(0, 0, 0), along="X", operation="join"):
+    """КОСЫНКА, треугольное ребро between a floor and a wall meeting at the inner corner corner=(x, y, z):
+    the triangle runs length mm along the floor (+along axis) and height mm up the wall (+Z), thickness
+    across (centered on the corner's other coordinate). Volume added = length * height / 2 * thickness."""
+    corner = _xyz_argument(corner, "corner", "gusset")
+    along = along.upper()
+    if along == "X":
+        points = [(corner[0], corner[2]), (corner[0] + length, corner[2]), (corner[0], corner[2] + height)]
+        return rib(points, thickness, "XZ", offset=corner[1], operation=operation)
+    if along == "Y":
+        points = [(corner[1], corner[2]), (corner[1] + length, corner[2]), (corner[1], corner[2] + height)]
+        return rib(points, thickness, "YZ", offset=corner[0], operation=operation)
+    if along == "-X":
+        points = [(corner[0], corner[2]), (corner[0] - length, corner[2]), (corner[0], corner[2] + height)]
+        return rib(points, thickness, "XZ", offset=corner[1], operation=operation)
+    if along == "-Y":
+        points = [(corner[1], corner[2]), (corner[1] - length, corner[2]), (corner[1], corner[2] + height)]
+        return rib(points, thickness, "YZ", offset=corner[0], operation=operation)
+    raise ValueError('along must be "X", "-X", "Y" or "-Y"')
+
+
+def tilted_plane(angle, axis="X", through=(0, 0, 0), plane="XY"):
+    """A construction plane: the base plane turned by angle degrees around the line through through=(x, y, z)
+    parallel to the axis (axis must lie in the plane: X or Y for XY). new_sketch() accepts it:
+    sk = new_sketch(tilted_plane(30, "X")); the sketch's (u, v) are measured in the tilted plane."""
+    through = _xyz_argument(through, "through", "tilted_plane")
+    plane = plane.upper()
+    u_index, v_index = {"XY": (0, 1), "XZ": (0, 2), "YZ": (1, 2)}[plane]
+    n_index = 3 - u_index - v_index
+    axis_index = _AXES[axis.upper()]
+    if axis_index == n_index:
+        raise ValueError("the axis %s is normal to the %s plane; turn around an axis lying in it" % (axis.upper(), plane))
+    # The hinge is a construction line drawn in a sketch on the plane through the point: a construction
+    # axis made from a bare line is refused in a parametric design.
+    hinge_sketch = new_sketch(plane, offset=through[n_index])
+    start = list(through)
+    end = list(through)
+    start[axis_index] -= 10
+    end[axis_index] += 10
+    hinge = hinge_sketch.sketchCurves.sketchLines.addByTwoPoints(
+        hinge_sketch.modelToSketchSpace(adsk.core.Point3D.create(start[0] * MM, start[1] * MM, start[2] * MM)),
+        hinge_sketch.modelToSketchSpace(adsk.core.Point3D.create(end[0] * MM, end[1] * MM, end[2] * MM)))
+    hinge.isConstruction = True
+    plane_input = root.constructionPlanes.createInput()
+    plane_input.setByAngle(hinge, adsk.core.ValueInput.createByString("%s deg" % angle), hinge_sketch.referencePlane)
+    return _add(lambda: root.constructionPlanes.add(plane_input), "tilted_plane", "")
+
+
+def angled_hole(x, y, z, diameter, angle, tilt_axis="X", depth=None):
+    """ОТВЕРСТИЕ ПОД УГЛОМ: a round hole whose axis passes through the surface point (x, y, z) and is tilted
+    by angle degrees from the vertical (Z), turning around the tilt_axis ("X" or "Y"); depth=None: through
+    everything. Material removed when it goes straight through a plate of thickness t without leaving its
+    sides: pi * (d/2)**2 * t / cos(angle)."""
+    plane = tilted_plane(angle, tilt_axis, through=(x, y, z), plane="XY")
+    sketch = root.sketches.add(plane)
+    center = sketch.modelToSketchSpace(adsk.core.Point3D.create(x * MM, y * MM, z * MM))
+    sketch.sketchCurves.sketchCircles.addByCenterRadius(center, diameter / 2 * MM)
+    if depth is None:
+        return cut(sketch)
+    return extrude(sketch, -abs(depth), operation="cut")
+
+
+def engrave(text, height, depth, corner=(0, 0, 0), plane="XY", width=None, raised=False):
+    """ТЕКСТ, надпись, гравировка: letters of this height (mm) starting at corner=(x, y, z) (bottom-left of
+    the text) on the plane (XY: a face at z = corner z), cut depth mm into the part, or raised (embossed)
+    by depth when raised=True. width: the text box width (default 0.8 * height per character)."""
+    corner = _xyz_argument(corner, "corner", "engrave")
+    plane = plane.upper()
+    u_index, v_index = {"XY": (0, 1), "XZ": (0, 2), "YZ": (1, 2)}[plane]
+    n_index = 3 - u_index - v_index
+    sketch = new_sketch(plane, offset=corner[n_index])
+    box_width = width if width else max(height, 0.8 * height * len(text))
+    texts = sketch.sketchTexts
+    text_input = texts.createInput2(text, height * MM)
+    text_input.setAsMultiLine(_point(sketch, corner[u_index], corner[v_index]),
+                              _point(sketch, corner[u_index] + box_width, corner[v_index] + height * 1.3),
+                              adsk.core.HorizontalAlignments.LeftHorizontalAlignment,
+                              adsk.core.VerticalAlignments.BottomVerticalAlignment, 0)
+    sketch_text = texts.add(text_input)
+    extrudes = root.features.extrudeFeatures
+    operation = "join" if raised else "cut"
+    extrude_input = extrudes.createInput(sketch_text, _OPERATIONS[operation])
+    extent = adsk.fusion.DistanceExtentDefinition.create(_length(abs(depth)))
+    direction = _direction_sign(sketch, depth if raised else -depth)
+    extrude_input.setOneSideExtent(extent, direction)
+    feature = _add(lambda: extrudes.add(extrude_input), "engrave",
+                   "The text must lie on a face of the part (corner z = that face's height) and fit on it.")
+    print("engrave: %r, letters %s mm high, %s %s mm" % (text, _fmt(height), "raised" if raised else "cut", _fmt(abs(depth))))
+    return feature
 
 
 def _profile(points, length, base):
