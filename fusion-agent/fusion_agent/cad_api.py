@@ -1398,10 +1398,13 @@ def rib(points, thickness, plane="XZ", offset=0, operation="join"):
         area += u1 * v2 - u2 * v1
     expected = abs(area) / 2 * thickness
     if operation == "join" and added < expected * 0.99:
-        raise ValueError("rib: only %s of the rib's %s mm3 is new material, the rest overlaps the part: the rib's "
-                         "corner must sit ON the faces it joins (the floor's TOP face and the wall's side face: "
-                         "x = wall thickness, z = plate thickness), not at the origin; %s" % (
-                             _fmt(added), _fmt(expected), _extents_text()))
+        raise ValueError("rib: only %s of the rib's %s mm3 is new material, the rest lies inside the part. A rib "
+                         "stands in the plane %s at %s and must run AWAY from the wall, perpendicular to the "
+                         "wall's face, with its corner on the floor's top face at the foot of that face: for a wall "
+                         "that is thin along Y (face at y = y0) use gusset(..., corner=(x on the wall, y0, floor top), "
+                         "along=\"Y\"); for a wall thin along X use along=\"X\" from its face at x0. Do not start "
+                         "the rib inside the wall's own span; %s" % (
+                             _fmt(added), _fmt(expected), plane, _fmt(offset), _extents_text()))
     print("rib: outline area %s mm2 (straight sides) x thickness %s = %s mm3 added" % (
         _fmt(abs(area) / 2), _fmt(thickness), _fmt(expected)))
     return feature
@@ -1409,8 +1412,11 @@ def rib(points, thickness, plane="XZ", offset=0, operation="join"):
 
 def gusset(length, height, thickness, corner=(0, 0, 0), along="X", operation="join"):
     """КОСЫНКА, треугольное ребро between a floor and a wall meeting at the inner corner corner=(x, y, z):
-    the triangle runs length mm along the floor (+along axis) and height mm up the wall (+Z), thickness
-    across (centered on the corner's other coordinate). Volume added = length * height / 2 * thickness."""
+    the triangle runs length mm along the floor AWAY from the wall's face (the along axis, "X", "-X",
+    "Y" or "-Y": perpendicular to the wall's face) and height mm up the wall (+Z); thickness is centered
+    on the corner's other coordinate. The corner is a point ON the wall's face at the floor's top (for a
+    wall thin along Y with its face at y0: corner=(x, y0, floor top), along="Y"). Two ribs = two calls at
+    two x (or y) positions. Volume added = length * height / 2 * thickness."""
     corner = _xyz_argument(corner, "corner", "gusset")
     along = along.upper()
     if along == "X":
@@ -1495,6 +1501,26 @@ def engrave(text, height, depth, corner=(0, 0, 0), plane="XY", width=None, raise
     feature = _add(lambda: extrudes.add(extrude_input), "engrave",
                    "The text must lie on a face of the part (corner z = that face's height) and fit on it.")
     print("engrave: %r, letters %s mm high, %s %s mm" % (text, _fmt(height), "raised" if raised else "cut", _fmt(abs(depth))))
+    return feature
+
+
+def lug(diameter, hole_diameter, thickness, center=(0, 0, 0), axis="Y", operation="join"):
+    """ПРОУШИНА, ушко (an eye for a pin or a bolt): a round disk of this diameter and thickness whose axis
+    runs along the axis through center=(x, y, z) (the middle of the disk), with a through hole of
+    hole_diameter along the SAME axis. axis="Y" or "X" is a standing eye with a horizontal hole (on top
+    of a post, at the end of a lever); axis="Z" a flat eye. Volume added = pi/4 * (D*D - d*d) * thickness
+    minus what overlaps the part (the join line says how much)."""
+    center = _xyz_argument(center, "center", "lug")
+    if hole_diameter >= diameter:
+        raise ValueError("the hole %s must be smaller than the lug's diameter %s" % (_fmt(hole_diameter), _fmt(diameter)))
+    axis_index = _AXES[axis.upper()]
+    base = list(center)
+    base[axis_index] -= thickness / 2.0
+    feature = cylinder(diameter, thickness, base=tuple(base), axis=axis, operation=operation)
+    drill(center[0], center[1], center[2], hole_diameter, axis=axis)
+    print("lug: diameter %s, hole %s along %s, thickness %s, center (%s, %s, %s); own volume %s mm3" % (
+        _fmt(diameter), _fmt(hole_diameter), axis.upper(), _fmt(thickness), _fmt(center[0]), _fmt(center[1]),
+        _fmt(center[2]), _fmt(math.pi / 4 * (diameter ** 2 - hole_diameter ** 2) * thickness)))
     return feature
 
 
@@ -1614,11 +1640,23 @@ def _check_hole_inside(what, u, v, diameter, u_index=0, v_index=1):
         return
     low, high = _extents_mm()
     radius = diameter / 2.0
-    if (u - radius < low[u_index] - 1e-6 or u + radius > high[u_index] + 1e-6
-            or v - radius < low[v_index] - 1e-6 or v + radius > high[v_index] + 1e-6):
-        raise ValueError("%s sticks out of the part: %s. Measure hole positions from the part's own corner or "
-                         "center (a cylinder's base is its center; a box from corner=(0, 0, 0) has its center at "
-                         "half its sizes)." % (what, _extents_text()))
+    for index, value in ((u_index, u), (v_index, v)):
+        extent = high[index] - low[index]
+        if value - radius < low[index] - 1e-6 or value + radius > high[index] + 1e-6:
+            name = "XYZ"[index]
+            if diameter > extent + 1e-6:
+                axis_name = "XYZ"[3 - u_index - v_index]
+                raise ValueError("%s is wider than the part along %s: the part is only %s mm there (%s..%s), the "
+                                 "hole's circle spans %s..%s. A hole this wide cannot cross the part sideways; "
+                                 "drill it along the axis the part is thick along (not %s), e.g. through an eye or "
+                                 "lug along the eye's own axis." % (
+                                     what, name, _fmt(extent), _fmt(low[index]), _fmt(high[index]),
+                                     _fmt(value - radius), _fmt(value + radius), axis_name))
+            raise ValueError("%s sticks out of the part along %s (the hole's circle spans %s..%s, the part %s..%s): %s. "
+                             "Measure hole positions from the part's own corner or center (a cylinder's base is its "
+                             "center; a box from corner=(0, 0, 0) has its center at half its sizes)." % (
+                                 what, name, _fmt(value - radius), _fmt(value + radius), _fmt(low[index]),
+                                 _fmt(high[index]), _extents_text()))
 
 
 def drill(x, y, z, diameter, axis=None, depth=None):
