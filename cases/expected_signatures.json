@@ -1703,5 +1703,67 @@
    ],
    "unhealthy": []
   }
+ },
+ "E-remove-top-chamfer-under-hole": {
+  "key": "665f06713e3a92c81b0210ea26db0a6625c42b7e",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 13928.761,
+     "extents_mm": [
+      6.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "E-remove-one-of-two-fillets-by-name": {
+  "key": "58db44f7fbb1536eaed35d785b6a79fb0c3ead1a",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 13914.675,
+     "extents_mm": [
+      6.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 9
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "E-remove-hole-fillet-under-threads": {
+  "key": "7b147dd109f452b020e00a8711a1edda02f9abd3",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 12834.458,
+     "extents_mm": [
+      6.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0,
+      6.78,
+      12.0
+     ],
+     "faces": 15
+    }
+   ],
+   "unhealthy": []
+  }
  }
 }

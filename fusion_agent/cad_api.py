@@ -999,31 +999,39 @@ def _thread_designation(diameter, pitch, internal):
     return thread_type, designation, thread_class
 
 
-def thread(diameter, length=None, base=None, axis="Z", internal=False, pitch=None, modeled=True):
+def thread(diameter, length=None, base=None, axis="Z", internal=False, pitch=None, modeled=True, all_faces=False):
     """РЕЗЬБА, metric ISO (M6, M8, M10 ...): on the cylindrical face of this nominal diameter along the axis.
     internal=False: the outside of a shaft or pin of this diameter; internal=True: a hole of this
     diameter (drill the hole with the nominal size, e.g. 8 for M8). length=None: the whole face; a length
     threads that much from the face end nearest to base=(x, y, z). pitch=None: the coarse pitch
     (M8x1.25, M10x1.5); modeled=True cuts the real helix (slow to display), False marks it cosmetically.
-    check(operations=["thread"]) sees it in the timeline."""
+    check(operations=["thread"]) sees it in the timeline. all_faces=True threads every face of this
+    diameter (all the holes of a plate), base= picks the one nearest that point."""
     axis_index = _AXES[axis.upper()]
     faces = _cylindrical_faces(diameter, axis_index)
     if not faces:
         raise ValueError("no cylindrical face of diameter %s along %s to thread; faces of the part: %s. Build the "
                          "shaft or drill the hole with the nominal diameter first." % (
                              _fmt(diameter), axis.upper(), sorted(set(_round_face_diameters()))))
-    if len(faces) > 1:
+    if len(faces) > 1 and all_faces:
+        if length is not None:
+            raise ValueError("thread(all_faces=True) threads whole faces: leave length out, or thread one face "
+                             "at a time with base=(x, y, z)")
+    elif len(faces) > 1:
         if base is None:
-            raise ValueError("%d cylindrical faces of diameter %s: give base=(x, y, z) near the one to thread" % (
-                len(faces), _fmt(diameter)))
+            raise ValueError("%d cylindrical faces of diameter %s: give base=(x, y, z) near the one to thread, "
+                             "or all_faces=True to thread every one of them" % (len(faces), _fmt(diameter)))
         base = _xyz_argument(base, "base", "thread")
         faces.sort(key=lambda face: _distance_to_box(base, face.boundingBox))
+        faces = faces[:1]
+    # One thread feature for all the faces: a face found before the feature is stale after it.
     face = faces[0]
     threads = root.features.threadFeatures
     thread_type, designation, thread_class = _thread_designation(diameter, pitch, internal)
     info = threads.createThreadInfo(internal, thread_type, designation, thread_class)
     collection = adsk.core.ObjectCollection.create()
-    collection.add(face)
+    for each_face in faces:
+        collection.add(each_face)
     thread_input = threads.createInput(collection, info)
     thread_input.isModeled = modeled
     if length is None:
@@ -1046,8 +1054,19 @@ def thread(diameter, length=None, base=None, axis="Z", internal=False, pitch=Non
                 _NOMINAL_SIZES.setdefault(round(diameter, 6), []).append(
                     (high[index] - low[index], "the nominal thread diameter (the cut thread measures %s)" % _fmt(high[index] - low[index])))
     _SPLINE_SIZES.add(diameter)
-    print("thread: %s %s on the %s face of diameter %s%s (%s)" % (
-        designation, thread_class, "inside of the hole" if internal else "outside", _fmt(diameter),
+    if len(faces) > 1:
+        where = "in %d holes" if internal else "on %d faces"
+        where = where % len(faces)
+    else:
+        box = face.boundingBox
+        center = [(box.minPoint.asArray()[i] + box.maxPoint.asArray()[i]) * 5 for i in range(3)]
+        center[axis_index] = box.minPoint.asArray()[axis_index] * 10
+        where = "%s at %s" % ("in the hole" if internal else "on the shaft", _xyz(center))
+    _remember_about(feature, "%s %s d%s" % (designation, where, _fmt(diameter)))
+    print("thread: %s %s on the %s of diameter %s%s (%s)" % (
+        designation, thread_class,
+        ("inside of %d holes" % len(faces)) if internal and len(faces) > 1 else
+        "inside of the hole face" if internal else "outside face", _fmt(diameter),
         "" if length is None else ", length %s" % _fmt(length), "modeled" if modeled else "cosmetic"))
     return feature
 
@@ -2190,10 +2209,59 @@ def fillet(edges, radius):
     fillets = root.features.filletFeatures
     fillet_input = fillets.createInput()
     fillet_input.addConstantRadiusEdgeSet(_edge_collection(edges), _length(radius), True)
-    return _add(lambda: fillets.add(fillet_input), "fillet",
-                _edges_summary(edges) + " Select only the edges the request names, e.g. find_edges(parallel_to='Z')"
-                " for the vertical corners of a plate; the radius must fit the faces next to the edges."
-                + _already_done_text("Fillet", "fillet"))
+    about = "r%s on %s" % (_fmt(radius), _edges_about(edges))
+    feature = _add(lambda: fillets.add(fillet_input), "fillet",
+                   _edges_summary(edges) + " Select only the edges the request names, e.g. find_edges(parallel_to='Z')"
+                   " for the vertical corners of a plate; the radius must fit the faces next to the edges."
+                   + _already_done_text("Fillet", "fillet"))
+    _remember_about(feature, about)
+    return feature
+
+
+def _edges_about(edges):
+    """Short words for what a fillet or chamfer was put on: '8 circles d6', '4 lines along Z', '12 lines'."""
+    kinds = set(_edge_kind(edge) for edge in edges)
+    if kinds == {"circle"}:
+        diameters = sorted(set(round(edge.geometry.radius * 20, 3) for edge in edges))
+        return "%d circles %s" % (len(edges), " ".join("d" + _fmt(diameter) for diameter in diameters))
+    if kinds == {"line"}:
+        axes = set()
+        for edge in edges:
+            start = edge.startVertex.geometry.asArray()
+            end = edge.endVertex.geometry.asArray()
+            along = [abs(end[i] - start[i]) for i in range(3)]
+            axes.add("XYZ"[along.index(max(along))])
+        if len(axes) == 1:
+            return "%d lines along %s" % (len(edges), axes.pop())
+        return "%d lines" % len(edges)
+    return "%d edges" % len(edges)
+
+
+def _remember_about(feature, text):
+    """Keep what a feature did as an attribute: the timeline then says 'Fillet2 (r1 on 8 circles d6)',
+    and remove() can find the step by its kind and diameter."""
+    try:
+        feature.attributes.add("fusion-agent", "about", text)
+    except RuntimeError:
+        pass
+
+
+def _about_of(entity):
+    try:
+        attribute = entity.attributes.itemByName("fusion-agent", "about")
+    except (RuntimeError, AttributeError):
+        return ""
+    if attribute is None:
+        return ""
+    return attribute.value
+
+
+def _step_label(item):
+    """A timeline step's name with what it did when that is known: 'Fillet2 (r1 on 8 circles d6)'."""
+    about = _about_of(item.entity)
+    if about:
+        return "%s (%s)" % (item.name, about)
+    return item.name
 
 
 def _already_done_text(prefix, what):
@@ -2211,9 +2279,12 @@ def chamfer(edges, distance):
     chamfers = root.features.chamferFeatures
     chamfer_input = chamfers.createInput2()
     chamfer_input.chamferEdgeSets.addEqualDistanceChamferEdgeSet(_edge_collection(edges), _length(distance), True)
-    return _add(lambda: chamfers.add(chamfer_input), "chamfer",
-                _edges_summary(edges) + " Select only the edges the request names; the distance must fit the faces."
-                + _already_done_text("Chamfer", "chamfer"))
+    about = "%s mm on %s" % (_fmt(distance), _edges_about(edges))
+    feature = _add(lambda: chamfers.add(chamfer_input), "chamfer",
+                   _edges_summary(edges) + " Select only the edges the request names; the distance must fit the faces."
+                   + _already_done_text("Chamfer", "chamfer"))
+    _remember_about(feature, about)
+    return feature
 
 
 def find_circles(diameter=None):
@@ -2446,7 +2517,7 @@ def state_summary():
                 diameters.add(round(face.geometry.radius * 20, 3))
         volume += body.volume * 1000
     size = " x ".join(_fmt(high[i] - low[i]) for i in range(3)) if found else "-"
-    steps = [design.timeline.item(i).name for i in range(design.timeline.count)]
+    steps = [_step_label(design.timeline.item(i)) for i in range(design.timeline.count)]
     print("State of the design now: bodies %d, size %s mm, cylinder diameters %s, volume %s mm3, timeline: %s" % (
         len(found), size, sorted(diameters), _fmt(volume), ", ".join(steps) or "empty"))
 
@@ -2476,6 +2547,43 @@ def undo(steps=1):
     timeline.markerPosition = timeline.count - steps
     timeline.deleteAllAfterMarker()
     print("undo: removed %s." % ", ".join(removed))
+    state_summary()
+
+
+def remove(step, diameter=None):
+    """Delete ONE step of the timeline wherever it is, the steps after it stay (undo() takes only the last ones):
+    remove("Fillet2") by its name, or by its kind: remove("fillet", diameter=6) the fillet on the edges of
+    diameter 6 (убери скругление у отверстий), remove("chamfer"), remove("thread", diameter=8).
+    The timeline in the state names every fillet, chamfer and thread with what it did."""
+    timeline = design.timeline
+    items = [timeline.item(i) for i in range(timeline.count)]
+    wanted = str(step).strip()
+    matches = [item for item in items if item.name.lower() == wanted.lower()]
+    is_by_kind = not matches
+    if is_by_kind:
+        matches = [item for item in items if item.name.lower().startswith(wanted.lower())]
+        if diameter is not None:
+            token = "d" + _fmt(diameter)
+            matches = [item for item in matches if token in _about_of(item.entity).split()]
+    if not matches:
+        raise ValueError("no step %r%s in the timeline: %s" % (
+            wanted, "" if diameter is None else " with diameter %s" % _fmt(diameter),
+            ", ".join(_step_label(item) for item in items) or "empty"))
+    if len(matches) > 1:
+        raise ValueError("%d steps match %r: %s. Give the name of the one to remove, or its diameter" % (
+            len(matches), wanted, ", ".join(_step_label(item) for item in matches)))
+    item = matches[0]
+    if item.index < _user_steps():
+        raise ValueError("%s is a step of the user's own part: it stays; change it with set_parameter()" % item.name)
+    label = _step_label(item)
+    entity = item.entity
+    if entity is None or not hasattr(entity, "deleteMe") or not entity.deleteMe():
+        raise ValueError("Fusion could not delete %s; undo() the steps up to it and build again" % label)
+    print("remove: deleted %s." % label)
+    for i in range(design.timeline.count):
+        left = design.timeline.item(i)
+        if left.healthState != adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState:
+            print("  PROBLEM in %s after the removal: %s" % (left.name, left.errorOrWarningMessage))
     state_summary()
 
 
@@ -2666,7 +2774,7 @@ def describe():
     steps = []
     for i in range(design.timeline.count):
         item = design.timeline.item(i)
-        label = item.name
+        label = _step_label(item)
         axis = _extrude_axis(item.entity)
         if axis is not None:
             label += " (along %s)" % axis
