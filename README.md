@@ -1,4 +1,4 @@
-# fusion-ladder
+# fusion360-local-ai-agent
 
 A local AI model builds and edits parts in Autodesk Fusion from a request in plain words.
 Everything runs on your own computer: Fusion, Ollama and the model Gemma 4 12B. No cloud, no account.
@@ -22,6 +22,6 @@ In short:
   environment and installs two packages; after that the app checks Fusion, Ollama and the model itself
   and tells you what to fix.
 
-The rest of this repository is the bench on which the tool was tuned and measured: task sets with
+The rest of this repository (the bench `fusion-ladder`) is where the tool was tuned and measured: task sets with
 hand-computed references, runners and the history of the measurements (`cases*.json`, `run_ladder.py`,
 `results/`, `HANDOFF.md`). A user of the tool does not need it.

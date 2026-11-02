@@ -197,6 +197,6 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
 ## Where things come from
 
 The CAD helpers (`fusion_agent/cad_api.py`), the system prompt (`fusion_agent/prompts/cad12.md`) and
-the agent loop (`fusion_agent/agent.py`) grew out of the bench in the parent folder (`fusion-ladder`),
+the agent loop (`fusion_agent/agent.py`) grew out of the bench in the parent folder of this repository (`fusion-ladder`, the repository's old name),
 where every change was measured on task sets with hand-computed references. This folder is their source
 of truth; the plan it was built from is `PLAN.md`.
