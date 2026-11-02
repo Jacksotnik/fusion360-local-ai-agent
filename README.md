@@ -1,6 +1,7 @@
-# fusion-agent
+# Fusion 360 Local AI Agent
 
 **A local AI model builds and edits parts in Autodesk Fusion from a plain-language request.**
+The terminal command is `fusion-agent`.
 
 You type what you want in the terminal, in Russian or English, in everyday words:
 
