@@ -138,15 +138,15 @@ the final code, Gemma 4 12B, fast mode (no thinking), on a laptop with a 16 GB G
 
 | Set | What | Result |
 |---|---|---|
-| Plain-language requests, 26 tasks | everyday words, cm sizes, plates, disks, bushings, edits, questions | **26/26, 26/26, 26/26, 25/26** |
-| Your own models, 11 tasks | parts made in Fusion by hand: edits through parameters, questions about mass and sizes | **11/11** (three runs) |
-| Real parts from a picture plus build steps, 51 | a photo and the steps in words with every size | **43/51 before one prompt line about arcs, 47-49/51 after** |
-| Real parts from a picture plus build steps, 62 (second set) | same kind, written after the arc fix | **61/62** |
-| The exam: a photo of a hub flange plus sizes in words | spline bore, 4 bolt holes, 2 rim cutouts, filleted hub | **PASS in 8 of 9 runs** |
-| Bench regression, 23 tasks | the original graded tasks of the project | **23/23** (most runs), 22/23 (a chamfer on both edges of a face instead of the outer one) |
-| The second exam (2026-11-02): a photo of a printed bracket plus sizes in words | a lobed base with a concave front edge, two bosses, a wall that tapers up to an eye, two ribs that meet under the eye | **0/2** after the three helpers it asked for: the base with its arcs and the bosses come out right, the wall is still built as a separate post and `stands_on=` is read as a point |
+| Plain-language requests, 26 tasks | everyday words, cm sizes, plates, disks, bushings, edits, questions | **26/26, 26/26, 26/26, 25/26, 26/26** (the last on the final code) |
+| Your own models, 11 tasks | parts made in Fusion by hand: edits through parameters, questions about mass and sizes | **11/11** (four runs, the last on the final code) |
+| Real parts from a picture plus build steps, 51 | a photo and the steps in words with every size | **43/51 before one prompt line about arcs, 47-49/51 after, 50/51 on the final code** |
+| Real parts from a picture plus build steps, 62 (second set) | same kind, written after the arc fix | **61/62, 61/62 on the final code** |
+| The exam: a photo of a hub flange plus sizes in words | spline bore, 4 bolt holes, 2 rim cutouts, filleted hub | **PASS in 9 of 10 runs** |
+| Bench regression, 23 tasks | the original graded tasks of the project | **23/23** (most runs), 22/23 (a chamfer on both edges of a face instead of the outer one); not re-run after the final helper patch of 2026-11-02 (Fusion was closed when its turn came) |
+| The second exam (2026-11-02): a photo of a printed bracket plus sizes in words | a lobed base with a concave front edge, two bosses, a wall that tapers up to an eye, two ribs that meet under the eye | **0/3** after the three helpers it asked for: the base with its arcs and the bosses come out right, the wall is still built as a separate post and `stands_on=` is read as a point |
 
-Across the untuned sets on the final code: **173 of 179 tasks, 96.6 %** (before the bracket exam, which is 0/2 so far).
+Across the untuned sets on the code of 2026-11-02 morning: **173 of 179 tasks, 96.6 %**. The final run of 2026-11-02 evening (plain holdout8, user models, both Gallery sets, both exams): **149 of 152, 98.0 %**; the three misses are the bracket exam and one Gallery part in each set (volume 2-3 % under the reference, the same parts as in earlier runs).
 
 **Sets used for tuning** (their failures drove the helpers; numbers are the last run):
 
@@ -155,7 +155,7 @@ Across the untuned sets on the final code: **173 of 179 tasks, 96.6 %** (before 
 | Machine parts, 12 | splined hub and shaft, rim notches, hub fillet, face recess, keyway, counterbores | 12/12 |
 | Bodies of revolution, 5 | a two-cone vase, a sphere, a dome, a barrel, a knob with a rounded top | 5/5 |
 | Gears, threads, hexagons, 8 | gears with bore and hub, nut, bolt, threaded shaft and hole, socket-head screw | 8/8 |
-| Basics, 15 | bent tube, L-rod, spring, square-to-round loft, frustum, gusset, angled hole, subtracted sphere, copied cube with a bridge, engraved plate, square tube along an arc, bracket with an eye, lobed plate, plate tapering to an eye, leaning gussets | 9/11 on the first eleven; the three helpers of the bracket exam 0/3 -> 1/3 -> 2/3 -> 3/3 over three rounds of tool fixes |
+| Basics, 15 | bent tube, L-rod, spring, square-to-round loft, frustum, gusset, angled hole, subtracted sphere, copied cube with a bridge, engraved plate, square tube along an arc, bracket with an eye, lobed plate, plate tapering to an eye, leaning gussets | 9/11 on the first eleven; the three helpers of the bracket exam 0/3 -> 1/3 -> 2/3 -> 3/3 over three rounds of tool fixes (one pass per task, not one run); the final run 9/15 (old tasks 8/12, new 1/3). `B-square-tube-arc` fails on a 0.03 mm arc artifact of its own reference, to fix in the reference |
 
 Honest reading of the misses: the model sometimes adds what was not asked (a rounded corner instead
 of a chamfer), misreads a width (20 instead of 10), or writes a wrong volume formula into its own check
