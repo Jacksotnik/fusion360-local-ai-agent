@@ -1032,24 +1032,29 @@ def thread(diameter, length=None, base=None, axis="Z", internal=False, pitch=Non
     collection = adsk.core.ObjectCollection.create()
     for each_face in faces:
         collection.add(each_face)
-    hint = _thread_failure_hint(face, diameter, designation, axis_index)
-
-    def make_thread():
-        thread_input = threads.createInput(collection, info)
-        thread_input.isModeled = modeled
-        if length is None:
-            thread_input.isFullLength = True
-        else:
-            thread_input.isFullLength = False
-            thread_input.threadLength = _length(length)
-            if base is not None:
-                low, high = _range_mm(face.boundingBox, axis_index)
-                if abs(base[axis_index] - high) < abs(base[axis_index] - low):
-                    thread_input.isRightHanded = True
-                    thread_input.threadOffset = _length(0)
-        return threads.add(thread_input)
-
-    feature = _add(make_thread, "thread", hint)
+    thread_input = threads.createInput(collection, info)
+    thread_input.isModeled = modeled
+    if length is None:
+        thread_input.isFullLength = True
+    else:
+        thread_input.isFullLength = False
+        thread_input.threadLength = _length(length)
+        if base is not None:
+            low, high = _range_mm(face.boundingBox, axis_index)
+            if abs(base[axis_index] - high) < abs(base[axis_index] - low):
+                thread_input.isRightHanded = True
+                thread_input.threadOffset = _length(0)
+    # Read the place before the thread exists: the new feature can invalidate the face (Fusion: "pFace").
+    if len(faces) > 1:
+        where = ("in %d holes" if internal else "on %d faces") % len(faces)
+    else:
+        box = face.boundingBox
+        center = [(box.minPoint.asArray()[i] + box.maxPoint.asArray()[i]) * 5 for i in range(3)]
+        center[axis_index] = box.minPoint.asArray()[axis_index] * 10
+        where = "%s at %s" % ("in the hole" if internal else "on the shaft", _xyz(center))
+    feature = _add(lambda: threads.add(thread_input), "thread",
+                   "Fusion could not cut a %s thread on this face: a thread needs a plain cylindrical face of the "
+                   "nominal diameter, long enough for the length; try modeled=False." % designation)
     if modeled and not internal:
         low, high = _extents_mm()
         for index in range(3):
@@ -1057,14 +1062,6 @@ def thread(diameter, length=None, base=None, axis="Z", internal=False, pitch=Non
                 _NOMINAL_SIZES.setdefault(round(diameter, 6), []).append(
                     (high[index] - low[index], "the nominal thread diameter (the cut thread measures %s)" % _fmt(high[index] - low[index])))
     _SPLINE_SIZES.add(diameter)
-    if len(faces) > 1:
-        where = "in %d holes" if internal else "on %d faces"
-        where = where % len(faces)
-    else:
-        box = face.boundingBox
-        center = [(box.minPoint.asArray()[i] + box.maxPoint.asArray()[i]) * 5 for i in range(3)]
-        center[axis_index] = box.minPoint.asArray()[axis_index] * 10
-        where = "%s at %s" % ("in the hole" if internal else "on the shaft", _xyz(center))
     _remember_about(feature, "%s %s d%s" % (designation, where, _fmt(diameter)))
     print("thread: %s %s on the %s of diameter %s%s (%s)" % (
         designation, thread_class,
@@ -1072,28 +1069,6 @@ def thread(diameter, length=None, base=None, axis="Z", internal=False, pitch=Non
         "inside of the hole face" if internal else "outside face", _fmt(diameter),
         "" if length is None else ", length %s" % _fmt(length), "modeled" if modeled else "cosmetic"))
     return feature
-
-
-def _thread_failure_hint(face, diameter, designation, axis_index):
-    """Why Fusion may refuse the thread: the face is short (fillets or chamfers on the hole's edges eat its
-    length), so say what is there and what to do; Fusion's own message is only 'pFace'."""
-    low, high = _range_mm(face.boundingBox, axis_index)
-    face_length = high - low
-    token = "d" + _fmt(diameter)
-    rounded = []
-    for i in range(design.timeline.count):
-        item = design.timeline.item(i)
-        if item.name.startswith(("Fillet", "Chamfer")) and token in _about_of(item.entity).split():
-            rounded.append(item.name)
-    text = ("Fusion could not cut a %s thread on this face: a thread needs a plain cylindrical face of the nominal "
-            "diameter, long enough for the thread (this face is %s mm long)." % (designation, _fmt(face_length)))
-    if rounded:
-        text += (" The edges of this diameter are rounded by %s, which shortens the face: remove(\"%s\") first "
-                 "and tell the user the %s was removed to make room for the thread, or use modeled=False."
-                 % (", ".join(rounded), rounded[-1], "fillet" if rounded[-1].startswith("Fillet") else "chamfer"))
-    else:
-        text += " Try modeled=False, or a hole without fillets and chamfers on its edges."
-    return text
 
 
 def _distance_to_box(point, box):
@@ -2300,9 +2275,10 @@ def _step_label(item):
 def _fillet_size(feature):
     """The current radius of a fillet or distance of a chamfer (mm), '?' when Fusion does not say."""
     try:
+        edge_set = feature.edgeSets.item(0)
         if feature.objectType.endswith("FilletFeature"):
-            return _fmt(feature.edgeSets.item(0).radius.value * 10)
-        return _fmt(feature.chamferEdgeSets.item(0).distance.value * 10)
+            return _fmt(edge_set.radius.value * 10)
+        return _fmt(edge_set.distance.value * 10)
     except (RuntimeError, AttributeError):
         return "?"
 

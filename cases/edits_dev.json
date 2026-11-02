@@ -27,6 +27,19 @@
       "start": "box(60, 40, 6, corner=(0, 0, 0))\nfillet(find_edges(parallel_to='Z'), 3)\ndrill(30, 20, 0, 10, axis='Z')\nfillet(find_edges(kind='circle', diameter=10), 1)",
       "reference": "remove('Fillet1')",
       "volume": "60*40*6 - math.pi*5*5*6 - 2*2*math.pi*(5 + 1/6/(1 - math.pi/4))*(1 - math.pi/4)*1*1"
+    },
+    {
+      "id": "E-thread-keeps-the-hole-fillet",
+      "prompt": "Нарежь резьбу в центральном отверстии.",
+      "start": "box(80, 50, 6, corner=(0, 0, 0))\ndrill(40, 25, 0, 20, axis='Z')\nfillet(find_edges(kind='circle', diameter=20), 1)",
+      "reference": "thread(20, internal=True)",
+      "volume": null,
+      "size": [
+        80,
+        50,
+        6
+      ],
+      "note": "A thread on a hole with filleted edges works and the fillet stays. A helper that read the face after the thread failed here with 'pFace', and the model removed the fillet to get past it."
     }
   ]
 }

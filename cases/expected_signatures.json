@@ -1765,5 +1765,26 @@
    ],
    "unhealthy": []
   }
+ },
+ "E-thread-keeps-the-hole-fillet": {
+  "key": "74b3f01f631e6d1316fb44bd1db87d28e890ab66",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 22399.138,
+     "extents_mm": [
+      6.0,
+      50.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      17.52,
+      20.29
+     ],
+     "faces": 14
+    }
+   ],
+   "unhealthy": []
+  }
  }
 }
