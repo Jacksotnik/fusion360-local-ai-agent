@@ -1,2 +1,9 @@
+.venv/
 __pycache__/
 *.pyc
+build/
+dist/
+*.egg-info/
+# Local run output (session data itself lives in the user data folder, see README).
+results/
+sessions/
