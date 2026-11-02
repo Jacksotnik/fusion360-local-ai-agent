@@ -157,7 +157,7 @@ def short_error(traceback_text, model_script):
         model_lines = model_script.splitlines()
         if 1 <= model_line <= len(model_lines):
             location = "line %d of your script: %s\n" % (model_line, model_lines[model_line - 1].strip())
-    return "Script failed.\n" + location + message + helper_signature_hint(message)
+    return "Script failed.\n" + location + message + helper_signature_hint(message) + shadowed_helper_hint(message)
 
 
 def helper_signature_hint(message):
@@ -170,6 +170,18 @@ def helper_signature_hint(message):
     if not signature:
         return ""
     return "\nThe helper is %s(%s): give every argument in this order." % (name, signature.group(1))
+
+
+def shadowed_helper_hint(message):
+    """For an UnboundLocalError on a helper's name: the script assigned to that name and hid the helper."""
+    match = re.search(r"UnboundLocalError: .*?local variable '(\w+)'", message)
+    if not match:
+        return ""
+    name = match.group(1)
+    if not re.search(r"^def %s\(" % re.escape(name), CAD_PRELUDE, re.MULTILINE):
+        return ""
+    return ("\n%s is a helper function, and the script also uses %s as a variable name, which hides the helper. "
+            "Call it without assigning to that name, or use another name: base = %s(...)." % (name, name, name))
 
 
 def truncate(text):

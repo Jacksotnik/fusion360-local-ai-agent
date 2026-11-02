@@ -327,6 +327,7 @@ def extrude(sketch, distance, operation="new", symmetric=False, taper=0):
         else:
             extrude_input.setOneSideExtent(extent, _direction_sign(sketch, distance))
     where = _extents_text() if operation != "new" else ""
+    span_before = _extents_mm() if _all_bodies() else None
     volume_before = sum(body.volume for body in _all_bodies())
     feature = _add(lambda: extrudes.add(extrude_input), "extrude (%s)" % operation,
                    "For join/cut/intersect the sketch shapes must overlap the body; check positions with describe()."
@@ -344,6 +345,8 @@ def extrude(sketch, distance, operation="new", symmetric=False, taper=0):
             print("extrude (join) of %s mm: the piece is %s mm3 but only %s mm3 is new material, %s lay inside the "
                   "part (count only %s in a volume formula)" % (
                       _fmt(distance), _fmt(own), _fmt(added), _fmt(own - added), _fmt(added)))
+        if own and span_before is not None and added >= own * 0.995:
+            _note_piece_beyond_edge(span_before)
         if added < 1e-6:
             _, _, normal_axis = _sketch_frame_axis(sketch)
             leftover = ""
@@ -433,6 +436,20 @@ def _xyz_argument(value, name, function):
 def _no_center(center, function):
     if center is not None:
         raise ValueError("%s() has no center=; use base=(x, y, z): the center of the BOTTOM circle or face" % function)
+
+
+def _note_piece_beyond_edge(span_before):
+    """After a join that overlapped nothing: say when the part grew sideways, i.e. the piece sits beyond an
+    edge of the part and touches it only by a face (a wall meant to stand ON the base at its edge)."""
+    low_before, high_before = span_before
+    low, high = _extents_mm()
+    for index, axis in ((0, "x"), (1, "y")):
+        if high[index] > high_before[index] + 0.01 or low[index] < low_before[index] - 0.01:
+            print("extrude (join): the piece lies beyond the part's edge along %s (the part was %s %s..%s, now %s..%s) "
+                  "and touches it only by a face. A wall or a boss ON the part at its edge stays within the part's "
+                  "span, flush with the edge: its outer face AT the edge, its corner one thickness inside." % (
+                      axis, axis, _fmt(low_before[index]), _fmt(high_before[index]), _fmt(low[index]), _fmt(high[index])))
+            return
 
 
 def _extents_text():
@@ -1380,6 +1397,29 @@ def spring(wire_diameter, mean_diameter, pitch, turns, base=(0, 0, 0), axis="Z",
     return feature
 
 
+def plate(points, thickness, z=0, operation="new"):
+    """ПЛАСТИНА ЛЮБОЙ ФОРМЫ (фигурное основание, плита с лепестками, вырезами, скруглёнными выступами):
+    its outline as (x, y) points in mm, drawn on the XY plane at height z and extruded up by thickness.
+    Corners are (x, y); a point (x, y, "arc") is not a corner but a point the edge passes through by an arc
+    from the previous corner to the next one: a round lobe = corner, the lobe's outermost point as "arc",
+    corner; a concave notch between two corners = its deepest point as "arc". Prints the outline's area and
+    the volume for check(volume=...). points may also be a sketch that already holds the outline."""
+    if getattr(points, "objectType", "").endswith("Sketch"):
+        sketch = points
+    else:
+        sketch = new_sketch("XY", offset=z)
+        outline(sketch, points)
+    area = sum(profile.areaProperties().area for profile in solid_profiles(sketch)) * 100
+    feature = extrude(sketch, thickness, operation=operation)
+    print("plate: outline area %s mm2 x thickness %s = %s mm3, from z %s to %s" % (
+        _fmt(area), _fmt(thickness), _fmt(area * thickness), _fmt(z), _fmt(z + thickness)))
+    for sketch_arc in sketch.sketchCurves.sketchArcs:
+        geometry = sketch_arc.geometry
+        center = sketch.sketchToModelSpace(geometry.center)
+        print("  arc: center (%s, %s), radius %s" % (_fmt(center.x / MM), _fmt(center.y / MM), _fmt(geometry.radius / MM)))
+    return feature
+
+
 def rib(points, thickness, plane="XZ", offset=0, operation="join"):
     """РЕБРО ЖЁСТКОСТИ, косынка: a closed outline (u, v) drawn on the plane (XZ: (x, z) at y=offset) and
     extruded symmetrically by thickness, joined to the part. A triangular gusset between a plate (z=0..t)
@@ -1410,28 +1450,125 @@ def rib(points, thickness, plane="XZ", offset=0, operation="join"):
     return feature
 
 
-def gusset(length, height, thickness, corner=(0, 0, 0), along="X", operation="join"):
+def _is_outside_part(x, y, z):
+    """True when the point (mm) lies outside every body of the design."""
+    probe = adsk.core.Point3D.create(x * MM, y * MM, z * MM)
+    for candidate in _all_bodies():
+        if candidate.pointContainment(probe) != adsk.fusion.PointContainment.PointOutsidePointContainment:
+            return False
+    return True
+
+
+_ALONG_STEPS = {"X": (1, 0), "-X": (-1, 0), "Y": (0, 1), "-Y": (0, -1)}
+
+
+def _free_direction(corner):
+    """The one direction away from the wall at an inner corner: 1 mm that way (just above the floor) is
+    air and 1 mm the opposite way is the wall. None when the corner does not look like an inner corner."""
+    if not _all_bodies():
+        return None
+    free = []
+    for name, (dx, dy) in _ALONG_STEPS.items():
+        ahead = _is_outside_part(corner[0] + dx, corner[1] + dy, corner[2] + 1)
+        behind = _is_outside_part(corner[0] - dx, corner[1] - dy, corner[2] + 1)
+        floor_ahead = not _is_outside_part(corner[0] + dx, corner[1] + dy, corner[2] - 1)
+        if ahead and not behind and floor_ahead:
+            free.append(name)
+    if len(free) == 1:
+        return free[0]
+    return None
+
+
+def gusset(length, height, thickness, corner=(0, 0, 0), along=None, operation="join", lean=0):
     """КОСЫНКА, треугольное ребро between a floor and a wall meeting at the inner corner corner=(x, y, z):
     the triangle runs length mm along the floor AWAY from the wall's face (the along axis, "X", "-X",
     "Y" or "-Y": perpendicular to the wall's face) and height mm up the wall (+Z); thickness is centered
     on the corner's other coordinate. The corner is a point ON the wall's face at the floor's top (for a
-    wall thin along Y with its face at y0: corner=(x, y0, floor top), along="Y"). Two ribs = two calls at
-    two x (or y) positions. Volume added = length * height / 2 * thickness."""
+    wall thin along Y with its face at y0: corner=(x, y0, floor top)). along may be left out: the helper
+    finds the free direction at the corner itself (and corrects a wrong one). Two ribs = two calls at two x
+    (or y) positions. Volume added = length * height / 2 * thickness.
+    lean (mm): the rib leans sideways along the wall's face: its foot stays at the corner and its top is
+    moved lean mm along the face (positive toward +X for a wall thin along Y, toward +Y for a wall thin
+    along X). The rib keeps its length, so its top ends a little lower than height. Ribs that meet under
+    an eye and spread down toward the feet: two gussets with opposite lean."""
+    global _NEW_BASE_BODIES
     corner = _xyz_argument(corner, "corner", "gusset")
-    along = along.upper()
+    free = _free_direction(corner)
+    if along is None:
+        if free is None:
+            raise ValueError("gusset: the corner (%s, %s, %s) is not an inner corner of a wall and a floor: it needs the "
+                             "wall on one side, air on the other side just above the floor, and the floor right under that air. "
+                             "Put the corner ON the wall's face at the floor's TOP (z = the floor's thickness), where the rib "
+                             "will stand on the floor; %s" % (_fmt(corner[0]), _fmt(corner[1]), _fmt(corner[2]), _extents_text()))
+        along = free
+        print("gusset: the rib runs along %s, away from the wall's face" % along)
+    else:
+        along = str(along).upper()
+        if along not in _ALONG_STEPS:
+            raise ValueError('along must be "X", "-X", "Y" or "-Y"')
+        if free is not None and free != along:
+            print('gusset: along="%s" would run into the part, the free direction at the corner is "%s": using it' % (along, free))
+            along = free
     if along == "X":
         points = [(corner[0], corner[2]), (corner[0] + length, corner[2]), (corner[0], corner[2] + height)]
-        return rib(points, thickness, "XZ", offset=corner[1], operation=operation)
-    if along == "Y":
+        plane, offset = "XZ", corner[1]
+    elif along == "Y":
         points = [(corner[1], corner[2]), (corner[1] + length, corner[2]), (corner[1], corner[2] + height)]
-        return rib(points, thickness, "YZ", offset=corner[0], operation=operation)
-    if along == "-X":
+        plane, offset = "YZ", corner[0]
+    elif along == "-X":
         points = [(corner[0], corner[2]), (corner[0] - length, corner[2]), (corner[0], corner[2] + height)]
-        return rib(points, thickness, "XZ", offset=corner[1], operation=operation)
-    if along == "-Y":
+        plane, offset = "XZ", corner[1]
+    else:
         points = [(corner[1], corner[2]), (corner[1] - length, corner[2]), (corner[1], corner[2] + height)]
-        return rib(points, thickness, "YZ", offset=corner[0], operation=operation)
-    raise ValueError('along must be "X", "-X", "Y" or "-Y"')
+        plane, offset = "YZ", corner[0]
+    if not lean:
+        return rib(points, thickness, plane, offset=offset, operation=operation)
+
+    # A leaning rib: the upright triangle as its own body, turned about the line through the corner along
+    # the rib's length (its foot stays), then merged into the part.
+    bodies_before = _all_bodies()
+    volume_before = sum(body.volume for body in bodies_before) * 1000
+    new_bodies_before = _NEW_BASE_BODIES
+    feature = rib(points, thickness, plane, offset=offset, operation="new")
+    _NEW_BASE_BODIES = new_bodies_before
+    rib_body = feature.bodies.item(0)
+    if plane == "XZ":
+        turn_axis = adsk.core.Vector3D.create(1, 0, 0)
+        sideways_index = 1
+    else:
+        turn_axis = adsk.core.Vector3D.create(0, 1, 0)
+        sideways_index = 0
+    pivot = adsk.core.Point3D.create(corner[0] * MM, corner[1] * MM, corner[2] * MM)
+    angle = math.atan2(lean, height)
+    moves = root.features.moveFeatures
+    is_turned = False
+    for signed_angle in (angle, -angle):
+        transform = adsk.core.Matrix3D.create()
+        transform.setToRotation(signed_angle, turn_axis, pivot)
+        collection = adsk.core.ObjectCollection.create()
+        collection.add(rib_body)
+        move = _add(lambda: moves.add(moves.createInput(collection, transform)), "gusset (lean)", "")
+        bounds = rib_body.boundingBox
+        middle = (bounds.maxPoint.asArray()[sideways_index] + bounds.minPoint.asArray()[sideways_index]) / 2 / MM
+        shift = middle - corner[sideways_index]
+        if shift * lean > 0:
+            is_turned = True
+            break
+        move.deleteMe()
+    if not is_turned:
+        raise ValueError("gusset: could not lean the rib by %s mm" % _fmt(lean))
+
+    if operation == "join" and bodies_before:
+        _combine(bodies_before[0], rib_body, "join", False)
+        added = sum(body.volume for body in _all_bodies()) * 1000 - volume_before
+        expected = length * height / 2 * thickness
+        if added < expected * 0.99:
+            raise ValueError("gusset: only %s of the leaning rib's %s mm3 is new material, the rest lies inside the "
+                             "part: the corner must sit ON the wall's face at the floor's top, and the rib must run "
+                             "away from the face; %s" % (_fmt(added), _fmt(expected), _extents_text()))
+    print("gusset: leaning %s mm sideways (%.1f degrees), top at height %s" % (
+        _fmt(lean), math.degrees(angle), _fmt(corner[2] + height * math.cos(angle))))
+    return feature
 
 
 def tilted_plane(angle, axis="X", through=(0, 0, 0), plane="XY"):
@@ -1504,23 +1641,103 @@ def engrave(text, height, depth, corner=(0, 0, 0), plane="XY", width=None, raise
     return feature
 
 
-def lug(diameter, hole_diameter, thickness, center=(0, 0, 0), axis="Y", operation="join"):
+def lug(diameter, hole_diameter, thickness, center=(0, 0, 0), axis="Y", operation="join", stands_on=None):
     """ПРОУШИНА, ушко (an eye for a pin or a bolt): a round disk of this diameter and thickness whose axis
     runs along the axis through center=(x, y, z) (the middle of the disk), with a through hole of
     hole_diameter along the SAME axis. axis="Y" or "X" is a standing eye with a horizontal hole (on top
     of a post, at the end of a lever); axis="Z" a flat eye. Volume added = pi/4 * (D*D - d*d) * thickness
-    minus what overlaps the part (the join line says how much)."""
+    minus what overlaps the part (the join line says how much).
+    stands_on=(x1, x2, z): the eye is the top of a flat STANDING PLATE of this thickness whose bottom edge
+    is the line from x1 to x2 (y1 to y2 for axis="X") at height z; the plate narrows up to the eye, its two
+    sides tangent to the eye's circle (a hanger, a bracket's wall that ends in an eye, a clevis plate). It
+    is the whole wall: nothing is built under it, it stands on the base's top face (z = base thickness) or
+    on the ground (z = 0). The hole goes through the eye; the call prints the volume for check(volume=...)."""
     center = _xyz_argument(center, "center", "lug")
     if hole_diameter >= diameter:
         raise ValueError("the hole %s must be smaller than the lug's diameter %s" % (_fmt(hole_diameter), _fmt(diameter)))
     axis_index = _AXES[axis.upper()]
-    base = list(center)
-    base[axis_index] -= thickness / 2.0
-    feature = cylinder(diameter, thickness, base=tuple(base), axis=axis, operation=operation)
+    if stands_on is None:
+        base = list(center)
+        base[axis_index] -= thickness / 2.0
+        feature = cylinder(diameter, thickness, base=tuple(base), axis=axis, operation=operation)
+        drill(center[0], center[1], center[2], hole_diameter, axis=axis)
+        print("lug: diameter %s, hole %s along %s, thickness %s, center (%s, %s, %s); own volume %s mm3" % (
+            _fmt(diameter), _fmt(hole_diameter), axis.upper(), _fmt(thickness), _fmt(center[0]), _fmt(center[1]),
+            _fmt(center[2]), _fmt(math.pi / 4 * (diameter ** 2 - hole_diameter ** 2) * thickness)))
+        return feature
+
+    if axis_index == 2:
+        raise ValueError('lug(stands_on=...) needs a standing eye, axis="Y" or "X"; a flat eye (axis="Z") stands on nothing')
+    if len(stands_on) != 3:
+        raise ValueError("stands_on is (x1, x2, z): the plate's bottom edge from x1 to x2 at height z, got %r" % (stands_on,))
+    a, b, foot_z = float(stands_on[0]), float(stands_on[1]), float(stands_on[2])
+    if a > b:
+        a, b = b, a
+    if a == b:
+        raise ValueError("the plate's bottom edge must have a length: x1 and x2 are both %s" % _fmt(a))
+    radius = diameter / 2.0
+    if axis_index == 1:
+        plane, u_center = "XZ", center[0]
+    else:
+        plane, u_center = "YZ", center[1]
+    v_center = center[2]
+    if foot_z >= v_center - radius:
+        raise ValueError("the plate's bottom edge at height %s must lie below the eye, whose bottom is at %s. "
+                         "stands_on=(x1, x2, z) is not a point: x1 and x2 are the two ends of the plate's bottom edge "
+                         "(its full width on the base), z is the height of that edge (the base's top face or the ground); "
+                         "the plate itself is the whole wall, do not build a post under it" % (
+                             _fmt(foot_z), _fmt(v_center - radius)))
+
+    # The plate's sides are the outer tangents from the foot corners to the eye's circle.
+    tangents = []
+    for u in (a, b):
+        distance = math.hypot(u - u_center, foot_z - v_center)
+        if distance <= radius:
+            raise ValueError("the bottom corner at %s lies inside the eye's circle; widen the bottom edge or raise the eye" % _fmt(u))
+        angle_to_corner = math.atan2(foot_z - v_center, u - u_center)
+        half_spread = math.acos(radius / distance)
+        outer_sign = 1 if u > u_center else -1
+        candidates = []
+        for angle in (angle_to_corner + half_spread, angle_to_corner - half_spread):
+            candidates.append((u_center + radius * math.cos(angle), v_center + radius * math.sin(angle)))
+        tangents.append(max(candidates, key=lambda point: outer_sign * (point[0] - u_center)))
+    left_tangent, right_tangent = tangents
+
+    sketch = new_sketch(plane, offset=center[axis_index])
+    outline(sketch, [(a, foot_z), (b, foot_z), right_tangent, (u_center, v_center + radius, "arc"), left_tangent])
+    if operation == "join" and not _all_bodies():
+        operation = "new"
+    feature = extrude(sketch, thickness, operation=operation, symmetric=True)
     drill(center[0], center[1], center[2], hole_diameter, axis=axis)
-    print("lug: diameter %s, hole %s along %s, thickness %s, center (%s, %s, %s); own volume %s mm3" % (
-        _fmt(diameter), _fmt(hole_diameter), axis.upper(), _fmt(thickness), _fmt(center[0]), _fmt(center[1]),
-        _fmt(center[2]), _fmt(math.pi / 4 * (diameter ** 2 - hole_diameter ** 2) * thickness)))
+
+    # Own volume: the four-corner plate plus the circle's cap above the chord between the tangent points, minus the hole.
+    corners = [(a, foot_z), (b, foot_z), right_tangent, left_tangent]
+    polygon_area = 0.0
+    for index in range(len(corners)):
+        u1, v1 = corners[index]
+        u2, v2 = corners[(index + 1) % len(corners)]
+        polygon_area += u1 * v2 - u2 * v1
+    polygon_area = abs(polygon_area) / 2
+    chord = math.hypot(right_tangent[0] - left_tangent[0], right_tangent[1] - left_tangent[1])
+    half_chord = min(chord / 2, radius)
+    to_chord = math.sqrt(max(radius ** 2 - half_chord ** 2, 0.0))
+    minor_segment = radius ** 2 * math.acos(to_chord / radius) - to_chord * half_chord
+    chord_middle_v = (left_tangent[1] + right_tangent[1]) / 2
+    if v_center > chord_middle_v:
+        cap = math.pi * radius ** 2 - minor_segment
+    else:
+        cap = minor_segment
+    own = (polygon_area + cap - math.pi / 4 * hole_diameter ** 2) * thickness
+    size = [0, 0, 0]
+    size[axis_index] = thickness
+    size[0 if axis_index == 1 else 1] = max(b, u_center + radius) - min(a, u_center - radius)
+    size[2] = v_center + radius - foot_z
+    print("lug on a plate: eye diameter %s, hole %s along %s, thickness %s, center (%s, %s, %s); the plate stands "
+          "on %s..%s at height %s, its sides touch the eye at heights %s and %s; own volume %s mm3, own size "
+          "%s x %s x %s mm (x, y, z: the eye's top is at height %s)" % (
+              _fmt(diameter), _fmt(hole_diameter), axis.upper(), _fmt(thickness), _fmt(center[0]), _fmt(center[1]),
+              _fmt(center[2]), _fmt(a), _fmt(b), _fmt(foot_z), _fmt(left_tangent[1]), _fmt(right_tangent[1]), _fmt(own),
+              _fmt(size[0]), _fmt(size[1]), _fmt(size[2]), _fmt(v_center + radius)))
     return feature
 
 

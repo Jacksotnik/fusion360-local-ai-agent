@@ -20,7 +20,8 @@ The app never saves or closes your Fusion documents. Saving the design is up to 
 
 ## What it is for
 
-- Building parts from words: plates, disks, shafts, bushings, flanges, brackets, boxes, profiles
+- Building parts from words: plates (also of any outline: lobes, concave edges), disks, shafts,
+  bushings, flanges, brackets (walls that taper up to an eye, leaning ribs), boxes, profiles
   (L, U, T, I), bottles and vases (bodies of revolution with rounded shoulders), gears, nuts and bolts,
   threads, springs, tubes along a path, lofts, ribs, holes of every kind (through, blind, counterbored,
   countersunk, angled), slots, pockets, grooves, keyways, splines, fillets, chamfers, shells, patterns,
@@ -143,8 +144,9 @@ the final code, Gemma 4 12B, fast mode (no thinking), on a laptop with a 16 GB G
 | Real parts from a picture plus build steps, 62 (second set) | same kind, written after the arc fix | **61/62** |
 | The exam: a photo of a hub flange plus sizes in words | spline bore, 4 bolt holes, 2 rim cutouts, filleted hub | **PASS in 8 of 9 runs** |
 | Bench regression, 23 tasks | the original graded tasks of the project | **23/23** (most runs), 22/23 (a chamfer on both edges of a face instead of the outer one) |
+| The second exam (2026-11-02): a photo of a printed bracket plus sizes in words | a lobed base with a concave front edge, two bosses, a wall that tapers up to an eye, two ribs that meet under the eye | **0/2** after the three helpers it asked for: the base with its arcs and the bosses come out right, the wall is still built as a separate post and `stands_on=` is read as a point |
 
-Across the untuned sets on the final code: **173 of 179 tasks, 96.6 %.**
+Across the untuned sets on the final code: **173 of 179 tasks, 96.6 %** (before the bracket exam, which is 0/2 so far).
 
 **Sets used for tuning** (their failures drove the helpers; numbers are the last run):
 
@@ -153,7 +155,7 @@ Across the untuned sets on the final code: **173 of 179 tasks, 96.6 %.**
 | Machine parts, 12 | splined hub and shaft, rim notches, hub fillet, face recess, keyway, counterbores | 12/12 |
 | Bodies of revolution, 5 | a two-cone vase, a sphere, a dome, a barrel, a knob with a rounded top | 5/5 |
 | Gears, threads, hexagons, 8 | gears with bore and hub, nut, bolt, threaded shaft and hole, socket-head screw | 8/8 |
-| Basics, 11 | bent tube, L-rod, spring, square-to-round loft, frustum, gusset, angled hole, subtracted sphere, copied cube with a bridge, engraved plate, square tube along an arc | 9/11 |
+| Basics, 15 | bent tube, L-rod, spring, square-to-round loft, frustum, gusset, angled hole, subtracted sphere, copied cube with a bridge, engraved plate, square tube along an arc, bracket with an eye, lobed plate, plate tapering to an eye, leaning gussets | 9/11 on the first eleven; the three helpers of the bracket exam 0/3 -> 1/3 -> 2/3 -> 3/3 over three rounds of tool fixes |
 
 Honest reading of the misses: the model sometimes adds what was not asked (a rounded corner instead
 of a chamfer), misreads a width (20 instead of 10), or writes a wrong volume formula into its own check
