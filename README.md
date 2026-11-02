@@ -5,7 +5,7 @@ Everything runs on your own computer: Fusion, Ollama and the model Gemma 4 12B. 
 
 **The tool is the folder [`fusion-agent/`](fusion-agent/)**: a terminal app. Its README tells what it can
 build, what has to be installed, how to start it and what the measurements showed (96.6 % of the tasks
-solved on sets the tool was never tuned on).
+solved on sets the tool was never tuned on; the final run of 2026-11-02: 149 of 151, 98.7 %).
 
 In short:
 
