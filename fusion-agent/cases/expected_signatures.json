@@ -208,5 +208,1690 @@
    ],
    "unhealthy": []
   }
+ },
+ "U-token": {
+  "key": "2e1331b194e4dce57d6f25eacef9bf61c674b8ca",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 1767.146,
+     "extents_mm": [
+      2.5,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      30.0
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-spacer": {
+  "key": "2c54dc0dc6d796bd14bdf0bca1b3884796907b77",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 942.478,
+     "extents_mm": [
+      12.0,
+      12.0,
+      15.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0,
+      12.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-vase": {
+  "key": "13673d936ed357469d275990316bc3d140308937",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 23021.984,
+     "extents_mm": [
+      40.0,
+      40.0,
+      70.0
+     ],
+     "cylinder_diameters_mm": [
+      35.0,
+      40.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-case": {
+  "key": "b832ef5e524542fe3fcc2befd25861ebed63f492",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 6523.5,
+     "extents_mm": [
+      20.0,
+      30.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 11
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-plate-corner-holes": {
+  "key": "0f5ce70e577039b891010007548598e4900a0f65",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 7049.204,
+     "extents_mm": [
+      3.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-thumbtack": {
+  "key": "5358af2b9d958d6bd3be222715319981fb2d37ea",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 188.496,
+     "extents_mm": [
+      10.0,
+      10.0,
+      12.0
+     ],
+     "cylinder_diameters_mm": [
+      2.0,
+      10.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-three-step": {
+  "key": "d64f7864af6b2962406b45b90b847729fab6dfb8",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11140.088,
+     "extents_mm": [
+      24.0,
+      24.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      12.0,
+      18.0,
+      24.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-spool": {
+  "key": "7ec7035b292dc8bf53a2e4f0add6155a9a28c1fb",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 47123.89,
+     "extents_mm": [
+      40.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0,
+      40.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-u-bracket": {
+  "key": "0b72f3ec17c650b7dd7ada901eaca5cffb27349d",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 2064.0,
+     "extents_mm": [
+      12.0,
+      25.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-l-bracket": {
+  "key": "6c29f18ada6e7d6ca82601d41066363c3a329c9e",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 5025.0,
+     "extents_mm": [
+      25.0,
+      30.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-slot-bar": {
+  "key": "63bf485c53770e85922303051cfbafa0cc8c11b2",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 3316.095,
+     "extents_mm": [
+      3.0,
+      20.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-coaster-rim": {
+  "key": "5af69fcb6c46361cf0af332c2dacef198a960c76",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 27906.768,
+     "extents_mm": [
+      7.0,
+      90.0,
+      90.0
+     ],
+     "cylinder_diameters_mm": [
+      84.0,
+      90.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-stand-wall-long": {
+  "key": "17d49dc3c8797aabd9e2fe491efbca3377f82c4f",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 38400.0,
+     "extents_mm": [
+      36.0,
+      50.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-stand-wall-short": {
+  "key": "826867d8dcbee9d50343636a219b8a2ac5a4b8ad",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 35000.0,
+     "extents_mm": [
+      25.0,
+      50.0,
+      120.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-block-boss": {
+  "key": "f35a4a53e254ccfd17db5afe5c9cb330c36aa21b",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 23208.495,
+     "extents_mm": [
+      20.0,
+      30.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      16.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-cube-side-hole": {
+  "key": "99d5405052677d524cc5f04eeb92b25057e34208",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 7607.301,
+     "extents_mm": [
+      20.0,
+      20.0,
+      20.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-blind-disk": {
+  "key": "6d09561b80997d97ff10635a08f2ab791bb7e099",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 28949.776,
+     "extents_mm": [
+      15.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0,
+      50.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-cube-chamfer-vertical": {
+  "key": "219f8bcc7280d746d21fae52626501162361f220",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 26460.0,
+     "extents_mm": [
+      30.0,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-edit-longer": {
+  "key": "2e4e75d471843956132b03b6cc13d0cdad1bf139",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 37500.0,
+     "extents_mm": [
+      5.0,
+      50.0,
+      150.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-edit-narrower": {
+  "key": "820ca58aabbb8567a096b3177440412f7bde2d9f",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 14400.0,
+     "extents_mm": [
+      6.0,
+      30.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-edit-thinner": {
+  "key": "c8f4a0b7f13331ec91828635716cd0fbaca4c9a9",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 14400.0,
+     "extents_mm": [
+      4.0,
+      60.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-edit-hole-smaller": {
+  "key": "c3cd36c3980d5ad113282cce0ae0c50a1654e4f3",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 9482.19,
+     "extents_mm": [
+      6.0,
+      40.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-edit-fillet-vertical": {
+  "key": "cc597fffb74787bd71d4586facd62881991b7fb8",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 29570.796,
+     "extents_mm": [
+      20.0,
+      30.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-ask-height": {
+  "key": "dc777fe4e1c622c198718f086db75275389a2bae",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 40000.0,
+     "extents_mm": [
+      25.0,
+      40.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-ask-outer": {
+  "key": "be800e5aadfb9f0cd5554393d306cc37b7d8ba37",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 5890.486,
+     "extents_mm": [
+      15.0,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0,
+      30.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "U-ask-mass": {
+  "key": "32421a868e88e81e538025b89fe7f066f4c868c6",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 50000.0,
+     "extents_mm": [
+      10.0,
+      50.0,
+      100.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "T-spur-gear-bore": {
+  "key": "51102f678878a7e8c03effcbb6dc6d8d4cc790f2",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11743.945,
+     "extents_mm": [
+      10.0,
+      44.0,
+      44.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0
+     ],
+     "faces": 423
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "T-spur-gear-plain": {
+  "key": "2baad97c59d9de94c193bcf9bc413065ca7bef6e",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 9408.539,
+     "extents_mm": [
+      6.0,
+      47.84,
+      48.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 632
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "T-hex-nut": {
+  "key": "ab56271bd83ca5e4ad07f42ab7b5f421ae701c95",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 674.823,
+     "extents_mm": [
+      6.5,
+      13.0,
+      15.011
+     ],
+     "cylinder_diameters_mm": [
+      6.78,
+      8.17
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "T-bolt": {
+  "key": "8bad4310f6b886d35a90f4a6b99e131c09e4ed7f",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 2548.455,
+     "extents_mm": [
+      13.0,
+      15.011,
+      45.3
+     ],
+     "cylinder_diameters_mm": [
+      6.45,
+      7.87
+     ],
+     "faces": 14
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "T-threaded-shaft": {
+  "key": "a1d1b4f61c697fb50409f996fb93cb1c663b8927",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 3162.313,
+     "extents_mm": [
+      9.85,
+      9.85,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      8.14,
+      9.85
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "T-threaded-hole-plate": {
+  "key": "600e083a7061b257324ee9fdd94575f6720684da",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 8762.453,
+     "extents_mm": [
+      10.0,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      5.04,
+      6.15
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "T-gear-with-hub": {
+  "key": "363f44895b5db3b2dc0a6fd1b73c86de4c4a0726",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 8848.407,
+     "extents_mm": [
+      18.0,
+      36.0,
+      36.0
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      20.0
+     ],
+     "faces": 341
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "T-socket-head": {
+  "key": "cbbfb2459a73a08620ac8d59fb18062458a694d1",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 2138.221,
+     "extents_mm": [
+      13.0,
+      13.0,
+      38.0
+     ],
+     "cylinder_diameters_mm": [
+      6.45,
+      7.87,
+      13.0
+     ],
+     "faces": 15
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-139610_e43b543c_0000": {
+  "key": "be8924f6371feec44adbd50a287dd3f7909e6133",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 500000.0,
+     "extents_mm": [
+      50.0,
+      100.0,
+      100.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-23956_ee17fe48_0015": {
+  "key": "c9048d83c0b35c308e2dacef9a2bf704eafd6203",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 100016.529,
+     "extents_mm": [
+      20.0,
+      90.0,
+      90.0
+     ],
+     "cylinder_diameters_mm": [
+      40.0,
+      87.0,
+      90.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-41691_96d262e4_0000": {
+  "key": "b8b2d022b77dcfbc008f9534630118a817376076",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 27438.458,
+     "extents_mm": [
+      12.7,
+      27.744,
+      119.38
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-55927_f8b31711_0016": {
+  "key": "d596a0a194e1f17978b1fd96f44960ee094f02e9",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 452.389,
+     "extents_mm": [
+      4.0,
+      20.0,
+      20.0
+     ],
+     "cylinder_diameters_mm": [
+      16.0,
+      20.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-32219_e5edc7ce_0039": {
+  "key": "eb8c6ff7ac786d18e4b0db2175647d648251fbaa",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 85408.697,
+     "extents_mm": [
+      50.0,
+      68.092,
+      100.0
+     ],
+     "cylinder_diameters_mm": [
+      80.0,
+      100.0
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-30417_0010bc7c_0019": {
+  "key": "420646b5fe5bc8587b0037d79ea514f52d7492a0",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 37514.055,
+     "extents_mm": [
+      4.0,
+      89.0,
+      106.5
+     ],
+     "cylinder_diameters_mm": [
+      5.0,
+      10.0
+     ],
+     "faces": 14
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-132796_53ed101d_0001": {
+  "key": "e3056cae80109e282bce0fb42f12bbd4efff4abb",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 1099.557,
+     "extents_mm": [
+      10.0,
+      10.0,
+      44.0
+     ],
+     "cylinder_diameters_mm": [
+      5.0,
+      10.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-22545_7c2ca3ce_0006": {
+  "key": "d6f20328ed23f17336fd29158a709ce5155e2675",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 6787.109,
+     "extents_mm": [
+      9.525,
+      9.525,
+      95.25
+     ],
+     "cylinder_diameters_mm": [
+      9.53
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-22340_ec24cd79_0011": {
+  "key": "fb539e0bcbb966cb7fad30c1f90d5ac8670d4af0",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 44624.386,
+     "extents_mm": [
+      28.0,
+      28.0,
+      81.0
+     ],
+     "cylinder_diameters_mm": [
+      28.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-119553_c436b288_0013": {
+  "key": "4ba79744f83c3ce17c5bb5df3e2d1a81b8aee7f2",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 699.24,
+     "extents_mm": [
+      3.0,
+      9.0,
+      29.4
+     ],
+     "cylinder_diameters_mm": [
+      3.0,
+      9.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-35962_dbbd6e18_0009": {
+  "key": "016b2be54751cb9572b7935a496455631c9082f0",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 360.942,
+     "extents_mm": [
+      5.0,
+      5.774,
+      28.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-41234_74275eb0_0007": {
+  "key": "92c70c6d60b3c6daf14fa33f031a8a15f1330164",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 14841.145,
+     "extents_mm": [
+      24.13,
+      38.1,
+      38.1
+     ],
+     "cylinder_diameters_mm": [
+      6.35,
+      38.1
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-54659_e1303e28_0041": {
+  "key": "a58ed5229c5d01d3256686eb5e63e5fdef4758a2",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 376.991,
+     "extents_mm": [
+      4.0,
+      4.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-33165_cec42ec5_0000": {
+  "key": "2b289b0199fb3745af9fe0b9d984a00fc839a3f5",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 172236.932,
+     "extents_mm": [
+      12.0,
+      90.0,
+      160.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-92286_045b32ee_0000": {
+  "key": "3031cfb996fb28a52d0804291cd11e94811e8f80",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 1593.319,
+     "extents_mm": [
+      5.0,
+      12.0,
+      67.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0,
+      6.0,
+      12.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-34535_2e59cac1_0000": {
+  "key": "639aecc26534896ca66acfc2b2b1e70d50eeaba9",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 25366.136,
+     "extents_mm": [
+      12.0,
+      51.879,
+      51.879
+     ],
+     "cylinder_diameters_mm": [
+      51.88
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-22768_620b0a0b_0004": {
+  "key": "355301052a7015864b1b637513816e4b01d69ed3",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 22400.0,
+     "extents_mm": [
+      8.0,
+      28.0,
+      100.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-122328_4d8636de_0000": {
+  "key": "01fde03bcb8a31dac21190726666907637fbca14",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 737417.88,
+     "extents_mm": [
+      50.8,
+      114.3,
+      127.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-24603_a4021250_0008": {
+  "key": "32ae86bdbddd7974940977b146f7f61d3647daa3",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 19799.044,
+     "extents_mm": [
+      6.0,
+      65.0,
+      71.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-45359_1768ab3f_0016": {
+  "key": "b37bbaadf3b042ff3de345dfa04ee9a2a06b8008",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 276.46,
+     "extents_mm": [
+      4.0,
+      4.0,
+      22.0
+     ],
+     "cylinder_diameters_mm": [
+      4.0
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-122491_52380ecd_0000": {
+  "key": "596f62780e0e1f1636a7c59cdc30455d7a17d0d8",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 3744.3,
+     "extents_mm": [
+      10.0,
+      15.0,
+      24.962
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-22320_e9f9e6ae_0003": {
+  "key": "7cf76adc0a7641f18815410c9bafd51a0ccdb7e9",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 12858.007,
+     "extents_mm": [
+      12.0,
+      44.496,
+      44.728
+     ],
+     "cylinder_diameters_mm": [
+      20.0
+     ],
+     "faces": 9
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-36733_b0605a21_0000": {
+  "key": "0b0a9d45a54fad67534d975dc193e46d0a0beef4",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11144.56,
+     "extents_mm": [
+      4.0,
+      20.0,
+      139.307
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-23753_b32a4e2e_0000": {
+  "key": "8a48a1b4bacc4c99db9a3142050a40de0ac07c67",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 60506.994,
+     "extents_mm": [
+      50.306,
+      50.306,
+      55.0
+     ],
+     "cylinder_diameters_mm": [
+      33.62,
+      50.31
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-23751_5e8bc03f_0008": {
+  "key": "35b7d5041f6ba8c97add8c7a04f7dcbfc91d54b3",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 1014.185,
+     "extents_mm": [
+      5.08,
+      5.08,
+      50.038
+     ],
+     "cylinder_diameters_mm": [
+      5.08
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-54485_e9658dfb_0000": {
+  "key": "4b9f9b621f81802585e9b4228f5675378c9ae75c",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 61950.0,
+     "extents_mm": [
+      25.0,
+      42.0,
+      59.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-56013_752d02cb_0001": {
+  "key": "005d1a6ab9a027afc2f59f34409692df6131a5de",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 79356.155,
+     "extents_mm": [
+      10.0,
+      30.0,
+      270.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0,
+      20.0
+     ],
+     "faces": 11
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-40999_cad6be09_0007": {
+  "key": "4b2b013d83ff9dce9f6ca6d47be8a52ce0c50d43",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 57916.665,
+     "extents_mm": [
+      25.4,
+      25.4,
+      114.3
+     ],
+     "cylinder_diameters_mm": [
+      25.4
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-41733_1ec9b00c_0009": {
+  "key": "e3ca43b268bf50680645e0e759ae58d5e9ac5f45",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 8072800.0,
+     "extents_mm": [
+      50.455,
+      400.0,
+      400.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-25199_b2422c18_0008": {
+  "key": "fe6f247c303bb347312d831faee0096d2c457541",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 204.201,
+     "extents_mm": [
+      0.77,
+      18.75,
+      18.75
+     ],
+     "cylinder_diameters_mm": [
+      18.75
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-20342_c140780b_0000": {
+  "key": "6596872b22f306f747f7c0a371be80fd31e15bba",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 186.003,
+     "extents_mm": [
+      3.512,
+      3.783,
+      14.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-22002_315afcfc_0008": {
+  "key": "0c965f070012bfcaed16a7a30df51043d19216fb",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 100.55,
+     "extents_mm": [
+      3.175,
+      3.175,
+      12.7
+     ],
+     "cylinder_diameters_mm": [
+      3.17
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-22124_6f71410e_0003": {
+  "key": "3ffb58c113fcac9390bb37654647f4374c2a04b7",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 3476.086,
+     "extents_mm": [
+      12.7,
+      26.369,
+      29.257
+     ],
+     "cylinder_diameters_mm": [
+      19.05
+     ],
+     "faces": 9
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-26404_7be5b2e3_0007": {
+  "key": "cf898401029f7fccd21329d85a61dcc85cb1bb13",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 14286.159,
+     "extents_mm": [
+      20.0,
+      20.0,
+      76.2
+     ],
+     "cylinder_diameters_mm": [
+      12.7,
+      20.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-43934_912ff891_0027": {
+  "key": "6efb2a598df9dbe44cb1c455fe1c0e3948d06c31",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 7200.0,
+     "extents_mm": [
+      5.0,
+      36.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-36088_1ea9c8a9_0005": {
+  "key": "1344f69fc9eb3938e17cde15270af6673f2faa85",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 2475.433,
+     "extents_mm": [
+      3.5,
+      29.94,
+      32.065
+     ],
+     "cylinder_diameters_mm": [
+      20.74,
+      29.94
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-34913_d23e2a24_0008": {
+  "key": "9c9270faecb64394d6e83c2046c4840c18ad182f",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 125860.864,
+     "extents_mm": [
+      3.0,
+      177.408,
+      236.481
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-51892_6da749d8_0016": {
+  "key": "1e112afc9624107499b3cc6b3177b590163d1bdc",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 2656.828,
+     "extents_mm": [
+      1.0,
+      32.0,
+      104.294
+     ],
+     "cylinder_diameters_mm": [
+      14.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-21803_8a36dcda_0011": {
+  "key": "e8dba97110f224575ae0f4d2e18f4d3f5f2bf074",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 3368.969,
+     "extents_mm": [
+      1.0,
+      106.0,
+      122.398
+     ],
+     "cylinder_diameters_mm": [
+      90.0
+     ],
+     "faces": 9
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-23001_234eee16_0003": {
+  "key": "fe3cc611a4ecac55db649c35fe35584a4b2aa44d",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 100530.965,
+     "extents_mm": [
+      40.0,
+      40.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      40.0
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-24907_c72322ea_0012": {
+  "key": "f55cdb0cce4be1f4960ab412c27c21b953149de8",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 9126.934,
+     "extents_mm": [
+      3.0,
+      40.0,
+      103.07
+     ],
+     "cylinder_diameters_mm": [
+      6.0,
+      28.0,
+      36.0
+     ],
+     "faces": 17
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-22019_0ef07114_0001": {
+  "key": "b77e6086d6887682a9d488a5e02416ad76eeaae0",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 250.623,
+     "extents_mm": [
+      5.08,
+      41.656,
+      41.656
+     ],
+     "cylinder_diameters_mm": [
+      40.89,
+      41.66
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-22630_b6010fff_0010": {
+  "key": "3674a7feb470d57c9865bb49a4d98979a791b5b2",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 1734.159,
+     "extents_mm": [
+      3.0,
+      94.0,
+      94.0
+     ],
+     "cylinder_diameters_mm": [
+      90.0,
+      94.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-33628_296ae2b8_0000": {
+  "key": "93c91472e9183b31c5cdbc49f781b95733813116",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 4000.0,
+     "extents_mm": [
+      5.0,
+      10.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-23649_45d06d26_0000": {
+  "key": "a8f7b1d506bf94a1d062982b84cd6257a729090c",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 35.343,
+     "extents_mm": [
+      1.5,
+      1.5,
+      20.0
+     ],
+     "cylinder_diameters_mm": [
+      1.5
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-41501_b627682a_0005": {
+  "key": "15a2ed6e7ed365a934162f25ba5e9c13da7e8c2f",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 348784.0,
+     "extents_mm": [
+      90.0,
+      100.0,
+      105.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 15
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-41785_5fecc307_0000": {
+  "key": "b0514b15a1ea25fb08df4524da8f03cb571e6a6c",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 38778.425,
+     "extents_mm": [
+      50.8,
+      50.8,
+      172.72
+     ],
+     "cylinder_diameters_mm": [
+      48.26,
+      50.8
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-26768_c4df841f_0017": {
+  "key": "f2caaeb8046d74f0dffff80e96aa6c711d60a838",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 25905.573,
+     "extents_mm": [
+      20.0,
+      20.0,
+      110.0
+     ],
+     "cylinder_diameters_mm": [
+      14.0,
+      20.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-21736_fc59650e_0011": {
+  "key": "0914d009c8fd6052c1bb2edeecff2751a55053cf",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 980.177,
+     "extents_mm": [
+      2.0,
+      32.0,
+      32.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0,
+      32.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-41739_1bc15d9f_0005": {
+  "key": "dd507c58426e3bd95b40ff9d00ae8f7c91aa526d",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 84573.775,
+     "extents_mm": [
+      18.796,
+      18.796,
+      304.8
+     ],
+     "cylinder_diameters_mm": [
+      18.8
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "G-137837_9c9f163d_0008": {
+  "key": "e28f92e69b8c693f0b68164f6c66e68681c6b6a1",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 625000.0,
+     "extents_mm": [
+      50.0,
+      50.0,
+      250.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
  }
 }
