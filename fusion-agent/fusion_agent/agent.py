@@ -49,6 +49,12 @@ REPEAT_STUCK_TEXT = ("STOP: you have run this exact script %d times with this ex
 # After this many identical script-and-result pairs the turn ends: the model is stuck.
 MAX_REPEATS = 5
 
+# A turn that keeps calling tools past this many seconds gets one last call to answer, then ends:
+# the owner's rule, long single tasks are unacceptable.
+TURN_BUDGET_SECONDS = 300
+TIME_UP_TEXT = ("Time is up for this task. Do not run more scripts. Answer the user now, in words: what is built "
+                "(use the last state line) and what you could not do.")
+
 NUDGE_TEXT = ("Модель в Fusion не изменилась: геометрия та же, что была до задачи. "
               "Сделай это через fusion_script и проверь результат.")
 
@@ -487,6 +493,8 @@ class Agent:
         final_answer = ""
         end_signature = None
         repeats = RepeatDetector()
+        turn_started = time.time()
+        is_time_up = False
 
         for _ in range(MAX_MODEL_CALLS):
             self._check_cancelled()
@@ -514,6 +522,9 @@ class Agent:
             self.messages.append(assistant)
 
             if tool_calls:
+                if is_time_up:
+                    status = "time_budget"
+                    break
                 screenshots = []
                 is_stuck = False
                 for call in tool_calls:
@@ -544,6 +555,9 @@ class Agent:
                 if is_stuck:
                     status = "repeat_stuck"
                     break
+                if time.time() - turn_started > TURN_BUDGET_SECONDS and not is_time_up:
+                    is_time_up = True
+                    self.messages.append({"role": "user", "content": TIME_UP_TEXT})
 
                 for shot in screenshots:
                     self.messages.append({"role": "user", "content": "Screenshot (%s)." % shot["direction"],

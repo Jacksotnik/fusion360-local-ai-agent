@@ -181,6 +181,8 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   | **real designs, `gallery_holdout2` (62, train split), late evening** | | **61/62 (98 %)** | |
   | gears, threads, hexagons, `gears_dev` (8: gears with bore and hub, nut, bolt, threaded shaft and hole, socket-head screw) | | | 8/8 |
   | Qwen3.5-9B on the same tool (comparison, no tuning): holdout8 22/26, revolve 4/5, exam PASS, gallery 42/51, gallery2 28/32 | | | dropped: less precise, fakes results under pressure |
+  | the owner's "basics" list, 2026-11-02: `basics_dev` (11: a bent tube, an L-rod, a spring, a square-to-round loft, a frustum, a gusset, an angled hole, a sphere subtracted from a block, a copied cube joined by a bridge, an engraved plate, a square tube along an arc) | | | 7/10, 8/10, 6/11, **9/11** (max 120 s once the turn budget and the hints were in) |
+  | tasks with NO helper, `raw_api_dev` (a torus, an ellipse; the model must write Fusion API code) | | 0/3 without the prompt section | 1/3, 2/3, 0/2 with it |
 
   Each tuning round fixed what the previous honest set showed, in the tool rather than in the prompt
   where words had failed: sizes in centimeters copied as mm; a wall thickness counted once; the length
@@ -221,6 +223,30 @@ Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMA
   size. With the `outline()` line in the prompt: **48/51**, the three misses random (a bigger diameter
   than written, 27 mm instead of 28 "to reach the total", an empty last script). Median 12.5 s per
   design. Summaries: `results/gallery-r1/`, `results/gallery-r2/`.
+- The owner's list of basics (2026-11-01/02, "это же база 3d моделирования"): threads (`thread`, ISO
+  metric through Fusion's ThreadFeatures, external and internal, modeled or cosmetic), spur gears
+  (`spur_gear`, involute teeth, `gear_points`), hexagons (`hex_prism`, `hex_socket`: nuts, bolt heads,
+  socket screws), a tube or rod along a path (`pipe`: polyline corners with `bend_radius`, arc points,
+  round or square section), a spring (`spring`, a helix as a fitted spline swept with the wire), `loft`,
+  a draft angle (`taper=` on extrude, box, cylinder), ribs (`rib`, `gusset`), tilted planes and angled
+  holes (`tilted_plane`, `angled_hole`), combining bodies (`subtract`, `union`, `intersect`), moving them
+  (`move_body`, `rotate_body`, `copy_body`), text (`engrave`); countersinks were already in `screw_holes`.
+  `gears_dev` passed 8/8 on the first run. `basics_dev` is the hard set: 7/10, 8/10, 6/11 over three runs,
+  then 9/11 with no task over 120 s, the misses being the model's own volume formulas rejected by its own check() and
+  then "repaired" geometry, paths given with a corner next to an arc point, a bridge read as 20 wide
+  instead of 10. What the tool learned from them: `check()` lists what every step added when the volume
+  differs; a join reports the part of the piece that lay inside the part; `rib` refuses a corner that
+  overlaps the part; `pipe` prints the radius and center of every arc and accepts the path's extent as
+  the size; a turn that keeps calling tools past 300 s gets one last call to answer (status
+  `time_budget`), and five identical script-and-result pairs end it (`repeat_stuck`): before that, two
+  tasks of one run took 500 and 620 s.
+- When no helper fits (2026-11-02): the prompt got a section telling the model to write Fusion API code
+  itself (lengths in cm, `root`, `adsk`, sketch curves by API) and to call `fusion_api_docs` (a tool it had
+  all along but never used) for unknown members. On `raw_api_dev` (a torus, an ellipse, a square tube
+  along an arc, none with a helper) the model went from 0/3 (it forced `tube`, `outline` and `pipe` onto
+  them) to 1/3 and 2/3; the docs tool was called in one task of six. The square tube then got a helper
+  (`pipe(section="square")` with an arc path). The honest reading: a 12B model writes raw API code for
+  simple curves about half the time and fails on sweeps; the toolbox, not the docs, is what carries it.
 - Temperature: `tools/run_cases.py --temperature` overrides the sampler for an experiment. On
   `plain_holdout7` 1.0, 0.3 and 0 gave exactly the same 24/25 with the same miss and the same number
   of model calls, so the app keeps the model's own sampler (1.0 / 0.95 / 64).

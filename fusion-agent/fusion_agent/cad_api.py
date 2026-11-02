@@ -346,10 +346,14 @@ def extrude(sketch, distance, operation="new", symmetric=False, taper=0):
                       _fmt(distance), _fmt(own), _fmt(added), _fmt(own - added), _fmt(added)))
         if added < 1e-6:
             _, _, normal_axis = _sketch_frame_axis(sketch)
+            leftover = ""
+            if _BODIES_BEFORE_SCRIPT:
+                leftover = (" NOTE: this script ran on top of the earlier attempt (%d bodies existed before it): "
+                            "start the script with clear()." % _BODIES_BEFORE_SCRIPT)
             raise ValueError("extrude (join) of %s mm added nothing: the new piece lies entirely inside the part "
                              "(%s). To add material at an end of the part extrude the other way (a negative "
-                             "distance goes toward -%s) or start the sketch on the end face (offset=)." % (
-                                 _fmt(distance), where, normal_axis))
+                             "distance goes toward -%s) or start the sketch on the end face (offset=).%s" % (
+                                 _fmt(distance), where, normal_axis, leftover))
     return feature
 
 
@@ -1206,6 +1210,11 @@ def _path_sketch(points, plane, offset, bend_radius):
         if previous is not None:
             if pending_arc is not None:
                 arc_curve = sketch.sketchCurves.sketchArcs.addByThreePoints(previous, _point(sketch, *pending_arc), current)
+                geometry = arc_curve.geometry
+                center = sketch.sketchToModelSpace(arc_curve.centerSketchPoint.geometry)
+                print("path arc through (%s, %s): radius %s, center (%s, %s, %s)" % (
+                    _fmt(pending_arc[0]), _fmt(pending_arc[1]), _fmt(geometry.radius / MM),
+                    _fmt(center.x / MM), _fmt(center.y / MM), _fmt(center.z / MM)))
                 previous = arc_curve.endSketchPoint
                 pending_arc = None
                 continue
@@ -1237,8 +1246,10 @@ def _sweep(profile_sketch, path_sketch, operation, what):
     sweep_input = sweeps.createInput(solid_profiles(profile_sketch)[0], path, _OPERATIONS[operation])
     sweep_input.orientation = adsk.fusion.SweepOrientationTypes.PerpendicularOrientationType
     return _add(lambda: sweeps.add(sweep_input), what,
-                "The profile must sit at the start of the path, perpendicular to it, and the bends must be "
-                "wider than the profile.")
+                "The bends must be wider than the section (bend_radius > the diameter), and the path must not "
+                "double back. The simplest valid call: pipe([(0, 0, 0), (50, 0, 0), (50, 0, 30)], 8, bend_radius=10): "
+                "the CORNER points with bend_radius, no arc points; an \"arc\" point is only for a path that IS an "
+                "arc, and it must lie on that arc between two corners.")
 
 
 def _plane_at_path_start(path_sketch):
@@ -1255,6 +1266,10 @@ def _plane_at_path_start(path_sketch):
 def _path_points(points, plane, offset):
     """(u, v) points on the given plane; (x, y, z) points are accepted when they all lie in one base plane,
     which then becomes the plane and its offset. (u, v, "arc") marks an arc's through point."""
+    for point in points:
+        if isinstance(point, str) or len(point) not in (2, 3):
+            raise ValueError('every path point is (u, v), (x, y, z) or (u, v, "arc"); got %r. An arc is marked on the '
+                             'point the path passes THROUGH, e.g. [(40, 0), (28.28, 28.28, "arc"), (0, 40)]' % (point,))
     if all(len(point) == 3 and point[2] != "arc" for point in points):
         for axis_index, name in ((2, "XY"), (1, "XZ"), (0, "YZ")):
             values = set(round(point[axis_index], 6) for point in points)

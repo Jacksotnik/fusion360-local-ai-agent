@@ -187,59 +187,23 @@
   }
  },
  "B-square-tube-arc": {
-  "key": "5b5d2aa3e86bebd5bae1869a81951389665c82a4",
+  "key": "5baf574ec4f94ef14c9a6ae5fef2809f513bd248",
   "signature": {
    "bodies": [
     {
-     "volume_mm3": 4021.239,
+     "volume_mm3": 4020.838,
      "extents_mm": [
       10.0,
-      45.0,
-      45.0
+      45.002,
+      45.002
      ],
      "cylinder_diameters_mm": [
-      70.0,
-      74.0,
-      86.0,
-      90.0
+      70.03,
+      74.03,
+      86.03,
+      90.03
      ],
      "faces": 10
-    }
-   ],
-   "unhealthy": []
-  }
- },
- "A-torus": {
-  "key": "8002394a5be856940917726e8afbd046c953af3d",
-  "signature": {
-   "bodies": [
-    {
-     "volume_mm3": 17054.676,
-     "extents_mm": [
-      12.0,
-      60.0,
-      60.0
-     ],
-     "cylinder_diameters_mm": [],
-     "faces": 1
-    }
-   ],
-   "unhealthy": []
-  }
- },
- "A-ellipse-disk": {
-  "key": "87f4dea9bce61ddea94adf91a1d193af43a47cc2",
-  "signature": {
-   "bodies": [
-    {
-     "volume_mm3": 9424.778,
-     "extents_mm": [
-      5.0,
-      40.0,
-      60.0
-     ],
-     "cylinder_diameters_mm": [],
-     "faces": 3
     }
    ],
    "unhealthy": []

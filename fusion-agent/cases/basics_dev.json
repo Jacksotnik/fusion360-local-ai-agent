@@ -90,7 +90,7 @@
    "id": "B-square-tube-arc",
    "prompt": "Сделай трубу квадратного сечения 10 на 10 мм со стенкой 2 мм, изогнутую по дуге в четверть окружности радиусом 40 мм в плоскости XY: от точки (40, 0, 0) до точки (0, 40, 0), центр дуги в начале координат.",
    "start": null,
-   "reference": "pipe([(40, 0), (40*math.cos(math.pi/4), 40*math.sin(math.pi/4), 'arc'), (0, 40)], 10, inner_diameter=6, plane='XY', section='square')",
+   "reference": "pipe([(40, 0), (28.28, 28.28, 'arc'), (0, 40)], 10, inner_diameter=6, plane='XY', section='square')",
    "volume": "(100 - 36)*math.pi/2*40"
   }
  ]
