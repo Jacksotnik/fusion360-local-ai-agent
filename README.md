@@ -138,6 +138,10 @@ model's part matches the reference in volume (0.5 %), overall size (0.05 mm), ro
 body count. Numbers below are from the final run on the final code (2026-11-02), Gemma 4 12B, fast mode (no thinking),
 on a laptop with a 16 GB GPU. The model is random (temperature 1.0): a run may differ by one task.
 
+The project's own task sets (362 tasks in English and Russian, with reference scripts and hand volumes)
+are published as a dataset on Hugging Face:
+[JackSotnyk/local-ai-agent-autodesk-fusion-tasks](https://huggingface.co/datasets/JackSotnyk/local-ai-agent-autodesk-fusion-tasks).
+
 **Sets the tool was never tuned on:**
 
 | Set | What | Result |
