@@ -2251,5 +2251,25 @@
    ],
    "unhealthy": []
   }
+ },
+ "S-parallelogram-hole": {
+  "key": "55a04f3de5c6b26fb9eaa963368efded48b37e08",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 15371.681,
+     "extents_mm": [
+      8.0,
+      40.0,
+      70.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
  }
 }

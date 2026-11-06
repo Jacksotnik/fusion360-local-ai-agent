@@ -1,5 +1,5 @@
 {
-  "note": "Step-by-step requests like the Gallery tasks (tunable set, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Nemotron made 'Extrude symmetrically, 6 mm to each side' 6 mm thick on gallery_holdout_en (honest, not tuned on); these tasks reproduce that on their own. Added the same day: outlines with \"arc\" points (Nemotron dropped the arcs or put them into polygon() on gallery_holdout2_en) and a two-step symmetric part.",
+  "note": "Step-by-step requests like the Gallery tasks (tunable set, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Nemotron made 'Extrude symmetrically, 6 mm to each side' 6 mm thick on gallery_holdout_en (honest, not tuned on); these tasks reproduce that on their own. Added the same day: outlines with \"arc\" points (Nemotron dropped the arcs or put them into polygon() on gallery_holdout2_en) and a two-step symmetric part. Then a parallelogram (Nemotron drew a rect() for four given points).",
   "cases": [
     {
       "id": "S-sym-xz-hole",
@@ -42,6 +42,13 @@
       "start": null,
       "reference": "sk = new_sketch('XY', offset=0)\ncircle(sk, 0, 0, 21)\nextrude(sk, 42, operation='new', symmetric=True)\nsk2 = new_sketch('XY', offset=-21)\ncircle(sk2, 0, 0, 11)\nextrude(sk2, -5, operation='join')",
       "volume": "math.pi*(10.5*10.5*42 + 5.5*5.5*5)"
+    },
+    {
+      "id": "S-parallelogram-hole",
+      "prompt": "Сделай деталь по шагам. Габарит 70 x 40 x 8 мм. Шаг 1: эскиз на плоскости XY (координаты x, y в мм): контур по точкам (0, 0), (50, 0), (70, 40), (20, 40), замкнуть; внутри (отверстия): окружность с центром (35, 20) диаметром 10. Выдавить на 8 мм в сторону +Z, новое тело.",
+      "start": null,
+      "reference": "sk = new_sketch('XY', offset=0)\npolygon(sk, [(0, 0), (50, 0), (70, 40), (20, 40)])\ncircle(sk, 35, 20, 10)\nextrude(sk, 8, operation='new')",
+      "volume": "(50*40 - math.pi*5*5)*8"
     }
   ]
 }

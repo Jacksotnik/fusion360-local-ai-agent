@@ -42,9 +42,10 @@ The app is tuned on and tested with **Gemma 4 12B** (Google, `gemma4-12b:q8_0`, 
 below was measured with it.
 
 Any other Ollama model that can call tools will run (vision is needed for photos and screenshots), but
-the prompt and the CAD helpers were shaped around Gemma 4 12B. Two others were tried on the same tool:
-Qwen3.5-9B (faster, less precise, and it fakes a result to pass its own check) and Gemma 4 26B-A4B MoE
-(the same time per part, less precise). Gemma 4 12B stayed.
+the prompt and the CAD helpers were shaped around Gemma 4 12B. Others were tried on the same tool:
+Qwen3.5-9B (faster, less precise, and it fakes a result to pass its own check), Gemma 4 26B-A4B MoE
+(the same time per part, less precise) and NVIDIA Nemotron 3.5 Bolt 74B-A9B (works with English
+requests; its numbers are under [Results](#results)). Gemma 4 12B stayed.
 
 The app never downloads or installs models. It checks what is installed and tells you what is missing.
 
@@ -167,9 +168,26 @@ scripts and the model answers with what it could not do.
 Speed: a one-operation part takes 5-10 s, a part of five or six operations 15-65 s. Thinking mode
 (`/think on`) is 3-4 times slower and helps on parts of many operations.
 
+**Another model: NVIDIA Nemotron 3.5 Bolt 74B-A9B** (`hf.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF`,
+IQ2_XXS, 23 GB: about 57 % on the 16 GB GPU next to Fusion, the rest on the CPU, about 18 tokens/s).
+It reads Russian poorly, so it was measured on English copies of the same sets (same references), fast
+mode, one run each, 2026-11-06. The tool was not tuned for it before these numbers.
+
+| Set | Nemotron 3.5 Bolt | Gemma 4 12B |
+|---|---|---|
+| Plain-language requests, 26 (never tuned on) | 23/26 | 26/26 |
+| Real parts from a picture plus build steps, 51 (never tuned on) | 44/51 | 50/51 |
+| Real parts from a picture plus build steps, 62 (never tuned on) | 51/62 | 61/62 |
+| Machine parts, 12 | 11/12 | 12/12 |
+| Bodies of revolution, 5 | 5/5 | 5/5 |
+
+A task takes it 9-18 s in the median (plus about 30 s to load the model). Its typical misses: it
+replaces a given outline with a rectangle or a box, drops the arc points of an outline, and then
+weakens its own check until it passes.
+
 Validation tools for developers: `python -m unittest discover -s tests` (no Fusion needed),
 `fusion-agent --selftest`, `tools/run_cases.py cases/<set>.json --tag <name>` (runs a set and compares
-with the references), `tools/ladder_regression.py` (the bench tasks).
+with the references), `tools/ladder_regression.py` (the 23 graded tasks of the original bench, in `bench/`).
 
 ## Known limits
 
@@ -195,10 +213,3 @@ with the references), `tools/ladder_regression.py` (the bench tasks).
 
 Environment variables: `OLLAMA_HOST`, `FUSION_MCP_URL`, `FUSION_AGENT_INLINE_IMAGES` (`off`, `sixel`,
 `iterm`, `kitty`), `NO_COLOR`.
-
-## Where things come from
-
-The CAD helpers (`fusion_agent/cad_api.py`), the system prompt (`fusion_agent/prompts/cad12.md`) and
-the agent loop (`fusion_agent/agent.py`) grew out of the original bench (`fusion-ladder`, the repository's old name; its 23 regression tasks are kept in `bench/`),
-where every change was measured on task sets with hand-computed references. This folder is their source
-of truth; the plan it was built from is `PLAN.md`.

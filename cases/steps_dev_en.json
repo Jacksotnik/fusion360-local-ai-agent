@@ -1,5 +1,5 @@
 {
-  "note": "English copy of steps_dev.json (tunable, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Same ids, references and volumes. Added the same day: outlines with \"arc\" points (Nemotron dropped the arcs or put them into polygon() on gallery_holdout2_en) and a two-step symmetric part.",
+  "note": "English copy of steps_dev.json (tunable, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Same ids, references and volumes. Added the same day: outlines with \"arc\" points (Nemotron dropped the arcs or put them into polygon() on gallery_holdout2_en) and a two-step symmetric part. Then a parallelogram (Nemotron drew a rect() for four given points).",
   "cases": [
     {
       "id": "S-sym-xz-hole",
@@ -42,6 +42,13 @@
       "start": null,
       "reference": "sk = new_sketch('XY', offset=0)\ncircle(sk, 0, 0, 21)\nextrude(sk, 42, operation='new', symmetric=True)\nsk2 = new_sketch('XY', offset=-21)\ncircle(sk2, 0, 0, 11)\nextrude(sk2, -5, operation='join')",
       "volume": "math.pi*(10.5*10.5*42 + 5.5*5.5*5)"
+    },
+    {
+      "id": "S-parallelogram-hole",
+      "prompt": "Make the part step by step. Overall size 70 x 40 x 8 mm. Step 1: sketch on the XY plane (coordinates x, y in mm): outline through the points (0, 0), (50, 0), (70, 40), (20, 40), closed; inside (holes): circle with center (35, 20) and diameter 10. Extrude 8 mm toward +Z, new body.",
+      "start": null,
+      "reference": "sk = new_sketch('XY', offset=0)\npolygon(sk, [(0, 0), (50, 0), (70, 40), (20, 40)])\ncircle(sk, 35, 20, 10)\nextrude(sk, 8, operation='new')",
+      "volume": "(50*40 - math.pi*5*5)*8"
     }
   ]
 }
