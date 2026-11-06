@@ -1,5 +1,7 @@
 # Local AI Agent for Autodesk Fusion
 
+https://github.com/user-attachments/assets/72259fa1-a46f-4bad-9dea-1aed1a2ab8ac
+
 **A local AI model builds and edits parts in Autodesk Fusion from a plain-language request.**
 The terminal command is `fusion-agent`.
 
