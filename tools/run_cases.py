@@ -37,6 +37,33 @@ from fusion_agent.ollama import Ollama  # noqa: E402
 from fusion_agent.session import DesignSession, new_session_id  # noqa: E402
 
 CACHE_PATH = os.path.join(APP_ROOT, "cases", "expected_signatures.json")
+# References of the Gallery cases (ids "G-", made by tools/gallery_cases.py) are dataset-derived like their task
+# sets, so they are cached in a file that git ignores, not in the committed cache.
+LOCAL_CACHE_PATH = os.path.join(APP_ROOT, "cases", "expected_signatures_local.json")
+LOCAL_ID_PREFIX = "G-"
+
+
+def load_cache():
+    cache = {}
+    for path in (CACHE_PATH, LOCAL_CACHE_PATH):
+        if os.path.exists(path):
+            cache.update(json.load(open(path, encoding="utf-8")))
+    return cache
+
+
+def save_cache(cache):
+    shared = {}
+    local = {}
+    for case_id, entry in cache.items():
+        if case_id.startswith(LOCAL_ID_PREFIX):
+            local[case_id] = entry
+        else:
+            shared[case_id] = entry
+    with open(CACHE_PATH, "w", encoding="utf-8") as file:
+        json.dump(shared, file, ensure_ascii=False, indent=1)
+    if local:
+        with open(LOCAL_CACHE_PATH, "w", encoding="utf-8") as file:
+            json.dump(local, file, ensure_ascii=False, indent=1)
 
 
 def compare(expected, actual):
@@ -155,8 +182,7 @@ def expected_signature(bench, case, cache):
             raise ValueError("%s: the reference has volume %.3f, the hand calculation %.3f" % (
                 case["id"], built_volume, hand_volume))
     cache[case["id"]] = {"key": key, "signature": signature}
-    with open(CACHE_PATH, "w", encoding="utf-8") as file:
-        json.dump(cache, file, ensure_ascii=False, indent=1)
+    save_cache(cache)
     return signature
 
 
@@ -249,9 +275,7 @@ def main():
     if args.cases:
         wanted = set(args.cases.split(","))
         cases = [case for case in cases if case["id"] in wanted]
-    cache = {}
-    if os.path.exists(CACHE_PATH):
-        cache = json.load(open(CACHE_PATH, encoding="utf-8"))
+    cache = load_cache()
     bench = Bench(FusionMcp())
 
     if args.check_references:

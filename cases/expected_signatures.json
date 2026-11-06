@@ -2189,5 +2189,67 @@
    ],
    "unhealthy": []
   }
+ },
+ "S-arc-tab-hole": {
+  "key": "1949800ea235d1fae67db245638971dfb34a9361",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 4534.071,
+     "extents_mm": [
+      5.0,
+      20.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0,
+      20.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "S-arc-rounded-xz": {
+  "key": "145a78d57601324ceb003f02d73e69618c78fa70",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 14271.321,
+     "extents_mm": [
+      6.0,
+      40.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 10
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "S-sym-two-steps": {
+  "key": "a412a43b31a39342f2ac569698b9dd967ac8805b",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 15022.311,
+     "extents_mm": [
+      21.0,
+      21.0,
+      47.0
+     ],
+     "cylinder_diameters_mm": [
+      11.0,
+      21.0
+     ],
+     "faces": 5
+    }
+   ],
+   "unhealthy": []
+  }
  }
 }

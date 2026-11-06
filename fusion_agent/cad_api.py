@@ -333,6 +333,11 @@ def extrude(sketch, distance, operation="new", symmetric=False, taper=0):
                    "For join/cut/intersect the sketch shapes must overlap the body; check positions with describe()."
                    + (" Now " + where + "." if where else ""))
     _STEP_VOLUMES.append((feature.name, (sum(body.volume for body in _all_bodies()) - volume_before) * 1000))
+    if symmetric:
+        # Nemotron wrote extrude(sk, 21, symmetric=True) for "21 mm to each side" in 3 of 3 runs although the
+        # prompt says distance is the total (2026-11-06): the half it got is printed next to the request's words.
+        print("extrude: symmetric, %s mm in total = %s mm to each side of the sketch plane" % (
+            _fmt(abs(distance)), _fmt(abs(distance) / 2)))
     if operation == "join":
         added = (sum(body.volume for body in _all_bodies()) - volume_before) * 1000
         own = 0.0

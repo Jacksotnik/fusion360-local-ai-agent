@@ -41,7 +41,7 @@ Sketches, for other shapes. Coordinates are in the sketch plane: XY -> (x, y), X
 - `sk = new_sketch(plane="XY", offset=0)` - offset moves the plane: XY at z=offset, XZ at y=offset, YZ at x=offset.
 - `rect(sk, x1, y1, x2, y2)`, `rect_center(sk, cx, cy, width, height)`, `circle(sk, cx, cy, diameter)`,
   `slot(sk, cx, cy, length, width, angle=0)` (rounded ends), `polygon(sk, [(u, v), ...])` (straight sides only),
-  `outline(sk, [(u, v), (u, v, "arc"), ...])` = a closed contour whose sides may be arcs: "дуга через точку (u, v)" between two corners is written (u, v, "arc") and the contour passes through it by an arc; corners stay (u, v). Never put an arc's through point into polygon() as a corner.
+  `outline(sk, [(u, v), (u, v, "arc"), ...])` = a closed contour whose sides may be arcs: "дуга через точку (u, v)" / "arc through the point (u, v)" between two corners is written (u, v, "arc") and the contour passes through it by an arc; corners stay (u, v). Never put an arc's through point into polygon() as a corner.
   `points_on_circle(cx, cy, circle_diameter, count, start_angle=0)`.
   A closed shape inside another closed shape of the same sketch becomes a hole.
 - `extrude(sk, distance, operation="new", symmetric=False)` - positive goes toward +Z for XY, +Y for XZ, +X for YZ; a NEGATIVE distance goes the other way ("в сторону -X" on YZ = extrude(sk, -54)). symmetric=True: distance is the TOTAL thickness, half on each side of the sketch plane ("6 mm to each side" / "по 6 мм в каждую сторону" = extrude(sk, 12, symmetric=True)). A join that adds nothing (the piece lies inside the part) is an error.

@@ -11,6 +11,7 @@ sessions/
 # tools/gallery_cases.py rebuilds the Gallery sets here on demand.
 cases/gallery/
 cases/gallery_holdout*.json
+cases/expected_signatures_local.json
 cases/*.png
 cases/*.jpg
 cases/*.jpeg

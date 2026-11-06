@@ -1,8 +1,47 @@
 {
-  "note": "Step-by-step requests like the Gallery tasks (tunable set, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Nemotron made 'Extrude symmetrically, 6 mm to each side' 6 mm thick on gallery_holdout_en (honest, not tuned on); these tasks reproduce that on their own.",
+  "note": "Step-by-step requests like the Gallery tasks (tunable set, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Nemotron made 'Extrude symmetrically, 6 mm to each side' 6 mm thick on gallery_holdout_en (honest, not tuned on); these tasks reproduce that on their own. Added the same day: outlines with \"arc\" points (Nemotron dropped the arcs or put them into polygon() on gallery_holdout2_en) and a two-step symmetric part.",
   "cases": [
-    {"id": "S-sym-xz-hole", "prompt": "Сделай деталь по шагам. Габарит 40 x 12 x 30 мм. Шаг 1: эскиз на плоскости XZ (координаты x, z в мм): контур по точкам (0, 0), (40, 0), (40, 30), (0, 30), замкнуть; внутри (отверстия): окружность с центром (20, 15) диаметром 10. Выдавить симметрично, по 6 мм в каждую сторону, новое тело.", "start": null, "reference": "sk = new_sketch('XZ', offset=0)\npolygon(sk, [(0, 0), (40, 0), (40, 30), (0, 30)])\ncircle(sk, 20, 15, 10)\nextrude(sk, 12, operation='new', symmetric=True)", "volume": "(40*30 - math.pi*5*5)*12"},
-    {"id": "S-sym-yz-trapezoid", "prompt": "Сделай деталь по шагам. Габарит 12.7 x 80 x 30 мм. Шаг 1: эскиз на плоскости YZ (координаты y, z в мм): контур по точкам (0, 0), (80, 0), (60, 30), (20, 30), замкнуть. Выдавить симметрично, по 6.35 мм в каждую сторону, новое тело.", "start": null, "reference": "sk = new_sketch('YZ', offset=0)\npolygon(sk, [(0, 0), (80, 0), (60, 30), (20, 30)])\nextrude(sk, 12.7, operation='new', symmetric=True)", "volume": "(80 + 40)/2*30*12.7"},
-    {"id": "S-sym-disk-words", "prompt": "Сделай диск диаметром 40 мм толщиной 10 мм, посередине на плоскости XY: по 5 мм над ней и под ней.", "start": null, "reference": "cylinder(40, 10, base=(0, 0, -5))", "volume": "math.pi*20*20*10"}
+    {
+      "id": "S-sym-xz-hole",
+      "prompt": "Сделай деталь по шагам. Габарит 40 x 12 x 30 мм. Шаг 1: эскиз на плоскости XZ (координаты x, z в мм): контур по точкам (0, 0), (40, 0), (40, 30), (0, 30), замкнуть; внутри (отверстия): окружность с центром (20, 15) диаметром 10. Выдавить симметрично, по 6 мм в каждую сторону, новое тело.",
+      "start": null,
+      "reference": "sk = new_sketch('XZ', offset=0)\npolygon(sk, [(0, 0), (40, 0), (40, 30), (0, 30)])\ncircle(sk, 20, 15, 10)\nextrude(sk, 12, operation='new', symmetric=True)",
+      "volume": "(40*30 - math.pi*5*5)*12"
+    },
+    {
+      "id": "S-sym-yz-trapezoid",
+      "prompt": "Сделай деталь по шагам. Габарит 12.7 x 80 x 30 мм. Шаг 1: эскиз на плоскости YZ (координаты y, z в мм): контур по точкам (0, 0), (80, 0), (60, 30), (20, 30), замкнуть. Выдавить симметрично, по 6.35 мм в каждую сторону, новое тело.",
+      "start": null,
+      "reference": "sk = new_sketch('YZ', offset=0)\npolygon(sk, [(0, 0), (80, 0), (60, 30), (20, 30)])\nextrude(sk, 12.7, operation='new', symmetric=True)",
+      "volume": "(80 + 40)/2*30*12.7"
+    },
+    {
+      "id": "S-sym-disk-words",
+      "prompt": "Сделай диск диаметром 40 мм толщиной 10 мм, посередине на плоскости XY: по 5 мм над ней и под ней.",
+      "start": null,
+      "reference": "cylinder(40, 10, base=(0, 0, -5))",
+      "volume": "math.pi*20*20*10"
+    },
+    {
+      "id": "S-arc-tab-hole",
+      "prompt": "Сделай деталь по шагам. Габарит 50 x 20 x 5 мм. Шаг 1: эскиз на плоскости XY (координаты x, y в мм): контур по точкам (0, -10), (40, -10), дуга через точку (50, 0), (40, 10), (0, 10), замкнуть; внутри (отверстия): окружность с центром (40, 0) диаметром 8. Выдавить на 5 мм в сторону +Z, новое тело.",
+      "start": null,
+      "reference": "sk = new_sketch('XY', offset=0)\noutline(sk, [(0, -10), (40, -10), (50, 0, 'arc'), (40, 10), (0, 10)])\ncircle(sk, 40, 0, 8)\nextrude(sk, 5, operation='new')",
+      "volume": "(40*20 + math.pi*10*10/2 - math.pi*4*4)*5"
+    },
+    {
+      "id": "S-arc-rounded-xz",
+      "prompt": "Сделай деталь по шагам. Габарит 60 x 6 x 40 мм. Шаг 1: эскиз на плоскости XZ (координаты x, z в мм): контур по точкам (-25, -20), (25, -20), дуга через точку (28.536, -18.536), (30, -15), (30, 15), дуга через точку (28.536, 18.536), (25, 20), (-25, 20), дуга через точку (-28.536, 18.536), (-30, 15), (-30, -15), дуга через точку (-28.536, -18.536), замкнуть. Выдавить на 6 мм в сторону +Y, новое тело.",
+      "start": null,
+      "reference": "sk = new_sketch('XZ', offset=0)\noutline(sk, [(-25, -20), (25, -20), (28.536, -18.536, 'arc'), (30, -15), (30, 15), (28.536, 18.536, 'arc'), (25, 20), (-25, 20), (-28.536, 18.536, 'arc'), (-30, 15), (-30, -15), (-28.536, -18.536, 'arc')])\nextrude(sk, 6, operation='new')",
+      "volume": "(60*40 - (4 - math.pi)*5*5)*6"
+    },
+    {
+      "id": "S-sym-two-steps",
+      "prompt": "Сделай деталь по шагам. Габарит 21 x 21 x 47 мм. Шаг 1: эскиз на плоскости XY (координаты x, y в мм): окружность с центром (0, 0) диаметром 21. Выдавить симметрично, по 21 мм в каждую сторону, новое тело. Шаг 2: эскиз на плоскости XY со смещением z = -21 мм (координаты x, y в мм): окружность с центром (0, 0) диаметром 11. Выдавить на 5 мм в сторону -Z, добавить к телу.",
+      "start": null,
+      "reference": "sk = new_sketch('XY', offset=0)\ncircle(sk, 0, 0, 21)\nextrude(sk, 42, operation='new', symmetric=True)\nsk2 = new_sketch('XY', offset=-21)\ncircle(sk2, 0, 0, 11)\nextrude(sk2, -5, operation='join')",
+      "volume": "math.pi*(10.5*10.5*42 + 5.5*5.5*5)"
+    }
   ]
 }

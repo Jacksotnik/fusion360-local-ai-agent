@@ -1,8 +1,47 @@
 {
-  "note": "English copy of steps_dev.json (tunable, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Same ids, references and volumes.",
+  "note": "English copy of steps_dev.json (tunable, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Same ids, references and volumes. Added the same day: outlines with \"arc\" points (Nemotron dropped the arcs or put them into polygon() on gallery_holdout2_en) and a two-step symmetric part.",
   "cases": [
-    {"id": "S-sym-xz-hole", "prompt": "Make the part step by step. Overall size 40 x 12 x 30 mm. Step 1: sketch on the XZ plane (coordinates x, z in mm): outline through the points (0, 0), (40, 0), (40, 30), (0, 30), closed; inside (holes): circle with center (20, 15) and diameter 10. Extrude symmetrically, 6 mm to each side, new body.", "start": null, "reference": "sk = new_sketch('XZ', offset=0)\npolygon(sk, [(0, 0), (40, 0), (40, 30), (0, 30)])\ncircle(sk, 20, 15, 10)\nextrude(sk, 12, operation='new', symmetric=True)", "volume": "(40*30 - math.pi*5*5)*12"},
-    {"id": "S-sym-yz-trapezoid", "prompt": "Make the part step by step. Overall size 12.7 x 80 x 30 mm. Step 1: sketch on the YZ plane (coordinates y, z in mm): outline through the points (0, 0), (80, 0), (60, 30), (20, 30), closed. Extrude symmetrically, 6.35 mm to each side, new body.", "start": null, "reference": "sk = new_sketch('YZ', offset=0)\npolygon(sk, [(0, 0), (80, 0), (60, 30), (20, 30)])\nextrude(sk, 12.7, operation='new', symmetric=True)", "volume": "(80 + 40)/2*30*12.7"},
-    {"id": "S-sym-disk-words", "prompt": "Make a disk 40 mm in diameter and 10 mm thick, centered on the XY plane: 5 mm above it and 5 mm below.", "start": null, "reference": "cylinder(40, 10, base=(0, 0, -5))", "volume": "math.pi*20*20*10"}
+    {
+      "id": "S-sym-xz-hole",
+      "prompt": "Make the part step by step. Overall size 40 x 12 x 30 mm. Step 1: sketch on the XZ plane (coordinates x, z in mm): outline through the points (0, 0), (40, 0), (40, 30), (0, 30), closed; inside (holes): circle with center (20, 15) and diameter 10. Extrude symmetrically, 6 mm to each side, new body.",
+      "start": null,
+      "reference": "sk = new_sketch('XZ', offset=0)\npolygon(sk, [(0, 0), (40, 0), (40, 30), (0, 30)])\ncircle(sk, 20, 15, 10)\nextrude(sk, 12, operation='new', symmetric=True)",
+      "volume": "(40*30 - math.pi*5*5)*12"
+    },
+    {
+      "id": "S-sym-yz-trapezoid",
+      "prompt": "Make the part step by step. Overall size 12.7 x 80 x 30 mm. Step 1: sketch on the YZ plane (coordinates y, z in mm): outline through the points (0, 0), (80, 0), (60, 30), (20, 30), closed. Extrude symmetrically, 6.35 mm to each side, new body.",
+      "start": null,
+      "reference": "sk = new_sketch('YZ', offset=0)\npolygon(sk, [(0, 0), (80, 0), (60, 30), (20, 30)])\nextrude(sk, 12.7, operation='new', symmetric=True)",
+      "volume": "(80 + 40)/2*30*12.7"
+    },
+    {
+      "id": "S-sym-disk-words",
+      "prompt": "Make a disk 40 mm in diameter and 10 mm thick, centered on the XY plane: 5 mm above it and 5 mm below.",
+      "start": null,
+      "reference": "cylinder(40, 10, base=(0, 0, -5))",
+      "volume": "math.pi*20*20*10"
+    },
+    {
+      "id": "S-arc-tab-hole",
+      "prompt": "Make the part step by step. Overall size 50 x 20 x 5 mm. Step 1: sketch on the XY plane (coordinates x, y in mm): outline through the points (0, -10), (40, -10), arc through the point (50, 0), (40, 10), (0, 10), closed; inside (holes): circle with center (40, 0) and diameter 8. Extrude 5 mm toward +Z, new body.",
+      "start": null,
+      "reference": "sk = new_sketch('XY', offset=0)\noutline(sk, [(0, -10), (40, -10), (50, 0, 'arc'), (40, 10), (0, 10)])\ncircle(sk, 40, 0, 8)\nextrude(sk, 5, operation='new')",
+      "volume": "(40*20 + math.pi*10*10/2 - math.pi*4*4)*5"
+    },
+    {
+      "id": "S-arc-rounded-xz",
+      "prompt": "Make the part step by step. Overall size 60 x 6 x 40 mm. Step 1: sketch on the XZ plane (coordinates x, z in mm): outline through the points (-25, -20), (25, -20), arc through the point (28.536, -18.536), (30, -15), (30, 15), arc through the point (28.536, 18.536), (25, 20), (-25, 20), arc through the point (-28.536, 18.536), (-30, 15), (-30, -15), arc through the point (-28.536, -18.536), closed. Extrude 6 mm toward +Y, new body.",
+      "start": null,
+      "reference": "sk = new_sketch('XZ', offset=0)\noutline(sk, [(-25, -20), (25, -20), (28.536, -18.536, 'arc'), (30, -15), (30, 15), (28.536, 18.536, 'arc'), (25, 20), (-25, 20), (-28.536, 18.536, 'arc'), (-30, 15), (-30, -15), (-28.536, -18.536, 'arc')])\nextrude(sk, 6, operation='new')",
+      "volume": "(60*40 - (4 - math.pi)*5*5)*6"
+    },
+    {
+      "id": "S-sym-two-steps",
+      "prompt": "Make the part step by step. Overall size 21 x 21 x 47 mm. Step 1: sketch on the XY plane (coordinates x, y in mm): circle with center (0, 0) and diameter 21. Extrude symmetrically, 21 mm to each side, new body. Step 2: sketch on the XY plane offset z = -21 mm (coordinates x, y in mm): circle with center (0, 0) and diameter 11. Extrude 5 mm toward -Z, join to the body.",
+      "start": null,
+      "reference": "sk = new_sketch('XY', offset=0)\ncircle(sk, 0, 0, 21)\nextrude(sk, 42, operation='new', symmetric=True)\nsk2 = new_sketch('XY', offset=-21)\ncircle(sk2, 0, 0, 11)\nextrude(sk2, -5, operation='join')",
+      "volume": "math.pi*(10.5*10.5*42 + 5.5*5.5*5)"
+    }
   ]
 }
