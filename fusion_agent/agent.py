@@ -27,9 +27,13 @@ MAX_REPLY_TOKENS = 1200
 # With thinking on, the reasoning counts against the cap too and needs room.
 MAX_REPLY_TOKENS_THINKING = 4000
 
-# The texts below go to the model and were tuned with it: keep them as they are.
+# The texts below go to the model and were tuned with it: keep them as they are. The two Russian ones go
+# with a Russian request; any other request gets their English copy (a model that reads Russian poorly
+# must still understand them).
 TOO_LONG_TEXT = ("Твой ответ оборвался: он слишком длинный. Вызови fusion_script сразу, "
                  "в скрипте только код, без комментариев.")
+TOO_LONG_TEXT_ENGLISH = ("Your answer was cut off: it is too long. Call fusion_script right away, "
+                         "with only code in the script, no comments.")
 
 REPEAT_TEXT = ("Note: this is exactly the script you already ran, with the same result. Repeating it will not "
                "help. Read the message again, find which number or which part is wrong, and change the approach.")
@@ -57,6 +61,8 @@ TIME_UP_TEXT = ("Time is up for this task. Do not run more scripts. Answer the u
 
 NUDGE_TEXT = ("Модель в Fusion не изменилась: геометрия та же, что была до задачи. "
               "Сделай это через fusion_script и проверь результат.")
+NUDGE_TEXT_ENGLISH = ("The model in Fusion did not change: the geometry is the same as before the task. "
+                      "Do it with fusion_script and check the result.")
 
 # Scripts that touch documents could reach the owner's own designs, so the runner refuses them.
 FORBIDDEN_SCRIPT_PATTERNS = [r"\.documents\b", r"\.save\s*\(", r"\.saveAs\s*\(", r"\.close\s*\(", r"executeTextCommand"]
@@ -229,14 +235,15 @@ INFO_WORDS = {
     "назови", "назвать", "назовите", "опиши", "описать", "опишите", "расскажи", "рассказать", "расскажите",
     "посчитай", "посчитать", "посчитайте", "подсчитай", "измерь", "измерить", "измерьте", "узнать", "проверь",
     "проверить", "проверьте", "объясни", "объяснить",
-    "what", "which", "how", "why", "where", "when", "who", "is", "are", "does", "show", "list", "tell",
-    "describe", "measure", "explain",
+    "what", "which", "how", "why", "where", "when", "who", "is", "are", "does", "do", "has", "show", "list",
+    "tell", "describe", "measure", "explain", "name", "count", "calculate", "compute", "check",
 }
-# Leading words that do not change the meaning ("а какая толщина", "ну скажи").
-FILLER_WORDS = {"а", "и", "ну", "так", "ещё", "еще", "теперь", "пожалуйста", "please", "ok", "ок", "хорошо"}
+# Leading words that do not change the meaning ("а какая толщина", "ну скажи", "so what is the mass").
+FILLER_WORDS = {"а", "и", "ну", "так", "ещё", "еще", "теперь", "пожалуйста", "please", "ok", "ок", "хорошо",
+                "and", "so", "now", "well", "okay", "also"}
 # Polite openings of a request to act ("можешь сделать её толще?"): a question mark after them is not a question.
 POLITE_WORDS = {"можешь", "можете", "можно", "сможешь", "сможете", "не", "мог", "могла", "могли", "бы", "ты", "вы",
-                "мне", "нам", "could", "can", "would", "will", "you", "me"}
+                "мне", "нам", "could", "can", "would", "will", "you", "me", "us"}
 
 
 def is_question(request):
@@ -259,13 +266,31 @@ def is_question(request):
     return request.rstrip().endswith("?") and len(sentences) == 1
 
 
-# "8 на 6 см", "2,5 см", "1 сантиметр", "6x4 cm": one size or several sizes followed by centimeters.
+# "8 на 6 см", "2,5 см", "1 сантиметр", "6x4 cm", "10 by 4 cm": one size or several sizes followed by
+# centimeters.
 CENTIMETER_SIZES = re.compile(
-    r"(\d+(?:[.,]\d+)?(?:\s*(?:на|x|х|×)\s*\d+(?:[.,]\d+)?)*)\s*(?:см|cm|сантиметр[а-яё]*)(?![\w])",
+    r"(\d+(?:[.,]\d+)?(?:\s*(?:на|by|x|х|×)\s*\d+(?:[.,]\d+)?)*)\s*"
+    r"(см|cm|сантиметр[а-яё]*|centimet(?:er|re)s?)(?![\w])",
     re.IGNORECASE)
-HALF_CENTIMETER = re.compile(r"пол[\s-]?сантиметра", re.IGNORECASE)
-ONE_AND_A_HALF_CENTIMETERS = re.compile(r"полтора\s+сантиметра", re.IGNORECASE)
+HALF_CENTIMETER = re.compile(r"пол[\s-]?сантиметра|(?<!and )half\s+(?:a\s+)?(?:centimet(?:er|re)|cm)(?![\w])",
+                             re.IGNORECASE)
+ONE_AND_A_HALF_CENTIMETERS = re.compile(r"полтора\s+сантиметра|one\s+and\s+a\s+half\s+(?:centimet(?:er|re)s?|cm)(?![\w])",
+                                        re.IGNORECASE)
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+CYRILLIC = re.compile(r"[а-яё]", re.IGNORECASE)
+
+
+def is_russian(text):
+    """True when the text has Cyrillic letters: a Russian request gets the texts the prompt was tuned with,
+    any other language gets their English copies."""
+    return CYRILLIC.search(text) is not None
+
+
+def millimeters_unit(text):
+    """"мм" next to a Russian word, "mm" otherwise: an English request gets no Russian unit."""
+    if is_russian(text):
+        return "мм"
+    return "mm"
 
 
 def millimeters_text(number_text):
@@ -280,11 +305,12 @@ def with_millimeters(request):
     gets the additions."""
     def add_millimeters(match):
         sizes = NUMBER.sub(lambda number: millimeters_text(number.group(0)), match.group(1))
-        return "%s (%s мм)" % (match.group(0), sizes)
+        return "%s (%s %s)" % (match.group(0), sizes, millimeters_unit(match.group(2)))
 
     text = CENTIMETER_SIZES.sub(add_millimeters, request)
-    text = HALF_CENTIMETER.sub(lambda match: match.group(0) + " (5 мм)", text)
-    text = ONE_AND_A_HALF_CENTIMETERS.sub(lambda match: match.group(0) + " (15 мм)", text)
+    text = HALF_CENTIMETER.sub(lambda match: "%s (5 %s)" % (match.group(0), millimeters_unit(match.group(0))), text)
+    text = ONE_AND_A_HALF_CENTIMETERS.sub(
+        lambda match: "%s (15 %s)" % (match.group(0), millimeters_unit(match.group(0))), text)
     return text
 
 
@@ -295,6 +321,9 @@ def with_millimeters(request):
 # in three bench tasks of one run although the prompt says what a disk is.
 SHAPE_HINTS = [
     (re.compile(r"(?<!\w)(диск\w*|кружо\w*|кружк\w*|круг(?!у)\w*|колёсик\w*|колесик\w*|ролик\w*|монет\w*|жетон\w*)(?!\w)", re.IGNORECASE), "cylinder()"),
+    # The same everyday names in English: Nemotron built "a round piece" as a tube and as a box (2026-11-06).
+    (re.compile(r"(?<!\w)(dis[ck]s?|coins?|tokens?|wheels?|rollers?|pucks?|round (?:piece|plate|part|blank)s?)(?!\w)",
+                re.IGNORECASE), "cylinder()"),
 ]
 
 
@@ -309,6 +338,9 @@ def with_shape_hints(request):
 DIMENSION_HINTS = [
     (re.compile(r"(?<!\w)(расшир\w*|шире|пошире|поуже|уже|суз\w*|сузь|ширин\w*)(?!\w)", re.IGNORECASE), "width"),
     (re.compile(r"(?<!\w)(удлин\w*|длинне\w*|подлинне\w*|короч\w*|укорот\w*|длин\w*)(?!\w)", re.IGNORECASE), "length"),
+    # Not inside a name already added ("[width]" after a Russian verb).
+    (re.compile(r"(?<![\w\[])(widen\w*|wider|narrow\w*|width)(?!\w)", re.IGNORECASE), "width"),
+    (re.compile(r"(?<![\w\[])(lengthen\w*|longer|shorten\w*|shorter|length)(?!\w)", re.IGNORECASE), "length"),
 ]
 
 
@@ -501,7 +533,8 @@ class Agent:
             if images:
                 message["images"] = list(images)
             self.messages.append(message)
-            result = self._agent_turn(start_signature, allow_nudges=not is_question(request))
+            result = self._agent_turn(start_signature, allow_nudges=not is_question(request),
+                                      is_russian=is_russian(request))
         except BaseException:
             del self.messages[history_length:]
             raise
@@ -509,9 +542,16 @@ class Agent:
         result["start_signature"] = start_signature
         return result
 
-    def _agent_turn(self, start_signature, allow_nudges=True):
+    def _agent_turn(self, start_signature, allow_nudges=True, is_russian=True):
         """Answer the last user message of the conversation: the model calls tools until it gives a final answer.
-        allow_nudges=False for a question: an unchanged design is then the expected outcome."""
+        allow_nudges=False for a question: an unchanged design is then the expected outcome.
+        is_russian picks the language of the two tuned Russian texts (too long, nothing changed)."""
+        if is_russian:
+            too_long_text = TOO_LONG_TEXT
+            nudge_text = NUDGE_TEXT
+        else:
+            too_long_text = TOO_LONG_TEXT_ENGLISH
+            nudge_text = NUDGE_TEXT_ENGLISH
         calls = []
         nudges = 0
         status = "max_calls"
@@ -541,7 +581,7 @@ class Agent:
 
             if response.get("done_reason") == "length" and not tool_calls:
                 self.messages.append({"role": "assistant", "content": message.get("content", "")[:2000]})
-                self.messages.append({"role": "user", "content": TOO_LONG_TEXT})
+                self.messages.append({"role": "user", "content": too_long_text})
                 continue
 
             assistant = {"role": "assistant", "content": message.get("content", "")}
@@ -600,7 +640,7 @@ class Agent:
             if is_unchanged and allow_nudges and nudges < MAX_NUDGES:
                 nudges += 1
                 strip_thinking(self.messages)
-                self.messages.append({"role": "user", "content": NUDGE_TEXT})
+                self.messages.append({"role": "user", "content": nudge_text})
                 self.listener.nudged(nudges)
                 continue
             status = "answered_unchanged" if is_unchanged and allow_nudges else "answered"

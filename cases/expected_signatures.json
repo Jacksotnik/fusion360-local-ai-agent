@@ -1786,5 +1786,99 @@
    ],
    "unhealthy": []
   }
+ },
+ "R-vase-two-cones": {
+  "key": "755c941771c4326f8db18c7f7e3da904a9097e63",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 645335.491,
+     "extents_mm": [
+      90.0,
+      90.0,
+      150.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "R-sphere": {
+  "key": "da2cb029c3d9821aea462c733c28f7408b2067a6",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 33510.322,
+     "extents_mm": [
+      40.0,
+      40.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 1
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "R-dome-on-cylinder": {
+  "key": "3eb191623e17db592c8a4b6bf8d0c08106629de8",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 234572.251,
+     "extents_mm": [
+      60.0,
+      80.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      80.0
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "R-barrel": {
+  "key": "e301d9179b1eb8fe5703adc2b28ffcd24079f530",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 426352.075,
+     "extents_mm": [
+      80.0,
+      80.0,
+      100.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "R-knob-rounded-top": {
+  "key": "e4289876d3f768c0fbbbee9d4ac04827b04732da",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 13669.171,
+     "extents_mm": [
+      20.0,
+      30.0,
+      30.0
+     ],
+     "cylinder_diameters_mm": [
+      30.0
+     ],
+     "faces": 4
+    }
+   ],
+   "unhealthy": []
+  }
  }
 }

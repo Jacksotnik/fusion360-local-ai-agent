@@ -1,0 +1,10 @@
+{
+  "note": "English translation of revolve_dev.json (bodies of revolution) for models that understand Russian poorly (Nemotron, 2026-11-06). Same ids, references and volumes.",
+  "cases": [
+    {"id": "R-vase-two-cones", "prompt": "Make a vase as a body of revolution: the bottom is 60 mm in diameter, at a height of 100 mm the diameter is 90 mm, and at the top, at a height of 150 mm, the diameter is 50 mm.", "start": null, "reference": "revolved_profile([(60, 0), (90, 100), (50, 150)])", "volume": "math.pi*100/3*(30*30 + 30*45 + 45*45) + math.pi*50/3*(45*45 + 45*25 + 25*25)"},
+    {"id": "R-sphere", "prompt": "Make a ball 40 mm in diameter.", "start": null, "reference": "sphere(40, center=(0, 0, 20))", "volume": "4.0/3*math.pi*20**3"},
+    {"id": "R-dome-on-cylinder", "prompt": "Make a cylinder 80 mm in diameter and 20 mm high, with a dome on top of it: a hemisphere of the same diameter.", "start": null, "reference": "revolved_profile([(80, 0), (80, 20), (80*math.cos(math.pi/4), 20 + 40*math.sin(math.pi/4), 'arc'), (0, 60)])", "volume": "math.pi*40*40*20 + 2.0/3*math.pi*40**3"},
+    {"id": "R-barrel", "prompt": "Make a small barrel as a body of revolution, 100 mm high: the ends are 60 mm in diameter, and it bulges out to 80 mm in the middle.", "start": null, "reference": "revolved_profile([(60, 0), (80, 50, 'arc'), (60, 100)])", "volume": "math.pi*((-90)**2*100 + 130**2*100 - (2*50**3/3) + 2*(-90)*2*(50/2*math.sqrt(130**2 - 50**2) + 130**2/2*math.asin(50/130)))"},
+    {"id": "R-knob-rounded-top", "prompt": "Make a round knob: a cylinder 30 mm in diameter and 20 mm high, with the top edge rounded with a 5 mm radius.", "start": null, "reference": "revolved_profile([(30, 0), (30, 20, 5)])", "volume": "math.pi*15*15*20 - 2*math.pi*(15 - 5*(5.0/6 - math.pi/4)/(1 - math.pi/4))*(5*5*(1 - math.pi/4))"}
+  ]
+}

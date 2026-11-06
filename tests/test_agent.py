@@ -89,14 +89,53 @@ class IsQuestionTest(unittest.TestCase):
         for request in ["Какая толщина у пластины?", "Сколько весит эта деталь?", "Из чего она сделана?",
                         "Перечисли параметры модели.", "Какие размеры у бруска", "А какой диаметр отверстия?",
                         "Покажи деталь сверху", "Толщина пластины?", "Можешь сказать, сколько она весит?",
-                        "Можно узнать объём?", "What is the wall thickness?", "List the parameters"]:
+                        "Можно узнать объём?", "What is the wall thickness?", "List the parameters",
+                        "How heavy is the part?", "So what is the mass?", "Could you tell me the hole diameter?",
+                        "Does it have any fillets?", "Check the size of the holes", "Plate thickness?",
+                        "Can you measure the length?"]:
             self.assertTrue(agent.is_question(request), request)
 
     def test_requests_to_change(self):
         for request in ["Сделай пластину толще — 10 мм.", "Дырку сделай побольше, 12 мм.",
                         "Можешь сделать её толще?", "Не мог бы ты скруглить углы?", "Сделай её в два раза толще",
-                        "Сделай пластину толще. Сколько она теперь весит?", "Make it 10 mm thicker", ""]:
+                        "Сделай пластину толще. Сколько она теперь весит?", "Make it 10 mm thicker", "",
+                        "Can you make it thicker?", "Could you round the corners?",
+                        "Make the plate thicker. How heavy is it now?"]:
             self.assertFalse(agent.is_question(request), request)
+
+
+class LanguageTest(unittest.TestCase):
+    def test_russian_request_keeps_the_tuned_texts(self):
+        self.assertTrue(agent.is_russian("Сделай пластину 80 на 50 мм"))
+        self.assertTrue(agent.is_russian("Make it толще"))
+        self.assertFalse(agent.is_russian("Make a plate 80 by 50 mm"))
+        self.assertFalse(agent.is_russian(""))
+
+
+class ShapeAndDimensionHintsTest(unittest.TestCase):
+    def test_round_parts_get_cylinder(self):
+        cases = {
+            "Сделай диск диаметром 60": "Сделай диск [cylinder()] диаметром 60",
+            "a round piece 4 cm across": "a round piece [cylinder()] 4 cm across",
+            "Make a disc 60 mm in diameter": "Make a disc [cylinder()] 60 mm in diameter",
+            "Make a coin, 25 mm": "Make a coin [cylinder()], 25 mm",
+            "Round all edges by 2 mm": "Round all edges by 2 mm",
+            "Make a plate with a round hole": "Make a plate with a round hole",
+        }
+        for request, expected in cases.items():
+            self.assertEqual(agent.with_shape_hints(request), expected)
+
+    def test_edit_verbs_get_the_dimension_name(self):
+        cases = {
+            "Расширь пластину до 7 см": "Расширь [width] пластину до 7 см",
+            "Make the plate wider, 70 mm": "Make the plate wider [width], 70 mm",
+            "Make it 20 mm longer": "Make it 20 mm longer [length]",
+            "Shorten it to 50 mm": "Shorten [length] it to 50 mm",
+            "Make it narrower": "Make it narrower [width]",
+            "Make it thicker": "Make it thicker",
+        }
+        for request, expected in cases.items():
+            self.assertEqual(agent.with_dimension_hints(request), expected)
 
 
 class WithMillimetersTest(unittest.TestCase):
@@ -110,7 +149,12 @@ class WithMillimetersTest(unittest.TestCase):
             "длиной 12 сантиметров": "длиной 12 сантиметров (120 мм)",
             "толщиной полсантиметра": "толщиной полсантиметра (5 мм)",
             "высотой полтора сантиметра": "высотой полтора сантиметра (15 мм)",
-            "a 3 cm cube": "a 3 cm (30 мм) cube",
+            "a 3 cm cube": "a 3 cm (30 mm) cube",
+            "a block 10 by 4 cm and 2 cm high": "a block 10 by 4 cm (100 by 40 mm) and 2 cm (20 mm) high",
+            "a ruler 15 centimeters long": "a ruler 15 centimeters (150 mm) long",
+            "half a centimeter thick": "half a centimeter (5 mm) thick",
+            "one and a half centimeters high": "one and a half centimeters (15 mm) high",
+            "брусок 6x4 cm": "брусок 6x4 cm (60x40 mm)",
         }
         for request, expected in cases.items():
             self.assertEqual(agent.with_millimeters(request), expected)

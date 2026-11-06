@@ -925,7 +925,12 @@ def hex_prism(across_flats, height, base=(0, 0, 0), axis="Z", bore=None, operati
     polygon(sketch, hexagon_points(base[u_index], base[v_index], across_flats))
     if bore:
         circle(sketch, base[u_index], base[v_index], bore)
-    _SPLINE_SIZES.update((across_flats, across_flats * 2 / math.sqrt(3)))
+    across_corners = across_flats * 2 / math.sqrt(3)
+    _SPLINE_SIZES.update((across_flats, across_corners))
+    # A nut of 13 across flats measures 15.011 across its corners: a model checked size=(13, 13, h) twenty
+    # times over a right nut (Nemotron, 2026-11-06).
+    _NOMINAL_SIZES.setdefault(round(across_flats, 6), []).append(
+        (across_corners, "the hexagon's size across its corners (%s across flats)" % _fmt(across_flats)))
     return extrude(sketch, height, operation=operation)
 
 
