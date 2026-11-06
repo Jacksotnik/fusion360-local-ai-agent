@@ -16,3 +16,7 @@ cases/*.png
 cases/*.jpg
 cases/*.jpeg
 cases/*.avif
+# Working notes of the AI coding sessions stay on the owner's disk (the repository is public).
+CLAUDE.md
+HANDOFF.md
+PLAN.md

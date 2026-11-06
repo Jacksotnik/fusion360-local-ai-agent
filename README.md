@@ -188,6 +188,7 @@ weakens its own check until it passes.
 Validation tools for developers: `python -m unittest discover -s tests` (no Fusion needed),
 `fusion-agent --selftest`, `tools/run_cases.py cases/<set>.json --tag <name>` (runs a set and compares
 with the references), `tools/ladder_regression.py` (the 23 graded tasks of the original bench, in `bench/`).
+How the tool is built and how a change is measured: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Known limits
 
