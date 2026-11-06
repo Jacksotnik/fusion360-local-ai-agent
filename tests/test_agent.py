@@ -128,6 +128,17 @@ class LanguageTest(unittest.TestCase):
         self.assertFalse(agent.is_russian(""))
 
 
+class LanguageHintTest(unittest.TestCase):
+    def test_a_non_russian_request_names_the_answer_language(self):
+        text = agent.with_language_hint("Make it thicker, 12 mm.", "Make it thicker, 12 mm.")
+        self.assertEqual(text, "Make it thicker, 12 mm.\n" + agent.LANGUAGE_HINT_TEXT)
+
+    def test_a_russian_request_is_sent_as_before(self):
+        request = "Сделай диск толще, 12 мм."
+        self.assertEqual(agent.with_language_hint(request, request), request)
+        self.assertEqual(agent.with_language_hint("", ""), "")
+
+
 class ShapeAndDimensionHintsTest(unittest.TestCase):
     def test_round_parts_get_cylinder(self):
         cases = {

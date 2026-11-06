@@ -367,6 +367,19 @@ MATERIAL_HINT = '[the %s: no dimension holds it, so add material with box(..., o
                 'end or cut it off with operation="cut"; the extrude dimension is the thickness, not the %s]'
 
 
+# Gemma answered English requests in Russian in one demo session of three (2026-11-06): the prompt's rule
+# "answer in the language of the request" loses to a prompt that is a fifth Cyrillic. A Russian request
+# gets nothing, so the tuned Russian path stays as it was.
+LANGUAGE_HINT_TEXT = "[Answer in the language of this request, not in Russian.]"
+
+
+def with_language_hint(request, text):
+    """The text sent to the model, with the answer language named when the request is not Russian."""
+    if is_russian(request) or not request.strip():
+        return text
+    return text + "\n" + LANGUAGE_HINT_TEXT
+
+
 def with_material_hints(request):
     """For a part whose sketch carries no named dimensions: the edit verb gets the material note instead
     (the model otherwise sets the only dimension it sees, the extrude thickness, to the new length)."""
@@ -507,6 +520,7 @@ class Agent:
             text = with_dimension_hints(text)
         elif "bodies: 0" not in state and "sketch " in state and "the user opened this design" not in state:
             text = with_material_hints(text)
+        text = with_language_hint(request, text)
         return state_prefix(state) + text
 
     # --- The loop -------------------------------------------------------------------------------

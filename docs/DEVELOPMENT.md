@@ -33,7 +33,9 @@ The user's text is never changed; only the copy sent to the model gets additions
 
 - sizes in centimeters also in mm (`10 by 4 cm (100 by 40 mm)`, `4 и 3 см (40 и 30 мм)`);
 - the helper of a round part's everyday name (`disc [cylinder()]`, `кружок [cylinder()]`);
-- for parts with named dimensions, the dimension an edit verb means (`wider [width]`, `расширь [width]`).
+- for parts with named dimensions, the dimension an edit verb means (`wider [width]`, `расширь [width]`);
+- for a request that is not in Russian, `[Answer in the language of this request, not in Russian.]`: the
+  prompt's own rule lost to its Russian examples (Gemma answered 23 of 25 English tasks in Russian).
 
 **English and Russian are supported at the same level.** Every word list, hint or loop text that
 understands one language has its counterpart in the other; a one-language rule is a bug. The model
