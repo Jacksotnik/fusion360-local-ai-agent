@@ -16,7 +16,7 @@ been run on a Mac. Write down what each step printed, especially anything marked
    "Fusion MCP Server" (port 27182) > Apply > OK.
    - ❓ Does the Preferences dialog open the same way on the Mac? (Some guides mention Cmd+,.)
      Note the exact menu path you used.
-5. The code: `git clone https://github.com/Jacksotnik/fusion360-local-ai-agent.git`, then `cd fusion360-local-ai-agent`.
+5. The code: `git clone https://github.com/Jacksotnik/local-ai-agent-autodesk-fusion-mcp.git`, then `cd local-ai-agent-autodesk-fusion-mcp`.
 
 ## 2. Launch
 

@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fusion360-local-ai-agent"
+name = "local-ai-agent-autodesk-fusion-mcp"
 dynamic = ["version"]
 description = "A local model (Ollama) designs and edits parts in Autodesk Fusion through Fusion's MCP server, from the terminal."
 readme = "README.md"
