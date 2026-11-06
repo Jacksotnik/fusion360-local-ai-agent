@@ -1,0 +1,8 @@
+{
+  "note": "Step-by-step requests like the Gallery tasks (tunable set, 2026-11-06): a symmetric extrude given as 'N mm to each side' is 2N thick. Nemotron made 'Extrude symmetrically, 6 mm to each side' 6 mm thick on gallery_holdout_en (honest, not tuned on); these tasks reproduce that on their own.",
+  "cases": [
+    {"id": "S-sym-xz-hole", "prompt": "Сделай деталь по шагам. Габарит 40 x 12 x 30 мм. Шаг 1: эскиз на плоскости XZ (координаты x, z в мм): контур по точкам (0, 0), (40, 0), (40, 30), (0, 30), замкнуть; внутри (отверстия): окружность с центром (20, 15) диаметром 10. Выдавить симметрично, по 6 мм в каждую сторону, новое тело.", "start": null, "reference": "sk = new_sketch('XZ', offset=0)\npolygon(sk, [(0, 0), (40, 0), (40, 30), (0, 30)])\ncircle(sk, 20, 15, 10)\nextrude(sk, 12, operation='new', symmetric=True)", "volume": "(40*30 - math.pi*5*5)*12"},
+    {"id": "S-sym-yz-trapezoid", "prompt": "Сделай деталь по шагам. Габарит 12.7 x 80 x 30 мм. Шаг 1: эскиз на плоскости YZ (координаты y, z в мм): контур по точкам (0, 0), (80, 0), (60, 30), (20, 30), замкнуть. Выдавить симметрично, по 6.35 мм в каждую сторону, новое тело.", "start": null, "reference": "sk = new_sketch('YZ', offset=0)\npolygon(sk, [(0, 0), (80, 0), (60, 30), (20, 30)])\nextrude(sk, 12.7, operation='new', symmetric=True)", "volume": "(80 + 40)/2*30*12.7"},
+    {"id": "S-sym-disk-words", "prompt": "Сделай диск диаметром 40 мм толщиной 10 мм, посередине на плоскости XY: по 5 мм над ней и под ней.", "start": null, "reference": "cylinder(40, 10, base=(0, 0, -5))", "volume": "math.pi*20*20*10"}
+  ]
+}

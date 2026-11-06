@@ -2131,5 +2131,63 @@
    ],
    "unhealthy": []
   }
+ },
+ "S-sym-xz-hole": {
+  "key": "fb2233a5139031c2381da131e0094ca9d78ab127",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 13457.522,
+     "extents_mm": [
+      12.0,
+      30.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      10.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "S-sym-yz-trapezoid": {
+  "key": "621ce2305f07459331676fb53f79803891e45edb",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 22860.0,
+     "extents_mm": [
+      12.7,
+      30.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "S-sym-disk-words": {
+  "key": "21f0d3fed98173c1d5f8cc58268ed5bb139d3e62",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 12566.371,
+     "extents_mm": [
+      10.0,
+      40.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      40.0
+     ],
+     "faces": 3
+    }
+   ],
+   "unhealthy": []
+  }
  }
 }
