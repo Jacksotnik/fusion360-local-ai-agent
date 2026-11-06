@@ -104,6 +104,22 @@ class IsQuestionTest(unittest.TestCase):
             self.assertFalse(agent.is_question(request), request)
 
 
+class LastCheckFailedTest(unittest.TestCase):
+    def test_the_last_check_in_the_output_decides(self):
+        self.assertTrue(agent.last_check_failed("CHECK FAILED: size is 30 x 30", False))
+        self.assertFalse(agent.last_check_failed("CHECK OK: bodies 1", True))
+        self.assertFalse(agent.last_check_failed("CHECK FAILED: volume\n...\nCHECK OK: bodies 1", True))
+
+    def test_the_loop_must_read_the_output_before_the_repeat_texts(self):
+        # The STOP text quotes "CHECK OK", so the loop reads the outcome before appending it.
+        output = "CHECK FAILED: size is 30 x 30\n" + agent.REPEAT_STOP_TEXT % 3
+        self.assertFalse(agent.last_check_failed(output, False))
+
+    def test_an_output_without_a_check_keeps_the_earlier_outcome(self):
+        self.assertTrue(agent.last_check_failed("Script finished, it printed nothing.", True))
+        self.assertFalse(agent.last_check_failed("Script failed. line 2 ...", False))
+
+
 class LanguageTest(unittest.TestCase):
     def test_russian_request_keeps_the_tuned_texts(self):
         self.assertTrue(agent.is_russian("Сделай пластину 80 на 50 мм"))
@@ -155,6 +171,9 @@ class WithMillimetersTest(unittest.TestCase):
             "half a centimeter thick": "half a centimeter (5 mm) thick",
             "one and a half centimeters high": "one and a half centimeters (15 mm) high",
             "брусок 6x4 cm": "брусок 6x4 cm (60x40 mm)",
+            "стороны 4 и 3 см": "стороны 4 и 3 см (40 и 30 мм)",
+            "with sides of 4 and 3 cm": "with sides of 4 and 3 cm (40 and 30 mm)",
+            "толщиной 5 мм и 3 см шириной": "толщиной 5 мм и 3 см (30 мм) шириной",
         }
         for request, expected in cases.items():
             self.assertEqual(agent.with_millimeters(request), expected)

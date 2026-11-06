@@ -266,10 +266,10 @@ def is_question(request):
     return request.rstrip().endswith("?") and len(sentences) == 1
 
 
-# "8 на 6 см", "2,5 см", "1 сантиметр", "6x4 cm", "10 by 4 cm": one size or several sizes followed by
-# centimeters.
+# "8 на 6 см", "2,5 см", "1 сантиметр", "6x4 cm", "10 by 4 cm", "стороны 4 и 3 см": one size or several
+# sizes followed by centimeters ("4 and 3 cm" gave "(30 mm)" and the model made both sides 30).
 CENTIMETER_SIZES = re.compile(
-    r"(\d+(?:[.,]\d+)?(?:\s*(?:на|by|x|х|×)\s*\d+(?:[.,]\d+)?)*)\s*"
+    r"(\d+(?:[.,]\d+)?(?:\s*(?:на|by|x|х|×|и|and)\s*\d+(?:[.,]\d+)?)*)\s*"
     r"(см|cm|сантиметр[а-яё]*|centimet(?:er|re)s?)(?![\w])",
     re.IGNORECASE)
 HALF_CENTIMETER = re.compile(r"пол[\s-]?сантиметра|(?<!and )half\s+(?:a\s+)?(?:centimet(?:er|re)|cm)(?![\w])",
@@ -278,6 +278,17 @@ ONE_AND_A_HALF_CENTIMETERS = re.compile(r"полтора\s+сантиметра|
                                         re.IGNORECASE)
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 CYRILLIC = re.compile(r"[а-яё]", re.IGNORECASE)
+
+
+def last_check_failed(output, was_failed):
+    """Whether the last check() in this tool output failed; an output without a check keeps the earlier outcome."""
+    failed_at = output.rfind("CHECK FAILED")
+    ok_at = output.rfind("CHECK OK")
+    if failed_at > ok_at:
+        return True
+    if ok_at > failed_at:
+        return False
+    return was_failed
 
 
 def is_russian(text):
@@ -560,6 +571,9 @@ class Agent:
         repeats = RepeatDetector()
         turn_started = time.time()
         is_time_up = False
+        # The outcome of the model's last check(): an answer after a failed one is not verified (Nemotron
+        # answered "The part is built correctly" after three CHECK FAILED, 2026-11-06).
+        is_last_check_failed = False
 
         for _ in range(MAX_MODEL_CALLS):
             self._check_cancelled()
@@ -602,6 +616,7 @@ class Agent:
                     tool_name = call.get("function", {}).get("name", "")
                     self.listener.status(tool_name)
                     output = self.run_tool(call, screenshots)
+                    is_last_check_failed = last_check_failed(output, is_last_check_failed)
                     repeat_count = repeats.check(call, output)
                     if repeat_count >= 1 and "CHECK OK" in output:
                         output += "\n" + REPEAT_OK_TEXT
@@ -655,6 +670,7 @@ class Agent:
             "calls": calls,
             "end_signature": end_signature,
             "changed": end_signature is not None and end_signature != start_signature,
+            "check_failed": is_last_check_failed,
         }
 
     def run_tool(self, call, screenshots):

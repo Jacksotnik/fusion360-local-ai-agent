@@ -1880,5 +1880,256 @@
    ],
    "unhealthy": []
   }
+ },
+ "M-spline-hub": {
+  "key": "02fd4b2b7b20ae889b45eac12b0652c1b9e23d00",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 26441.042,
+     "extents_mm": [
+      25.0,
+      40.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      40.0
+     ],
+     "faces": 35
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-spline-shaft": {
+  "key": "c50478344153f70469a3d40ee558252716609aed",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 14760.0,
+     "extents_mm": [
+      20.0,
+      20.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [],
+     "faces": 26
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-disk-rim-cutouts": {
+  "key": "fe8f34f1e5b0b1380af9611c12e6ead62058fa1e",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 43153.352,
+     "extents_mm": [
+      6.0,
+      95.5,
+      100.0
+     ],
+     "cylinder_diameters_mm": [
+      30.0,
+      100.0
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-flange-hub-photo": {
+  "key": "58874c0d8a6afce98316ccbdb4871fb2d75c3a81",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 109959.827,
+     "extents_mm": [
+      28.0,
+      114.6,
+      120.0
+     ],
+     "cylinder_diameters_mm": [
+      8.0,
+      36.0,
+      50.0,
+      120.0
+     ],
+     "faces": 52
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-pulley-groove": {
+  "key": "b95acc2c7a09733baaee57b7d68334c00df850d0",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 24831.148,
+     "extents_mm": [
+      14.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      44.0,
+      50.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-shaft-groove-x": {
+  "key": "ab5dedb419e29bc6af3c3ad2532b9360ca8de06c",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 11922.344,
+     "extents_mm": [
+      16.0,
+      16.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      14.0,
+      16.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-three-notches": {
+  "key": "045a16dae8a4d2215ab39b9fd5a9ce1e0e08ecbf",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 22901.743,
+     "extents_mm": [
+      5.0,
+      78.75,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0,
+      80.0
+     ],
+     "faces": 8
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-hub-fillet": {
+  "key": "576b6e1dcb9ca2357b8b8dd2ef4c53c8aa6cb29d",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 51005.425,
+     "extents_mm": [
+      23.0,
+      80.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      30.0,
+      80.0
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-face-recess": {
+  "key": "bd97670bdb4912b0a699f550b91f9cf5c80bf4c3",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 26646.989,
+     "extents_mm": [
+      10.0,
+      60.0,
+      60.0
+     ],
+     "cylinder_diameters_mm": [
+      30.0,
+      44.0,
+      60.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-keyway-bore": {
+  "key": "cdc1198f7da15f8174a0f459da5e21d897d6a36c",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 27706.957,
+     "extents_mm": [
+      30.0,
+      40.0,
+      40.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0,
+      40.0
+     ],
+     "faces": 7
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-counterbore-plate": {
+  "key": "3658481f1b85ad07b1753b4836266251ad957ad4",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 38585.906,
+     "extents_mm": [
+      10.0,
+      50.0,
+      80.0
+     ],
+     "cylinder_diameters_mm": [
+      6.6,
+      11.0
+     ],
+     "faces": 12
+    }
+   ],
+   "unhealthy": []
+  }
+ },
+ "M-boss-chamfer": {
+  "key": "dc09b2d5a031c7c0af6b941c10a1b283dfddae3a",
+  "signature": {
+   "bodies": [
+    {
+     "volume_mm3": 14892.196,
+     "extents_mm": [
+      16.0,
+      50.0,
+      50.0
+     ],
+     "cylinder_diameters_mm": [
+      20.0,
+      50.0
+     ],
+     "faces": 6
+    }
+   ],
+   "unhealthy": []
+  }
  }
 }

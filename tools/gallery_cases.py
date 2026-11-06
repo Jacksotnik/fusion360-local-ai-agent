@@ -6,6 +6,9 @@ the steps in words with every size in mm, the reference is the same history repl
 and the hand volume is the Gallery's own measurement, so a wrong replay is caught by --check-references.
 
     .venv\\Scripts\\python -X utf8 tools\\gallery_cases.py scanned.json cases\\gallery_holdout.json --limit 60
+    .venv\\Scripts\\python -X utf8 tools\\gallery_cases.py scanned.json cases\\gallery_holdout_en.json --language en
+
+The same designs in another language: the same scanned file and --seed give the same designs in the same order.
 
 The scanned file is a list of designs (id, image URL, code = the Gallery JSON) made by a scan of the dataset
 through the Hugging Face datasets-server API. Designs are kept when they use only lines, arcs and circles,
@@ -27,7 +30,37 @@ AXIS_NAMES = "XYZ"
 PLANE_BY_NORMAL = {2: "XY", 1: "XZ", 0: "YZ"}
 IN_PLANE = {"XY": (0, 1), "XZ": (0, 2), "YZ": (1, 2)}
 OPERATIONS = {"NewBodyFeatureOperation": "new", "JoinFeatureOperation": "join", "CutFeatureOperation": "cut"}
-OPERATION_WORDS = {"new": "новое тело", "join": "добавить к телу", "cut": "вырезать из тела"}
+# The words of a task in each language (--language); the Russian ones are those of the first sets.
+TEXTS = {
+    "ru": {
+        "operations": {"new": "новое тело", "join": "добавить к телу", "cut": "вырезать из тела"},
+        "circle": "окружность с центром %s диаметром %s",
+        "arc": "дуга через точку %s",
+        "outline": "контур по точкам %s, замкнуть",
+        "sketch": "эскиз на плоскости %s",
+        "offset": " со смещением %s = %s мм",
+        "coordinates": " (координаты %s, %s в мм)",
+        "holes": "; внутри (отверстия): ",
+        "symmetric": ". Выдавить симметрично, по %s мм в каждую сторону, %s.",
+        "one_side": ". Выдавить на %s мм в сторону %s, %s.",
+        "step": "Шаг %d: %s",
+        "task": "Сделай деталь как на картинке, по шагам. Габарит %s x %s x %s мм. ",
+    },
+    "en": {
+        "operations": {"new": "new body", "join": "join to the body", "cut": "cut from the body"},
+        "circle": "circle with center %s and diameter %s",
+        "arc": "arc through the point %s",
+        "outline": "outline through the points %s, closed",
+        "sketch": "sketch on the %s plane",
+        "offset": " offset %s = %s mm",
+        "coordinates": " (coordinates %s, %s in mm)",
+        "holes": "; inside (holes): ",
+        "symmetric": ". Extrude symmetrically, %s mm to each side, %s.",
+        "one_side": ". Extrude %s mm toward %s, %s.",
+        "step": "Step %d: %s",
+        "task": "Make the part as in the picture, step by step. Overall size %s x %s x %s mm. ",
+    },
+}
 
 
 class Skip(Exception):
@@ -155,17 +188,17 @@ def points_code(points):
     return "[" + ", ".join(parts) + "]"
 
 
-def loop_words(kind_data):
+def loop_words(kind_data, texts):
     if kind_data[0] == "circle":
-        return "окружность с центром %s диаметром %s" % (point_text(kind_data[1]), fmt(kind_data[2]))
+        return texts["circle"] % (point_text(kind_data[1]), fmt(kind_data[2]))
     words = []
     points = kind_data[1]
     for index, point in enumerate(points):
         if len(point) == 3:
-            words.append("дуга через точку %s" % point_text(point))
+            words.append(texts["arc"] % point_text(point))
         else:
             words.append(point_text(point))
-    return "контур по точкам " + ", ".join(words) + ", замкнуть"
+    return texts["outline"] % ", ".join(words)
 
 
 def loop_code(kind_data):
@@ -177,7 +210,8 @@ def loop_code(kind_data):
     return "polygon(sk, %s)" % points_code(points)
 
 
-def build_case(design):
+def build_case(design, language="ru"):
+    texts = TEXTS[language]
     code = design["code"]
     entities = code["entities"]
     props = code.get("properties", {})
@@ -248,22 +282,23 @@ def build_case(design):
         step += 1
         axis_name = AXIS_NAMES[normal_index]
         u_name, v_name = (AXIS_NAMES[i].lower() for i in IN_PLANE[plane])
-        where = "эскиз на плоскости %s" % plane
+        operation_words = texts["operations"][operation]
+        where = texts["sketch"] % plane
         if abs(offset) > 1e-6:
-            where += " со смещением %s = %s мм" % (axis_name.lower(), fmt(offset))
-        where += " (координаты %s, %s в мм)" % (u_name, v_name)
-        outer_words = [loop_words(data) for is_outer, data in loops if is_outer]
-        inner_words = [loop_words(data) for is_outer, data in loops if not is_outer]
+            where += texts["offset"] % (axis_name.lower(), fmt(offset))
+        where += texts["coordinates"] % (u_name, v_name)
+        outer_words = [loop_words(data, texts) for is_outer, data in loops if is_outer]
+        inner_words = [loop_words(data, texts) for is_outer, data in loops if not is_outer]
         words = where + ": " + "; ".join(outer_words)
         if inner_words:
-            words += "; внутри (отверстия): " + "; ".join(inner_words)
+            words += texts["holes"] + "; ".join(inner_words)
         signed = distance * normal_sign
         if is_symmetric:
-            words += ". Выдавить симметрично, по %s мм в каждую сторону, %s." % (fmt(abs(distance)), OPERATION_WORDS[operation])
+            words += texts["symmetric"] % (fmt(abs(distance)), operation_words)
         else:
             direction = ("+" if signed > 0 else "-") + axis_name
-            words += ". Выдавить на %s мм в сторону %s, %s." % (fmt(abs(distance)), direction, OPERATION_WORDS[operation])
-        steps_words.append("Шаг %d: %s" % (step, words))
+            words += texts["one_side"] % (fmt(abs(distance)), direction, operation_words)
+        steps_words.append(texts["step"] % (step, words))
         lines = ['sk = new_sketch("%s", offset=%s)' % (plane, fmt(offset))]
         for _, data in loops:
             lines.append(loop_code(data))
@@ -274,8 +309,7 @@ def build_case(design):
         steps_code.append("\n".join(lines))
     if step == 0:
         raise Skip("no extrude")
-    prompt = ("Сделай деталь как на картинке, по шагам. Габарит %s x %s x %s мм. " % tuple(fmt(s) for s in size)
-              + " ".join(steps_words))
+    prompt = texts["task"] % tuple(fmt(s) for s in size) + " ".join(steps_words)
     return {
         "id": "G-" + design["id"],
         "images": ["gallery/" + design["id"] + ".png"],
@@ -306,6 +340,8 @@ def main():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--images-dir", default=os.path.join(APP_ROOT, "cases", "gallery"))
     parser.add_argument("--no-images", action="store_true")
+    parser.add_argument("--language", choices=sorted(TEXTS), default="ru",
+                        help="language of the task text (the references and volumes do not depend on it)")
     args = parser.parse_args()
     designs = json.load(open(args.scanned, encoding="utf-8"))
     random.Random(args.seed).shuffle(designs)
@@ -313,7 +349,7 @@ def main():
     skipped = {}
     for design in designs:
         try:
-            case = build_case(design)
+            case = build_case(design, language=args.language)
         except Skip as reason:
             key = str(reason).split(" ")[0]
             skipped[key] = skipped.get(key, 0) + 1

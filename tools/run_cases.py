@@ -180,7 +180,8 @@ def run_case(bench, case, cache, ollama, details, args, system_prompt, out_dir):
             pictures.append(images.load_image(os.path.join(APP_ROOT, "cases", image_name)).base64)
         result = agent.turn(case["prompt"], images=pictures or None)
         actual = bench.signature()
-        record.update({"status": result["status"], "calls": result["calls"], "nudges": result["nudges"],
+        record.update({"status": result["status"], "check_failed": result.get("check_failed", False),
+                       "calls": result["calls"], "nudges": result["nudges"],
                        "turn_seconds": result["seconds"], "actual": actual, "answer": result["final_answer"],
                        "messages": loggable(agent.messages)})
         record["problems"] = compare(expected, actual)

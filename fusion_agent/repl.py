@@ -44,6 +44,8 @@ STATUS_NOTES = {
     "answered_unchanged": "The design did not change.",
     "left_session_design": "The active document in Fusion changed during the request: stopped there.",
 }
+# Shown when the model answers although its own last check() of the part failed.
+CHECK_FAILED_NOTE = "The model's last check of the part failed: the part may not match the request."
 
 STATUS_TEXT = {
     "model": "model",
@@ -661,12 +663,15 @@ class App:
     def print_result(self, result):
         answer = result["final_answer"].strip()
         self.log.write("answer", status=result["status"], text=answer, seconds=result["seconds"],
-                       model_calls=len(result["calls"]), nudges=result["nudges"], changed=result["changed"])
+                       model_calls=len(result["calls"]), nudges=result["nudges"], changed=result["changed"],
+                       check_failed=result.get("check_failed", False))
         if answer:
             print(answer)
         note = STATUS_NOTES.get(result["status"])
         if note:
             print(term.paint(note, term.YELLOW))
+        if result.get("check_failed"):
+            print(term.paint(CHECK_FAILED_NOTE, term.YELLOW))
         print(term.paint(self.stats_line(result), term.GREY))
         if result["changed"] and self.settings["screenshots"] and result["status"] != "left_session_design":
             self.show_screenshot("iso-top-right", quiet=True)
